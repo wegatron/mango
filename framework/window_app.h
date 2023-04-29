@@ -4,7 +4,8 @@
 #include <GLFW/glfw3.h>
 #include <string>
 #include <memory>
-#include "app_base.h"
+#include "framework/app_base.h"
+#include "framework/vk_driver.h"
 
 namespace vk_engine
 {
@@ -20,6 +21,7 @@ namespace vk_engine
             void setApp(const std::shared_ptr<AppBase> &app);
             void run();
         private:
+            std::shared_ptr<VkDriver> driver_;
             std::shared_ptr<AppBase> app_;
             GLFWwindow * window_;
     };

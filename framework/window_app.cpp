@@ -1,4 +1,4 @@
-#include "window_app.h"
+#include "framework/window_app.h"
 #include <cassert>
 
 namespace vk_engine
@@ -10,6 +10,13 @@ namespace vk_engine
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window_ = glfwCreateWindow(width, height, window_title.c_str(), nullptr, nullptr);
+
+        driver_ = std::make_shared<VkDriver>();
+        #ifdef NDEBUG
+        driver_->init(window_title, false);
+        #else
+        driver_->init(window_title, true);
+        #endif
     }
 
     WindowApp::~WindowApp()

@@ -8,12 +8,19 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/glfw3")
-find_package(glfw3 REQUIRED)
+set(GLFW_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/libglfw3.a)
 
 include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/install/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm)
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/Vulkan-Hpp
+)
+
+if (NOT APPLE AND ${CMAKE_CXX_COMPILER} MATCHES "(C|c?)lang")
+    add_link_options(-stdlib=libc++)
+    add_compile_options(-stdlib=libc++)
+endif()
 
 add_definitions(-DVK_NO_PROTOTYPES)
 if (WIN32)
@@ -23,10 +30,10 @@ elseif()
 endif()
 add_subdirectory(thirdparty/volk)
 
-file(GLOB src *.cpp)
-file(GLOB headers *.h)
+file(GLOB src *.cpp framework/*.cpp)
+file(GLOB headers *.h framework/*.h)
 add_executable(vk_triangle
     ${src}
     ${headers})
 
-target_link_libraries(vk_triangle PRIVATE volk glfw)
+target_link_libraries(vk_triangle PRIVATE volk ${GLFW_LIBRARY})
