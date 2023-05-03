@@ -1,5 +1,6 @@
 #include "framework/vk_driver.h"
 #include <cassert>
+#include <stdexcept>
 #include <vector>
 #include <volk.h>
 
@@ -43,8 +44,7 @@ namespace vk_engine
 
     bool VkDriver::init(const std::string &app_name, const bool enable_validation)
     {
-        VkResult ret = volkInitialize();
-        if(ret != VK_SUCCESS)
+        if(VK_SUCCESS != volkInitialize())
         {
             throw std::runtime_error("failed to initialize volk!");
             return false;
@@ -77,9 +77,8 @@ namespace vk_engine
             instance_info.enabledLayerCount = static_cast<uint32_t>(request_validation_layers.size());
             instance_info.ppEnabledLayerNames = request_validation_layers.data();
         }
-        
-        ret = vkCreateInstance(&instance_info, nullptr, &instance_);
-        if(ret != VK_SUCCESS) {
+                
+        if(VK_SUCCESS != vkCreateInstance(&instance_info, nullptr, &instance_)) {
             throw std::runtime_error("failed to create instance");
             return false;
         }
@@ -96,13 +95,12 @@ namespace vk_engine
         }
 
         std::vector<VkPhysicalDevice> physical_devices(device_count);
+        VkPhysicalDeviceFeatures features;
         vkEnumeratePhysicalDevices(instance_, &device_count, physical_devices.data());
         for(const auto &pd : physical_devices)
         {
             VkPhysicalDeviceProperties properties;
-            vkGetPhysicalDeviceProperties(pd, &properties);
-
-            VkPhysicalDeviceFeatures features;
+            vkGetPhysicalDeviceProperties(pd, &properties);            
             vkGetPhysicalDeviceFeatures(pd, &features);
 
             if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader)
@@ -139,11 +137,32 @@ namespace vk_engine
             return false;
         }
 
+        // queue info
+        VkDeviceQueueCreateInfo queue_info;
+        queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_info.queueFamilyIndex = selected_queue_family_index;
+        queue_info.queueCount = 1;
+        float queue_priority = 1.0f;
+        queue_info.pQueuePriorities = &queue_priority;
+
         // logical device
-        // TODO
         VkDeviceCreateInfo device_info{};
         device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_info.pQueueCreateInfos = &queue_info;
+        device_info.queueCreateInfoCount = 1;
+        device_info.pEnabledFeatures = &features;
+        if(enable_validation)
+        {
+            device_info.enabledLayerCount = request_validation_layers.size();
+            device_info.ppEnabledLayerNames = request_validation_layers.data();
+        } else device_info.enabledLayerCount = 0;
+        device_info.enabledExtensionCount = 0;
 
+        if(VK_SUCCESS != vkCreateDevice(physical_device_, &device_info, nullptr, &device_))
+        {
+            throw std::runtime_error("failed to create vulkan device!");
+            return false;
+        }
         return true;
     }
 

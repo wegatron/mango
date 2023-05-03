@@ -16,6 +16,7 @@ namespace vk_engine
         bool init(const std::string &app_name, const bool enable_validation);
     private:
         VkInstance instance_{VK_NULL_HANDLE};
-        VkPhysicalDevice physical_device_{VK_NULL_HANDLE};        
+        VkPhysicalDevice physical_device_{VK_NULL_HANDLE};
+        VkDevice device_{VK_NULL_HANDLE};     
     };
 }
