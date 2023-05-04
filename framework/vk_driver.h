@@ -21,6 +21,8 @@ namespace vk_engine
 
         std::pair<bool, uint32_t> selectPhysicalDevice(std::vector<const char*> request_extensions);
         
+        bool checkSwapchainAbility();
+        
         bool createSwapchain();
 
         VkInstance instance_{VK_NULL_HANDLE};

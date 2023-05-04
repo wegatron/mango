@@ -14,6 +14,11 @@ int main(int argc, char const *argv[])
         "triangle", 800, 600);
 
     window_app->setApp(app);
+    if(!window_app->init())
+    {
+        std::cerr << "Failed to init window app" << std::endl;
+        return -1;
+    }
     window_app->run();
     return 0;
 }

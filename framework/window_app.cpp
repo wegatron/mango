@@ -12,8 +12,12 @@ namespace vk_engine
 
     bool WindowApp::init()
     {
-        int ret = glfwInit();
-        assert(ret == GLFW_TRUE);
+        if(GLFW_TRUE != glfwInit())
+        {
+            std::cerr << "Failed to init glfw" << std::endl;
+            return false;
+        }
+
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window_ = glfwCreateWindow(width_, height_, window_title_.c_str(), nullptr, nullptr);        

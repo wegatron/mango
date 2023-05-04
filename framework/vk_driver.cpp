@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <vector>
 #include <cstring>
+#include <algorithm>
 #include <volk.h>
 
 #define GLFW_INCLUDE_VULKAN
@@ -181,26 +182,46 @@ namespace vk_engine
         }
 
         vkGetDeviceQueue(device_, select_ret.second, 0, &graphics_queue_);
+        checkSwapchainAbility();
+        createSwapchain();
+        return true;
+    }
 
-        return createSwapchain();        
+    bool VkDriver::checkSwapchainAbility()
+    {
+        VkSurfaceFormatKHR surface_format{VK_FORMAT_B8G8R8_SNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+        uint32_t format_count = 0;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count, nullptr);
+        std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count, surface_formats.data());
+        auto format_itr = std::find(surface_formats.begin(), surface_formats.end(), surface_format);
+        if(format_itr == surface_formats.end())
+        {
+            throw std::runtime_error("B8G8R8_SNORM format, COLOR_SPACE_SRGB_NONLINEAR_KHR is not supported!");
+            return false;
+        }
+
+        uint32_t present_mode_count = 0;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count, nullptr);
+        std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count, present_modes.data());
+        auto present_itr = std::find(present_modes.begin(), present_modes.end(), VK_PRESENT_MODE_FIFO_KHR);
+        if(present_itr == present_modes.end())
+        {
+            throw std::runtime_error("FIFO present mode is not supported!");
+            return false;
+        }
+        return true;
     }
 
     bool VkDriver::createSwapchain()
     {
         VkSurfaceCapabilitiesKHR surface_capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_capabilities);
-        uint32_t format_count = 0;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count, nullptr);
-        std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count, surface_formats.data());
+        VkSurfaceFormatKHR surface_format{VK_FORMAT_B8G8R8_SNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
 
-        uint32_t present_mode_count = 0;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count, nullptr);
-        std::vector<VkPresentModeKHR> present_modes(present_mode_count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count, present_modes.data());
-
-        // select format and present mode
-        return true;
+        // create swapchain
+        VkSwapchainCreateInfoKHR swapchain_info{};
     }
 
     VkDriver::~VkDriver()
