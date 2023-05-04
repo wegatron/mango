@@ -55,9 +55,17 @@ namespace vk_engine
         auto physical_devices = PhysicalDevice::getPhysicalDevices(instance_);
         for(const auto &pd : physical_devices)
         {
+            physical_device_ = pd.getHandle();
             uint32_t graphics_queue_family_index = pd.getGraphicsQueueFamilyIndex();
             if(graphics_queue_family_index == 0XFFFFFFFF)
                 continue;
+            VkBool32 surface_support = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_, graphics_queue_family_index, surface_, &surface_support);
+            if(!surface_support
+                || (pd.getProperties().deviceType != VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+                || !(pd.getFeatures().geometryShader))
+                continue;
+
             const auto &device_extensions = pd.getExtensionProperties();
             bool extension_support = true;
             for(const auto &req_ext : request_extensions)
@@ -76,20 +84,8 @@ namespace vk_engine
                     break;
                 }
             }
-            if(!extension_support) continue;
-
-            // swapchain support adquate
-
-
-            VkBool32 surface_support = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_, graphics_queue_family_index, surface_, &surface_support);
-            if(surface_support
-                && pd.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
-                && pd.getFeatures().geometryShader)
-            {
-                physical_device_ = pd.getHandle();
-                return std::make_pair(true, graphics_queue_family_index);
-            }
+            if(!extension_support) continue; 
+            return std::make_pair(true, graphics_queue_family_index);            
         }
 
         return std::make_pair(false, -1);
@@ -185,11 +181,31 @@ namespace vk_engine
         }
 
         vkGetDeviceQueue(device_, select_ret.second, 0, &graphics_queue_);
+
+        return createSwapchain();        
+    }
+
+    bool VkDriver::createSwapchain()
+    {
+        VkSurfaceCapabilitiesKHR surface_capabilities;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_capabilities);
+        uint32_t format_count = 0;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count, nullptr);
+        std::vector<VkSurfaceFormatKHR> surface_formats(format_count);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(physical_device_, surface_, &format_count, surface_formats.data());
+
+        uint32_t present_mode_count = 0;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count, nullptr);
+        std::vector<VkPresentModeKHR> present_modes(present_mode_count);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(physical_device_, surface_, &present_mode_count, present_modes.data());
+
+        // select format and present mode
         return true;
     }
 
     VkDriver::~VkDriver()
     {
+        vkDestroySwapchainKHR(device_, swapchain_, nullptr);
         vkDestroyDevice(device_, nullptr);
         vkDestroySurfaceKHR(instance_, surface_, nullptr);
         vkDestroyInstance(instance_, nullptr);        

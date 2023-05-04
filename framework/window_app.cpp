@@ -1,29 +1,36 @@
 #include "framework/window_app.h"
 #include <cassert>
+#include <iostream>
 
 namespace vk_engine
 {
-    WindowApp::WindowApp(const std::string &window_title, const int width, const int height)
-    {
-        int ret = glfwInit();
-        assert(ret == GLFW_TRUE);
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-        window_ = glfwCreateWindow(width, height, window_title.c_str(), nullptr, nullptr);
-
-        driver_ = std::make_shared<VkDriver>();
-        #ifdef NDEBUG
-        driver_->init(window_title, false, window_);
-        #else
-        driver_->init(window_title, true, window_);
-        #endif
-    }
-
     WindowApp::~WindowApp()
     {
         glfwDestroyWindow(window_);
         glfwTerminate();
     }
+
+    bool WindowApp::init()
+    {
+        int ret = glfwInit();
+        assert(ret == GLFW_TRUE);
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+        window_ = glfwCreateWindow(width_, height_, window_title_.c_str(), nullptr, nullptr);        
+        driver_ = std::make_shared<VkDriver>();
+        bool ret = false;
+        try {
+            #ifdef NDEBUG
+            ret = driver_->init(window_title_, false, window_);
+            #else
+            ret = driver_->init(window_title_, true, window_);
+            #endif
+        } catch (const std::runtime_error &e) {
+            std::cerr << e.what() << std::endl;
+            return false;
+        }
+        return ret;
+    }  
 
     void WindowApp::setApp(const std::shared_ptr<AppBase> &app)
     {

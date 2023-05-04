@@ -20,14 +20,15 @@ namespace vk_engine
     private:
 
         std::pair<bool, uint32_t> selectPhysicalDevice(std::vector<const char*> request_extensions);
+        
+        bool createSwapchain();
 
         VkInstance instance_{VK_NULL_HANDLE};
         VkPhysicalDevice physical_device_{VK_NULL_HANDLE};
         VkDevice device_{VK_NULL_HANDLE};
         
         VkQueue graphics_queue_{VK_NULL_HANDLE};
-        //VkQueue present_queue_{VK_NULL_HANDLE};
-
-        VkSurfaceKHR surface_{VK_NULL_HANDLE};  
+        VkSurfaceKHR surface_{VK_NULL_HANDLE};
+        VkSwapchainKHR swapchain_{VK_NULL_HANDLE};
     };
 }
