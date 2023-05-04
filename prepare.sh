@@ -1,5 +1,5 @@
 #!/bin/bash
-apt install vulkan-tools libvulkan-dev vulkan-validationlayers-dev spirv-tools
+#apt install vulkan-tools libvulkan-dev vulkan-validationlayers-dev spirv-tools
 
 mkdir thirdparty
 git clone https://github.com/g-truc/glm.git thirdparty/glm

@@ -2,13 +2,20 @@
 #include <cassert>
 #include <stdexcept>
 #include <vector>
+#include <cstring>
 #include <volk.h>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include "framework/physical_device.h"
+
 const std::vector<const char*> request_validation_layers = {
-    "VK_LAYER_KHRONOS_validation"  
+    "VK_LAYER_KHRONOS_validation",
+};
+
+const std::vector<const char*> request_device_extensions = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
 namespace vk_engine
@@ -42,7 +49,53 @@ namespace vk_engine
         return true;
     }
 
-    bool VkDriver::init(const std::string &app_name, const bool enable_validation)
+    std::pair<bool, uint32_t> VkDriver::selectPhysicalDevice(
+        std::vector<const char *> request_extensions)
+    {
+        auto physical_devices = PhysicalDevice::getPhysicalDevices(instance_);
+        for(const auto &pd : physical_devices)
+        {
+            uint32_t graphics_queue_family_index = pd.getGraphicsQueueFamilyIndex();
+            if(graphics_queue_family_index == 0XFFFFFFFF)
+                continue;
+            const auto &device_extensions = pd.getExtensionProperties();
+            bool extension_support = true;
+            for(const auto &req_ext : request_extensions)
+            {
+                bool is_find = false;
+                for(const auto &ext : device_extensions)
+                {
+                    if(strcmp(ext.extensionName, req_ext) == 0)
+                    {
+                        is_find = true;
+                        break;
+                    }
+                }
+                if(!is_find) {
+                    extension_support = false;
+                    break;
+                }
+            }
+            if(!extension_support) continue;
+
+            // swapchain support adquate
+
+
+            VkBool32 surface_support = false;
+            vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_, graphics_queue_family_index, surface_, &surface_support);
+            if(surface_support
+                && pd.getProperties().deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU
+                && pd.getFeatures().geometryShader)
+            {
+                physical_device_ = pd.getHandle();
+                return std::make_pair(true, graphics_queue_family_index);
+            }
+        }
+
+        return std::make_pair(false, -1);
+    }
+
+    bool VkDriver::init(const std::string &app_name, const bool enable_validation, GLFWwindow * window)
     {
         if(VK_SUCCESS != volkInitialize())
         {
@@ -85,72 +138,39 @@ namespace vk_engine
 
         volkLoadInstance(instance_);
 
-        // physical device, descrete gpu and support geometry shader
-        uint32_t device_count = 0;
-        vkEnumeratePhysicalDevices(instance_, &device_count, nullptr);
-        if(device_count == 0)
+        assert(window != nullptr);
+        if(VK_SUCCESS != glfwCreateWindowSurface(instance_, window, nullptr, &surface_))
         {
-            throw std::runtime_error("failed to find gpu with vulkan support!");
+            throw std::runtime_error("failed to create window surface!");
             return false;
         }
-
-        std::vector<VkPhysicalDevice> physical_devices(device_count);
-        VkPhysicalDeviceFeatures features;
-        vkEnumeratePhysicalDevices(instance_, &device_count, physical_devices.data());
-        for(const auto &pd : physical_devices)
+        
+        auto select_ret = selectPhysicalDevice(request_device_extensions);
+        if(!select_ret.first)
         {
-            VkPhysicalDeviceProperties properties;
-            vkGetPhysicalDeviceProperties(pd, &properties);            
-            vkGetPhysicalDeviceFeatures(pd, &features);
-
-            if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && features.geometryShader)
-            {
-                physical_device_ = pd;
-                break;
-            }
-        }
-        if(physical_device_ == VK_NULL_HANDLE)
-        {
-            throw std::runtime_error("unable to find suitable vulkan device!");
-            return false;
-        }
-
-        // queue
-        uint32_t queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, nullptr);
-        std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(physical_device_, &queue_family_count, queue_family_properties.data());
-        uint32_t selected_queue_family_index = -1;
-        for(uint32_t i = 0; i<queue_family_count; ++i)        
-        {
-            const auto &p = queue_family_properties[i];
-            if((p.queueFlags & VK_QUEUE_GRAPHICS_BIT) 
-                && (p.queueFlags & VK_QUEUE_TRANSFER_BIT) 
-                && (p.queueFlags & VK_QUEUE_COMPUTE_BIT))
-            {
-                selected_queue_family_index = i;
-            }
-        }
-        if(selected_queue_family_index == -1)
-        {
-            throw std::runtime_error("unable to find a queue support graphics, compute and transfer!");
+            throw std::runtime_error("failed to select suitable physical device!");
             return false;
         }
 
         // queue info
         VkDeviceQueueCreateInfo queue_info;
-        queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_info.queueFamilyIndex = selected_queue_family_index;
-        queue_info.queueCount = 1;
         float queue_priority = 1.0f;
+        queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_info.queueFamilyIndex = select_ret.second;
+        queue_info.queueCount = 1;        
         queue_info.pQueuePriorities = &queue_priority;
 
         // logical device
         VkDeviceCreateInfo device_info{};
+        VkPhysicalDeviceFeatures device_features{}; // no need to set, all false, when use features to enable all supported features may crash
         device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
         device_info.pQueueCreateInfos = &queue_info;
         device_info.queueCreateInfoCount = 1;
-        device_info.pEnabledFeatures = &features;
+        device_info.pEnabledFeatures = &device_features;
+        device_info.enabledExtensionCount = request_device_extensions.size();        
+        device_info.ppEnabledExtensionNames = request_device_extensions.data(); 
+
+        device_features.geometryShader = VK_TRUE;
         if(enable_validation)
         {
             device_info.enabledLayerCount = request_validation_layers.size();
@@ -163,11 +183,15 @@ namespace vk_engine
             throw std::runtime_error("failed to create vulkan device!");
             return false;
         }
+
+        vkGetDeviceQueue(device_, select_ret.second, 0, &graphics_queue_);
         return true;
     }
 
     VkDriver::~VkDriver()
-    {        
-        vkDestroyInstance(instance_, nullptr);
+    {
+        vkDestroyDevice(device_, nullptr);
+        vkDestroySurfaceKHR(instance_, surface_, nullptr);
+        vkDestroyInstance(instance_, nullptr);        
     }
 }

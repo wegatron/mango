@@ -40,4 +40,4 @@ add_executable(vk_triangle
     ${src}
     ${headers})
 
-target_link_libraries(vk_triangle PRIVATE volk ${GLFW_LIBRARY})
+target_link_libraries(vk_triangle PRIVATE volk ${GLFW_LIBRARY} -lpthread)

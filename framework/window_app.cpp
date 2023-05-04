@@ -13,9 +13,9 @@ namespace vk_engine
 
         driver_ = std::make_shared<VkDriver>();
         #ifdef NDEBUG
-        driver_->init(window_title, false);
+        driver_->init(window_title, false, window_);
         #else
-        driver_->init(window_title, true);
+        driver_->init(window_title, true, window_);
         #endif
     }
 
