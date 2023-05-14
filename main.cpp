@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <volk.h>
+#include "framework/logging.h"
 #include <vulkan/vulkan.h>
 #include <cassert>
 
@@ -16,7 +17,7 @@ int main(int argc, char const *argv[])
     window_app->setApp(app);
     if(!window_app->init())
     {
-        std::cerr << "Failed to init window app" << std::endl;
+        LOGE("Failed to init window app");
         return -1;
     }
     window_app->run();

@@ -37,7 +37,13 @@ namespace vk_engine
         
         VkQueue graphics_queue_{VK_NULL_HANDLE};
         VkSurfaceKHR surface_{VK_NULL_HANDLE};
+
         VkSwapchainKHR swapchain_{VK_NULL_HANDLE};
+        std::vector<VkImage> swapchain_images_;
+        std::vector<VkImageView> swapchain_image_views_;
+        VkExtent2D swapchain_extent_;
+        VkFormat swapchain_image_format_;        
+
         bool enable_vk_validation_{true};
 
         VkDebugUtilsMessengerEXT debug_messenger_;
