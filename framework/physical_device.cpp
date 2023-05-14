@@ -34,14 +34,14 @@ namespace vk_engine
             std::vector<VkQueueFamilyProperties> queue_family_properties(queue_family_count);
             vkGetPhysicalDeviceQueueFamilyProperties(handle, &queue_family_count, queue_family_properties.data());
             uint32_t selected_queue_family_index = -1;
-            for(uint32_t i = 0; i<queue_family_count; ++i)        
+            for(uint32_t j = 0; j<queue_family_count; ++j)        
             {
-                const auto &p = queue_family_properties[i];
+                const auto &p = queue_family_properties[j];
                 if((p.queueFlags & VK_QUEUE_GRAPHICS_BIT) 
                     && (p.queueFlags & VK_QUEUE_TRANSFER_BIT)
                     && (p.queueFlags & VK_QUEUE_COMPUTE_BIT))
                 {
-                    physical_devices[i].graphics_queue_family_index_ = i;
+                    physical_devices[i].graphics_queue_family_index_ = j;
                 }
             }        
         }

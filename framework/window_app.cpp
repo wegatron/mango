@@ -12,6 +12,9 @@ namespace vk_engine
 
     bool WindowApp::init()
     {
+        #if defined(VK_USE_PLATFORM_XLIB_KHR)
+	        glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, false);
+        #endif
         if(GLFW_TRUE != glfwInit())
         {
             std::cerr << "Failed to init glfw" << std::endl;

@@ -19,11 +19,17 @@ namespace vk_engine
         bool init(const std::string &app_name, const bool enable_validation, GLFWwindow *window);
     private:
 
+        void initInstance();
+        
+        void initDevice();
+
         std::pair<bool, uint32_t> selectPhysicalDevice(std::vector<const char*> request_extensions);
         
         bool checkSwapchainAbility();
         
-        bool createSwapchain();
+        bool initSwapchain(GLFWwindow * window);
+
+        void setupDebugMessenger();
 
         VkInstance instance_{VK_NULL_HANDLE};
         VkPhysicalDevice physical_device_{VK_NULL_HANDLE};
@@ -32,5 +38,8 @@ namespace vk_engine
         VkQueue graphics_queue_{VK_NULL_HANDLE};
         VkSurfaceKHR surface_{VK_NULL_HANDLE};
         VkSwapchainKHR swapchain_{VK_NULL_HANDLE};
+        bool enable_vk_validation_{true};
+
+        VkDebugUtilsMessengerEXT debug_messenger_;
     };
 }
