@@ -1,7 +1,7 @@
 #include <iostream>
+#include "framework/logging.h"
 
 #include <volk.h>
-#include "framework/logging.h"
 #include <vulkan/vulkan.h>
 #include <cassert>
 

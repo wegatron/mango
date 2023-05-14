@@ -18,7 +18,7 @@ namespace vk_engine
         #endif
         if(GLFW_TRUE != glfwInit())
         {
-            std::cerr << "Failed to init glfw" << std::endl;
+            LOGE("Failed to init glfw");
             return false;
         }
 
@@ -26,7 +26,6 @@ namespace vk_engine
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
         window_ = glfwCreateWindow(width_, height_, window_title_.c_str(), nullptr, nullptr);        
         driver_ = std::make_shared<VkDriver>();
-        bool ret = false;
         try {
             #ifdef NDEBUG
             driver_->init(window_title_, false, window_);
@@ -37,7 +36,7 @@ namespace vk_engine
             LOGE(e.what());            
             return false;
         }
-        return ret;
+        return true;
     }  
 
     void WindowApp::setApp(const std::shared_ptr<AppBase> &app)
