@@ -1,4 +1,5 @@
 #include "framework/window_app.h"
+#include "framework/logging.h"
 #include <cassert>
 #include <iostream>
 
@@ -28,12 +29,12 @@ namespace vk_engine
         bool ret = false;
         try {
             #ifdef NDEBUG
-            ret = driver_->init(window_title_, false, window_);
+            driver_->init(window_title_, false, window_);
             #else
-            ret = driver_->init(window_title_, true, window_);
+            driver_->init(window_title_, true, window_);
             #endif
         } catch (const std::runtime_error &e) {
-            std::cerr << e.what() << std::endl;
+            LOGE(e.what());            
             return false;
         }
         return ret;

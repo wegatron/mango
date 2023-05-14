@@ -16,7 +16,7 @@ namespace vk_engine
         
         VkDriver(const VkDriver &) = delete;
         VkDriver &operator=(const VkDriver &) = delete;
-        bool init(const std::string &app_name, const bool enable_validation, GLFWwindow *window);
+        void init(const std::string &app_name, const bool enable_validation, GLFWwindow *window);
     private:
 
         void initInstance();
@@ -25,9 +25,9 @@ namespace vk_engine
 
         std::pair<bool, uint32_t> selectPhysicalDevice(std::vector<const char*> request_extensions);
         
-        bool checkSwapchainAbility();
+        void checkSwapchainAbility();
         
-        bool initSwapchain(GLFWwindow * window);
+        void initSwapchain(GLFWwindow * window);
 
         void setupDebugMessenger();
 

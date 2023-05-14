@@ -169,7 +169,6 @@ namespace vk_engine
             device_info.enabledLayerCount = request_validation_layers.size();
             device_info.ppEnabledLayerNames = request_validation_layers.data();
         } else device_info.enabledLayerCount = 0;
-        device_info.enabledExtensionCount = 0;
 
         if(VK_SUCCESS != vkCreateDevice(physical_device_, &device_info, nullptr, &device_))
         {
@@ -181,7 +180,7 @@ namespace vk_engine
         vkGetDeviceQueue(device_, select_ret.second, 0, &graphics_queue_);
     }
 
-    bool VkDriver::init(const std::string &app_name, const bool enable_validation, GLFWwindow * window)
+    void VkDriver::init(const std::string &app_name, const bool enable_validation, GLFWwindow * window)
     {
         enable_vk_validation_ = enable_validation;        
         initInstance();
@@ -190,7 +189,6 @@ namespace vk_engine
         if(VK_SUCCESS != glfwCreateWindowSurface(instance_, window, nullptr, &surface_))
         {
             throw std::runtime_error("failed to create window surface!");
-            return false;
         }
 
         initDevice();
@@ -198,7 +196,6 @@ namespace vk_engine
         checkSwapchainAbility();
 
         initSwapchain(window);
-        return true;
     }
 
     static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData) {
@@ -230,7 +227,7 @@ namespace vk_engine
         }
     }    
 
-    bool VkDriver::checkSwapchainAbility()
+    void VkDriver::checkSwapchainAbility()
     {
         VkSurfaceFormatKHR surface_format{VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
         uint32_t format_count = 0;
@@ -244,7 +241,6 @@ namespace vk_engine
         if(format_itr == surface_formats.end())
         {
             throw std::runtime_error("B8G8R8_SNORM format, COLOR_SPACE_SRGB_NONLINEAR_KHR is not supported!");
-            return false;
         }
 
         uint32_t present_mode_count = 0;
@@ -258,12 +254,10 @@ namespace vk_engine
         if(present_itr == present_modes.end())
         {
             throw std::runtime_error("FIFO present mode is not supported!");
-            return false;
         }
-        return true;
     }
 
-    bool VkDriver::initSwapchain(GLFWwindow * window)
+    void VkDriver::initSwapchain(GLFWwindow * window)
     {
         VkSurfaceCapabilitiesKHR surface_capabilities;
         vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_, &surface_capabilities);        
@@ -300,12 +294,13 @@ namespace vk_engine
         swapchain_info.clipped = VK_TRUE;
         swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
         
-        if(VK_SUCCESS != vkCreateSwapchainKHR(device_, &swapchain_info, nullptr, &swapchain_))
-        {
-            throw std::runtime_error("failed to create swapchain!");
-        }
-        std::cout << "!!!!!!!" << std::endl;
-        return true;
+        // vkCreateSwapchainKHR maybe null if not enable VK_KHR_swapchain
+        // make sure eanbleExtensionCount is correct when create logical device
+        // refer to: https://stackoverflow.com/questions/55131406/why-would-vkcreateswapchainkhr-result-in-an-access-violation-at-0
+        VK_CHECK(vkCreateSwapchainKHR(device_, &swapchain_info, nullptr, &swapchain_));
+
+
+        // create swapchain images
     }
 
     VkDriver::~VkDriver()
