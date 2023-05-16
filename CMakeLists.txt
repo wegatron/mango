@@ -14,6 +14,10 @@ else()
     set(GLFW_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/libglfw3.a)
 endif()
 
+list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/glslang)
+
+find_package(glslang REQUIRED)
+
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/install/include
@@ -40,4 +44,4 @@ add_executable(vk_triangle
     ${src}
     ${headers})
 
-target_link_libraries(vk_triangle PRIVATE volk ${GLFW_LIBRARY} -lpthread)
+target_link_libraries(vk_triangle PRIVATE volk ${GLFW_LIBRARY} -lpthread glslang::glslang)
