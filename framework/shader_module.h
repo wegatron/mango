@@ -35,14 +35,13 @@ namespace vk_engine
 
         size_t getHash() const noexcept { return hash_code_; }
 
-        void setSource(const std::string &code);
-
     private:
 
         void compile2spirv();
-
+        
         size_t hash_code_{0};
         std::string glsl_code_;
         std::vector<uint32_t> spirv_code_;
+        VkShaderStageFlagBits stage_;
     };
 }
