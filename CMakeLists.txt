@@ -23,6 +23,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/install/include
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/Vulkan-Hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/eigen3.4
 )
 
 if (NOT APPLE AND ${CMAKE_CXX_COMPILER} MATCHES "(C|c?)lang")

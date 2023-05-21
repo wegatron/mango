@@ -7,6 +7,7 @@ git clone https://github.com/glfw/glfw.git thirdparty/glfw
 git clone https://github.com/zeux/volk.git thirdparty/volk
 git clone https://github.com/KhronosGroup/Vulkan-Headers thirdparty/Vulkan-Headers
 git clone https://github.com/gabime/spdlog.git thirdparty/spdlog
+git clone https://gitlab.com/libeigen/eigen.git -b 3.4 thirdparty/eigen3.4
 
 cmake thirdparty/glfw -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/glfw/build -DCMAKE_BUILD_TYPE=Debug
 cmake --build thirdparty/glfw/build

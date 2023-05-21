@@ -36,6 +36,9 @@ namespace vk_engine
             LOGE(e.what());            
             return false;
         }
+
+        assert(app_ != nullptr);
+        app_->init(driver_);
         return true;
     }  
 
