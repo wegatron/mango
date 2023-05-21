@@ -14,6 +14,13 @@ namespace vk_engine
         /// prepare data
 
         // vertex data
+        std::vector<float> vertex_data = {
+            -0.5, -0.5, 0, 1, 0, 0, 1, 0, 0,
+             0.5, -0.5, 0, 1, 0, 0, 1, 1, 0,
+             0, 0.5, 0, 1, 0, 0, 1, 0.5, 0.5
+        };
+        
+
         // indices
         // mvp
         // texture

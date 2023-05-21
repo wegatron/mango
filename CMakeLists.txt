@@ -14,9 +14,14 @@ else()
     set(GLFW_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/libglfw3.a)
 endif()
 
-list(APPEND CMAKE_PREFIX_PATH ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/glslang)
+list(APPEND CMAKE_PREFIX_PATH 
+    ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/glslang
+    ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/VulkanMemoryAllocator
+)
 
 find_package(glslang REQUIRED)
+
+find_package(VulkanMemoryAllocator REQUIRED)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -57,4 +62,5 @@ target_link_libraries(vk_triangle
     glslang::glslang    
     glslang::glslang-default-resource-limits
     glslang::SPIRV
+    VulkanMemoryAllocator::VulkanMemoryAllocator
 )

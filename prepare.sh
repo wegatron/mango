@@ -25,3 +25,8 @@ git clone https://github.com/KhronosGroup/glslang thirdparty/glslang
 cmake thirdparty/glslang -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/glslang/build -DCMAKE_BUILD_TYPE=Debug
 cmake --build thirdparty/glslang/build
 cmake --install thirdparty/glslang/build --config Debug
+
+git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git thirdparty/vma
+cmake thirdparty/vma -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/vma/build -DCMAKE_BUILD_TYPE=Debug
+cmake --build thirdparty/vma/build
+cmake --install thirdparty/vma/build --config Debug
