@@ -3,6 +3,10 @@
 #include <fstream>
 #include "glslang/Public/ShaderLang.h"
 #include "glslang/Public/ResourceLimits.h"
+#include <glslang/SPIRV/GLSL.std.450.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
+
+#include "framework/logging.h"
 
 namespace vk_engine
 {
@@ -66,9 +70,33 @@ namespace vk_engine
         if (!shader.parse(GetDefaultResources(), 100, false, messages))
         {
             auto error_msg = std::string(shader.getInfoLog()) + "\n" + std::string(shader.getInfoDebugLog());
-            throw std::runtime_error("compile glsl to spirv error!"+error_msg);
-        }        
+            throw std::runtime_error("compile glsl to spirv error: "+error_msg);
+        }
+        // Add shader to new program object.
+        glslang::TProgram program;
+        program.addShader(&shader);
+
+        if(!program.link(messages))
+        {
+            auto error_msg = std::string(program.getInfoLog()) + "\n" + std::string(program.getInfoDebugLog());
+            throw std::runtime_error("link program error: " + error_msg);
+        }
+
+        auto shader_log = shader.getInfoLog();
+        if(shader_log) LOGI(shader_log);
+        auto program_log = program.getInfoLog();
+        if(program_log) LOGI(program_log);
+
+        glslang::TIntermediate *intermediate = program.getIntermediate(lang);
+        if(!intermediate)
+        {
+            throw std::runtime_error("failed to get shader intermediate code");
+        }
         
+        spv::SpvBuildLogger logger;
+        glslang::GlslangToSpv(*intermediate, spirv_code_, &logger);
+        LOGI(logger.getAllMessages());
+        glslang::FinalizeProcess();
     }
 
 

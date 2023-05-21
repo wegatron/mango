@@ -44,4 +44,16 @@ add_executable(vk_triangle
     ${src}
     ${headers})
 
-target_link_libraries(vk_triangle PRIVATE volk ${GLFW_LIBRARY} -lpthread glslang::glslang)
+if (NOT WIN32)
+set(THREAD "-lpthread")
+endif()
+
+target_link_libraries(vk_triangle 
+    PRIVATE 
+    volk
+    ${GLFW_LIBRARY}
+    ${THREAD} 
+    glslang::glslang    
+    glslang::glslang-default-resource-limits
+    glslang::SPIRV
+)
