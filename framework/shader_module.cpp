@@ -100,7 +100,6 @@ namespace vk_engine
     }
 
 
-
     // helper functions
     EShLanguage findShaderLanguage(VkShaderStageFlagBits stage)
     {

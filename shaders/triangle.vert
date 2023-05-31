@@ -6,7 +6,6 @@ layout(location=1) in vec3 normal;
 layout(location=2) in vec2 uv;
 
 // indices data binding = 1
-
 layout(location=0) out vec2 o_uv;
 layout(location=1) out vec3 o_normal;
 
