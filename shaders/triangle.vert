@@ -17,7 +17,7 @@ layout(binding = 2) uniform GlobalUniform
 
 void main(void)
 {
-    gl_Position = view_proj * model * vpos;
+    gl_Position = global_uniform.view_proj * global_uniform.model * vpos;
     o_normal = mat3(global_uniform.model) * normal;    
     o_uv = uv;
 }

@@ -14,8 +14,11 @@ namespace vk_engine
     {
         /// prepare data
         // load and compile shader
-        ShaderSource shader_source;
-        shader_source.load("shaders/triangle.vert");
+        ShaderSource vertex_shader;
+        vertex_shader.load("shaders/triangle.vert");
+
+        ShaderSource fragment_shader;
+        fragment_shader.load("shaders/triangle.frag");
                 
         // create pipeline layout
 

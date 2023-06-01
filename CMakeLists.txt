@@ -17,11 +17,14 @@ endif()
 list(APPEND CMAKE_PREFIX_PATH 
     ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/glslang
     ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/VulkanMemoryAllocator
+    ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_reflect/cmake
 )
 
 find_package(glslang REQUIRED)
 
 find_package(VulkanMemoryAllocator REQUIRED)
+
+find_package(spirv_cross_reflect REQUIRED)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -63,4 +66,5 @@ target_link_libraries(vk_triangle
     glslang::glslang-default-resource-limits
     glslang::SPIRV
     VulkanMemoryAllocator::VulkanMemoryAllocator
+    spirv-cross-reflect
 )

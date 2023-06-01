@@ -7,6 +7,7 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 
 #include "framework/logging.h"
+#include "framework/spirv_reflection.h"
 
 namespace vk_engine
 {
@@ -18,6 +19,7 @@ namespace vk_engine
         if(!ifs) throw std::runtime_error("can't open file " + filepath);
         ifs.seekg(0, std::ios::end);
         size_t size = ifs.tellg();
+        ifs.seekg(0, std::ios::beg);
 
         if( 0 == filepath.compare(len-4, 4, ".spv"))
         {
@@ -42,11 +44,20 @@ namespace vk_engine
         }
         ifs.close();
 
+        // update shader resources
+        SPIRVReflection spirv_reflection;
+
+        // Reflect all shader resouces
+        if (!spirv_reflection.reflect_shader_resources(stage_, spirv_code_, resources_))
+        {
+            throw std::runtime_error("Failed to reflect shader resources");
+        }        
+
         // update hash code
         std::hash<std::string> hasher{};
         hash_code_ = hasher(std::string{
             reinterpret_cast<const char *>(spirv_code_.data(),
-            reinterpret_cast<const char *>(spirv_code_.data() + spirv_code_.size()))});        
+            reinterpret_cast<const char *>(spirv_code_.data() + spirv_code_.size()))});
     }
 
     EShLanguage findShaderLanguage(VkShaderStageFlagBits stage);
