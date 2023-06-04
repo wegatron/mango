@@ -10,6 +10,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 if(WIN32)
     set(GLFW_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/glfw3.lib)
+    add_definitions(-DNOMINMAX)
 else()
     set(GLFW_LIBRARY ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/libglfw3.a)
 endif()
@@ -18,6 +19,8 @@ list(APPEND CMAKE_PREFIX_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/glslang
     ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/VulkanMemoryAllocator
     ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_reflect/cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_core/cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_glsl/cmake
 )
 
 find_package(glslang REQUIRED)
@@ -25,6 +28,10 @@ find_package(glslang REQUIRED)
 find_package(VulkanMemoryAllocator REQUIRED)
 
 find_package(spirv_cross_reflect REQUIRED)
+
+find_package(spirv_cross_core REQUIRED)
+
+find_package(spirv_cross_glsl REQUIRED)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -67,4 +74,6 @@ target_link_libraries(vk_triangle
     glslang::SPIRV
     VulkanMemoryAllocator::VulkanMemoryAllocator
     spirv-cross-reflect
+    spirv-cross-core
+    spirv-cross-glsl
 )

@@ -27,9 +27,5 @@ namespace vk_engine
         void parse_push_constants(const spirv_cross::Compiler &compiler,
                                     VkShaderStageFlagBits        stage,
                                     std::vector<ShaderResource> &resources);
-
-        void parse_specialization_constants(const spirv_cross::Compiler &compiler,
-                                            VkShaderStageFlagBits        stage,
-                                            std::vector<ShaderResource> &resources);
     };    
 }

@@ -7,6 +7,18 @@
 
 namespace vk_engine
 {
+
+    /// A bitmask of qualifiers applied to a resource
+    struct ShaderResourceQualifiers
+    {
+        enum : uint32_t
+        {
+            None        = 0,
+            NonReadable = 1,
+            NonWritable = 2,
+        };
+    };
+
     /// Types of shader resources
     enum class ShaderResourceType
     {
