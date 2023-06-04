@@ -23,12 +23,12 @@
 @REM cmake --build thirdparty/glslang/build
 @REM cmake --install thirdparty/glslang/build --config Debug
 
-@REM git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git thirdparty/vma
+git clone https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git thirdparty/vma
 cmake thirdparty/vma -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/vma/build -DCMAKE_BUILD_TYPE=Debug -DVMA_STATIC_VULKAN_FUNCTIONS=OFF
 cmake --build thirdparty/vma/build
 cmake --install thirdparty/vma/build --config Debug
 
-@REM git clone https://github.com/KhronosGroup/SPIRV-Cross.git thirdparty/spirv-cross
-@REM cmake thirdparty/spirv-cross -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/spirv-cross/build -DCMAKE_BUILD_TYPE=Debug
-@REM cmake --build thirdparty/spirv-cross/build
-@REM cmake --install thirdparty/spirv-cross/build --config Debug
+git clone https://github.com/KhronosGroup/SPIRV-Cross.git thirdparty/spirv-cross
+cmake thirdparty/spirv-cross -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/spirv-cross/build -DCMAKE_BUILD_TYPE=Debug
+cmake --build thirdparty/spirv-cross/build
+cmake --install thirdparty/spirv-cross/build --config Debug

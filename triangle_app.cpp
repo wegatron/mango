@@ -19,7 +19,7 @@ namespace vk_engine
 
         ShaderSource fragment_shader;
         fragment_shader.load("shaders/triangle.frag");
-                
+
         // create pipeline layout
 
         // create pipeline

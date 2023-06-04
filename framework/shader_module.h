@@ -115,6 +115,6 @@ namespace vk_engine
         VkShaderStageFlagBits stage_;
         std::string glsl_code_;
         std::vector<uint32_t> spirv_code_;
-        std::vector<ShaderResource> resources_;        
+        std::vector<ShaderResource> resources_;
     };
 }
