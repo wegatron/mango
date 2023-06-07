@@ -26,5 +26,7 @@ namespace vk_engine
         VkDescriptorSetLayout getHandle() const { return handle_; }
     private:
         VkDescriptorSetLayout handle_{VK_NULL_HANDLE};
+        std::vector<VkDescriptorBindingFlagsEXT> binding_flags_;
+        std::vector<VkDescriptorSetLayoutBinding> bindings_;
     };
 }

@@ -17,6 +17,9 @@ namespace vk_engine
         VkDriver(const VkDriver &) = delete;
         VkDriver &operator=(const VkDriver &) = delete;
         void init(const std::string &app_name, const bool enable_validation, GLFWwindow *window);
+
+        VkDevice getDevice() const { return device_; }
+        
     private:
 
         void initInstance();
