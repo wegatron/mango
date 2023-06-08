@@ -23,6 +23,8 @@ public:
   VkDescriptorSetLayout getHandle() const { return handle_; }
 
 private:
+  std::shared_ptr<VkDriver> driver_;
+  uint32_t set_index_;
   VkDescriptorSetLayout handle_{VK_NULL_HANDLE};
   std::vector<VkDescriptorBindingFlagsEXT> binding_flags_;
   std::vector<VkDescriptorSetLayoutBinding> bindings_;

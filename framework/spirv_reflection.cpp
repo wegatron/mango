@@ -2,6 +2,7 @@
 #include <framework/spirv_reflection.h>
 #include <limits>
 #include <spirv_glsl.hpp>
+#include <framework/logging.h>
 
 namespace vk_engine {
 template <ShaderResourceType T>
