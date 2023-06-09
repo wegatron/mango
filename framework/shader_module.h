@@ -2,7 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
-#include <volk.h>
+#include <framework/vk_driver.h>
 
 namespace vk_engine {
 
@@ -67,9 +67,9 @@ struct ShaderResource {
   std::string name;
 };
 
-class ShaderSource {
+class ShaderModule {
 public:
-  ShaderSource() = default;
+  ShaderModule(const std::shared_ptr<VkDriver> &driver) : driver_(driver) {}
 
   /**
    * @brief load shader file
@@ -99,10 +99,12 @@ public:
   }
 
 private:
+
   void compile2spirv();
 
   size_t hash_code_{0};
   VkShaderStageFlagBits stage_;
+  std::shared_ptr<VkDriver> driver_;
   std::string glsl_code_;
   std::vector<uint32_t> spirv_code_;
   std::vector<ShaderResource> resources_;

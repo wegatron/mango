@@ -10,7 +10,7 @@ namespace vk_engine {
 class PipelineLayout final {
 public:
   PipelineLayout(std::shared_ptr<VkDriver> &driver,
-    const std::vector<ShaderSource *> &shader_modules);
+    const std::vector<ShaderModule *> &shader_modules);
 
   ~PipelineLayout() = default;
 
@@ -33,7 +33,7 @@ private:
   // A map of each set and the resources it owns used by the pipeline layout
 	std::map<uint32_t, std::vector<ShaderResource>> set_resources_;
 
-  std::vector<DescriptorSetLayout *> descriptor_set_layouts_;
+  std::vector<std::shared_ptr<DescriptorSetLayout>> descriptor_set_layouts_;
 
   VkPipelineLayout handle_{VK_NULL_HANDLE};
 };

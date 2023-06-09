@@ -10,7 +10,7 @@
 #include "framework/spirv_reflection.h"
 
 namespace vk_engine {
-void ShaderSource::load(const std::string &filepath) {
+void ShaderModule::load(const std::string &filepath) {
   auto len = filepath.length();
   assert(len > 4);
   std::ifstream ifs(filepath, std::ifstream::binary);
@@ -57,7 +57,7 @@ void ShaderSource::load(const std::string &filepath) {
 
 EShLanguage findShaderLanguage(VkShaderStageFlagBits stage);
 
-void ShaderSource::compile2spirv() {
+void ShaderModule::compile2spirv() {
   // Initialize glslang library.
   glslang::InitializeProcess();
 

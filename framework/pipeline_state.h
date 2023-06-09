@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan.h>
+#include <volk.h>
+#include <framework/pipeline_layout.h>
 
 namespace vk_engine {
 struct VertexInputState {
@@ -65,6 +66,8 @@ public:
 
   ~PipelineState() = default;
 
+  void setPipelineLayout(std::shared_ptr<PipelineLayout> &pipeline_layout);
+
   void setVertexInputState(const VertexInputState &state);
 
   void setInputAssemblyState(const InputAssemblyState &state);
@@ -96,6 +99,9 @@ public:
   bool isDirty() const { return dirty_; }
 
 private:
+  
+  std::shared_ptr<PipelineLayout> pipeline_layout_;
+
   VertexInputState vertex_input_state_;
 
   InputAssemblyState input_assembly_state_;

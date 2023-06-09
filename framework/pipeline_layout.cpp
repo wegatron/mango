@@ -1,9 +1,8 @@
 #include <framework/pipeline_layout.h>
-
 namespace vk_engine
 {
   PipelineLayout::PipelineLayout(std::shared_ptr<VkDriver> &driver,
-    const std::vector<ShaderSource *> &shader_modules)
+    const std::vector<ShaderModule *> &shader_modules)
   {
     // all resources statics
     for(const auto shader_module : shader_modules)
@@ -36,11 +35,19 @@ namespace vk_engine
 
     // create descriptor set layouts
     descriptor_set_layouts_.resize(max_set_index + 1);
-
+    for(auto itr=set_resources_.begin(); itr!=set_resources_.end(); ++itr)
+    {
+      auto set_index = itr->first;
+      auto &set_resources = itr->second;
+      descriptor_set_layouts_[set_index].reset(new DescriptorSetLayout(driver, set_index, set_resources));
+    }
   }
   
-  const DescriptorSetLayout &PipelineLayout::getDescriptorSetLayout(const uint32_t set_index)
+  const DescriptorSetLayout &PipelineLayout::getDescriptorSetLayout(const uint32_t set_index) const
   {
-
+    auto &ptr = descriptor_set_layouts_[set_index];
+    if(ptr == nullptr)
+      throw std::runtime_error("invalid set index");
+    return *ptr;
   }
 }

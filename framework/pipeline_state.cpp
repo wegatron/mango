@@ -94,6 +94,13 @@ bool operator!=(const ColorBlendState &lhs, const ColorBlendState &rhs) {
          lhs.blend_constants != rhs.blend_constants;
 }
 
+void PipelineState::setPipelineLayout(std::shared_ptr<PipelineLayout> &pipeline_layout)
+{
+  if(pipeline_layout_ == pipeline_layout) return;
+  pipeline_layout_ = pipeline_layout;
+  dirty_ = true;
+}
+
 void PipelineState::setVertexInputState(const VertexInputState &state) {
   if (state != vertex_input_state_) {
     vertex_input_state_ = state;
