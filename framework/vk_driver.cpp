@@ -115,6 +115,7 @@ void VkDriver::initInstance() {
   // validation layer
   instance_info.enabledLayerCount = 0;
 
+  // install vulkan sdk for validation support
   if (enable_vk_validation_) {
     if (!checkValidationLayerSupport())
       return;

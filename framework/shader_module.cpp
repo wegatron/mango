@@ -1,43 +1,59 @@
 #include "shader_module.h"
-#include "glslang/Public/ResourceLimits.h"
-#include "glslang/Public/ShaderLang.h"
 #include <cassert>
 #include <fstream>
+#include <functional>
 #include <glslang/SPIRV/GLSL.std.450.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
+#include <glslang/Public/ResourceLimits.h>
+#include <glslang/Public/ShaderLang.h>
+#include <glm/gtx/hash.hpp>
 
-#include "framework/logging.h"
-#include "framework/spirv_reflection.h"
+#include <volk.h>
+
+#include <framework/logging.h>
+#include <framework/spirv_reflection.h>
 
 namespace vk_engine {
 void ShaderModule::load(const std::string &filepath) {
   auto len = filepath.length();
-  assert(len > 4);
+  if(len <= 4)
+    throw std::runtime_error("invalid shader file path");
+  
+  if(filepath.compare(len-4, 4, ".vert"))
+  {
+    stage_ = VK_SHADER_STAGE_VERTEX_BIT;
+  }
+  else if(filepath.compare(len-4, 4, ".frag"))
+  {
+    stage_ = VK_SHADER_STAGE_FRAGMENT_BIT;
+  }
+  else if(filepath.compare(len-4, 4, ".comp"))
+  {
+    stage_ = VK_SHADER_STAGE_COMPUTE_BIT;
+  } else {
+    throw std::runtime_error("invalid shader file path post fix, only support .vert, .frag, .comp");
+  }
+
+  // read glsl code
   std::ifstream ifs(filepath, std::ifstream::binary);
   if (!ifs)
     throw std::runtime_error("can't open file " + filepath);
   ifs.seekg(0, std::ios::end);
   size_t size = ifs.tellg();
-  ifs.seekg(0, std::ios::beg);
-
-  if (0 == filepath.compare(len - 4, 4, ".spv")) {
-    if (0 == filepath.compare(len - 9, 9, ".vert.spv")) {
-      stage_ = VK_SHADER_STAGE_VERTEX_BIT;
-    } else if (0 == filepath.compare(len - 9, 9, ".frag.spv")) {
-      stage_ = VK_SHADER_STAGE_FRAGMENT_BIT;
-    } else if (0 == filepath.compare(len - 9, 9, ".comp.vert")) {
-      stage_ = VK_SHADER_STAGE_COMPUTE_BIT;
-    }
-    assert(size % 4 == 0);
-    spirv_code_.resize(size / 4);
-    ifs.read(reinterpret_cast<char *>(spirv_code_.data()), size);
-  } else {
-    // glslcode compile to spirv code
-    glsl_code_.resize(size);
-    ifs.read(reinterpret_cast<char *>(glsl_code_.data()), size);
-    compile2spirv();
-  }
+  ifs.seekg(0, std::ios::beg);  
+  glsl_code_.resize(size);
+  ifs.read(reinterpret_cast<char *>(glsl_code_.data()), size);
   ifs.close();
+
+  setGlsl(glsl_code_, stage_);
+  compile2spirv(glsl_code_, stage_, spirv_code_);  
+  ifs.close();
+}
+
+void ShaderModule::setGlsl(const std::string &glsl_code,
+                           VkShaderStageFlagBits stage) {
+  glsl_code_ = glsl_code;
+  stage_ = stage;
 
   // update shader resources
   SPIRVReflection spirv_reflection;
@@ -49,24 +65,23 @@ void ShaderModule::load(const std::string &filepath) {
   }
 
   // update hash code
-  std::hash<std::string> hasher{};
-  hash_code_ = hasher(std::string{reinterpret_cast<const char *>(
-      spirv_code_.data(), reinterpret_cast<const char *>(spirv_code_.data() +
-                                                         spirv_code_.size()))});
+  hash_code_ = hash(glsl_code_, stage_);
 }
 
 EShLanguage findShaderLanguage(VkShaderStageFlagBits stage);
 
-void ShaderModule::compile2spirv() {
+void ShaderModule::compile2spirv(
+  const std::string &glsl_code,
+  VkShaderStageFlagBits stage,
+  std::vector<uint32_t> &spirv_code) {
   // Initialize glslang library.
   glslang::InitializeProcess();
 
   // TODO add support for shader varient
-
-  EShLanguage lang = findShaderLanguage(stage_);
+  EShLanguage lang = findShaderLanguage(stage);
   glslang::TShader shader(lang);
   const char *file_name_list[1] = {""};
-  const char *shader_source = glsl_code_.data();
+  const char *shader_source = glsl_code.data();
   shader.setStringsWithLengthsAndNames(&shader_source, nullptr, file_name_list,
                                        1);
   shader.setEntryPoint("main");
@@ -102,10 +117,37 @@ void ShaderModule::compile2spirv() {
   }
 
   spv::SpvBuildLogger logger;
-  glslang::GlslangToSpv(*intermediate, spirv_code_, &logger);
+  glslang::GlslangToSpv(*intermediate, spirv_code, &logger);
   LOGI(logger.getAllMessages());
   glslang::FinalizeProcess();
 }
+
+
+size_t ShaderModule::hash(const std::string &glsl_code,
+                    VkShaderStageFlagBits stage) noexcept
+{
+  auto hash_code = std::hash<VkShaderStageFlagBits>{}(stage);
+  auto value = std::hash<std::string>{}(glsl_code);
+  glm::detail::hash_combine(hash_code, value);
+  return hash_code;
+}
+
+
+Shader::Shader(const std::shared_ptr<VkDriver> &driver, const std::shared_ptr<ShaderModule> &shader_module)
+{
+  driver_ = driver;
+  shader_module_ = shader_module;
+
+  VkShaderModuleCreateInfo create_info = {};
+  create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+  create_info.codeSize = shader_module_->getSpirv().size() * sizeof(uint32_t);
+  create_info.pCode = shader_module_->getSpirv().data();
+
+  if (vkCreateShaderModule(driver_->getDevice(), &create_info, nullptr, &handle_) != VK_SUCCESS) {
+    throw std::runtime_error("failed to create shader module!");
+  }
+}
+
 
 // helper functions
 EShLanguage findShaderLanguage(VkShaderStageFlagBits stage) {

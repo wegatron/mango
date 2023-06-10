@@ -68,18 +68,15 @@ struct ShaderResource {
   std::string name;
 };
 
-class ShaderModule {
+class ShaderModule final {
 public:
-  ShaderModule(const std::shared_ptr<VkDriver> &driver) : driver_(driver) {}
+  ShaderModule() = default;
 
   /**
    * @brief load shader file
    * .vert for vertex shader glsl
    * .frag for fragment shader glsl
    * .comp for computer shader glsl
-   * .vert.spv for vertex shader spirv
-   * .frag.spv for fragment shader spirv
-   * .comp.spv for computer shader spirv
    * @param file_path
    */
   void load(const std::string &file_path);
@@ -99,15 +96,31 @@ public:
     return resources_;
   }
 
+  static size_t hash(const std::string &glsl_code,
+                     VkShaderStageFlagBits stage) noexcept;
+
+  static void compile2spirv(const std::string &glsl_code,
+                            VkShaderStageFlagBits stage,
+                            std::vector<uint32_t> &spirv_code);
 private:
-
-  void compile2spirv();
-
   size_t hash_code_{0};
   VkShaderStageFlagBits stage_;
   std::shared_ptr<VkDriver> driver_;
   std::string glsl_code_;
   std::vector<uint32_t> spirv_code_;
   std::vector<ShaderResource> resources_;
+};
+
+class Shader final
+{
+public:
+  Shader(const std::shared_ptr<VkDriver> &driver, const std::shared_ptr<ShaderModule> &shader_module);
+
+  ~Shader();
+
+private:
+  std::shared_ptr<VkDriver> driver_;
+  std::shared_ptr<ShaderModule> shader_module_;
+  VkShaderModule handle_;
 };
 } // namespace vk_engine
