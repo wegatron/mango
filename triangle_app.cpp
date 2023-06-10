@@ -1,7 +1,7 @@
 #include "triangle_app.h"
-#include "framework/shader_module.h"
-#include "framework/vk_driver.h"
 #include <memory>
+#include <framework/shader_module.h>
+#include <framework/vk_driver.h>
 
 namespace vk_engine {
 void TriangleApp::tick(const float seconds) {
@@ -11,10 +11,10 @@ void TriangleApp::tick(const float seconds) {
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver) {
   /// prepare data
   // load and compile shader
-  ShaderModule vertex_shader;
+  ShaderModule vertex_shader(driver_);
   vertex_shader.load("shaders/triangle.vert");
 
-  ShaderModule fragment_shader;
+  ShaderModule fragment_shader(driver_);
   fragment_shader.load("shaders/triangle.frag");
 
   // create pipeline layout

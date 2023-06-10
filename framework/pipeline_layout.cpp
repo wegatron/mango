@@ -1,4 +1,5 @@
 #include <framework/pipeline_layout.h>
+#include <stdexcept>
 namespace vk_engine
 {
   PipelineLayout::PipelineLayout(std::shared_ptr<VkDriver> &driver,

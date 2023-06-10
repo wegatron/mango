@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <memory>
 #include <framework/vk_driver.h>
 
 namespace vk_engine {
