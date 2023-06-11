@@ -9,51 +9,21 @@
 #include <glm/gtx/hash.hpp>
 
 #include <volk.h>
-
 #include <framework/logging.h>
 #include <framework/spirv_reflection.h>
 
 namespace vk_engine {
-void ShaderModule::load(const std::string &filepath) {
-  auto len = filepath.length();
-  if(len <= 4)
-    throw std::runtime_error("invalid shader file path");
-  
-  if(filepath.compare(len-4, 4, ".vert"))
-  {
-    stage_ = VK_SHADER_STAGE_VERTEX_BIT;
-  }
-  else if(filepath.compare(len-4, 4, ".frag"))
-  {
-    stage_ = VK_SHADER_STAGE_FRAGMENT_BIT;
-  }
-  else if(filepath.compare(len-4, 4, ".comp"))
-  {
-    stage_ = VK_SHADER_STAGE_COMPUTE_BIT;
-  } else {
-    throw std::runtime_error("invalid shader file path post fix, only support .vert, .frag, .comp");
-  }
-
-  // read glsl code
-  std::ifstream ifs(filepath, std::ifstream::binary);
-  if (!ifs)
-    throw std::runtime_error("can't open file " + filepath);
-  ifs.seekg(0, std::ios::end);
-  size_t size = ifs.tellg();
-  ifs.seekg(0, std::ios::beg);  
-  glsl_code_.resize(size);
-  ifs.read(reinterpret_cast<char *>(glsl_code_.data()), size);
-  ifs.close();
-
+void ShaderModule::load(const std::string &file_path) {
+  readGlsl(file_path, stage_, glsl_code_);
   setGlsl(glsl_code_, stage_);
-  compile2spirv(glsl_code_, stage_, spirv_code_);  
-  ifs.close();
 }
 
 void ShaderModule::setGlsl(const std::string &glsl_code,
                            VkShaderStageFlagBits stage) {
   glsl_code_ = glsl_code;
   stage_ = stage;
+
+  compile2spirv(glsl_code_, stage_, spirv_code_);
 
   // update shader resources
   SPIRVReflection spirv_reflection;
@@ -122,6 +92,39 @@ void ShaderModule::compile2spirv(
   glslang::FinalizeProcess();
 }
 
+
+void ShaderModule::readGlsl(const std::string &file_path, VkShaderStageFlagBits &stage, std::string &glsl_code)
+{
+  auto len = file_path.length();
+  if(len <= 4)
+    throw std::runtime_error("invalid shader file path");
+  
+  if(file_path.compare(len-4, 4, ".vert"))
+  {
+    stage = VK_SHADER_STAGE_VERTEX_BIT;
+  }
+  else if(file_path.compare(len-4, 4, ".frag"))
+  {
+    stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+  }
+  else if(file_path.compare(len-4, 4, ".comp"))
+  {
+    stage = VK_SHADER_STAGE_COMPUTE_BIT;
+  } else {
+    throw std::runtime_error("invalid shader file path post fix, only support .vert, .frag, .comp");
+  }
+
+  // read glsl code
+  std::ifstream ifs(file_path, std::ifstream::binary);
+  if (!ifs)
+    throw std::runtime_error("can't open file " + file_path);
+  ifs.seekg(0, std::ios::end);
+  size_t size = ifs.tellg();
+  ifs.seekg(0, std::ios::beg);
+  glsl_code.resize(size);
+  ifs.read(reinterpret_cast<char *>(glsl_code.data()), size);
+  ifs.close();  
+}
 
 size_t ShaderModule::hash(const std::string &glsl_code,
                     VkShaderStageFlagBits stage) noexcept

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <string>
+#include <framework/resource_cache.h>
 
 namespace vk_engine {
 class VkDriver;
@@ -19,5 +20,6 @@ public:
 protected:
   const std::string name_;
   std::shared_ptr<VkDriver> driver_;
+  std::shared_ptr<ResourceCache> resource_cache_;
 };
 } // namespace vk_engine

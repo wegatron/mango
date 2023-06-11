@@ -102,6 +102,8 @@ public:
   static void compile2spirv(const std::string &glsl_code,
                             VkShaderStageFlagBits stage,
                             std::vector<uint32_t> &spirv_code);
+  static void readGlsl(const std::string &file_path, VkShaderStageFlagBits &stage, std::string &glsl_code);
+
 private:
   size_t hash_code_{0};
   VkShaderStageFlagBits stage_;
