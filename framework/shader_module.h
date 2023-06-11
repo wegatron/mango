@@ -37,19 +37,19 @@ enum class ShaderResourceType {
 enum class ShaderResourceMode { Static, Dynamic, UpdateAfterBind };
 
 struct ShaderResource {
-  VkShaderStageFlags stages;
+  VkShaderStageFlags stages{0};
 
   ShaderResourceType type;
 
   ShaderResourceMode mode;
 
-  uint32_t set;
+  uint32_t set{0XFFFFFFFF};
 
-  uint32_t binding;
+  uint32_t binding{0XFFFFFFFF};
 
-  uint32_t location;
+  uint32_t location{0XFFFFFFFF};
 
-  uint32_t input_attachment_index;
+  uint32_t input_attachment_index{0XFFFFFFFF};
 
   uint32_t vec_size;
 
@@ -66,6 +66,8 @@ struct ShaderResource {
   uint32_t qualifiers;
 
   std::string name;
+
+  static size_t hash(const ShaderResource &resource) noexcept;
 };
 
 class ShaderModule final {

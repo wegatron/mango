@@ -10,7 +10,7 @@ namespace vk_engine {
 class PipelineLayout final {
 public:
   PipelineLayout(std::shared_ptr<VkDriver> &driver,
-    const std::vector<ShaderModule *> &shader_modules);
+    const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 
   ~PipelineLayout() = default;
 

@@ -3,7 +3,7 @@
 namespace vk_engine
 {
   PipelineLayout::PipelineLayout(std::shared_ptr<VkDriver> &driver,
-    const std::vector<ShaderModule *> &shader_modules)
+    const std::vector<std::shared_ptr<ShaderModule>> &shader_modules)
   {
     // all resources statics
     for(const auto shader_module : shader_modules)

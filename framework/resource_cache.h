@@ -33,6 +33,15 @@ public:
   
   std::shared_ptr<Shader> requestShader(const std::shared_ptr<VkDriver> &driver,
                                         const std::string &file_path);
+  
+  std::shared_ptr<DescriptorSetLayout> requestDescriptorSetLayout(
+      const std::shared_ptr<VkDriver> &driver,
+      const size_t set_index,
+      const std::vector<ShaderResource> &resources);
+  
+  std::shared_ptr<PipelineLayout> requestPipelineLayout(
+      const std::shared_ptr<VkDriver> &driver,
+      const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 
   void clear();
 

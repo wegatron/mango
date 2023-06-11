@@ -13,6 +13,26 @@
 #include <framework/spirv_reflection.h>
 
 namespace vk_engine {
+
+size_t ShaderResource::hash(const ShaderResource &resource)
+{
+  size_t hash_code = 0;
+  if(resource.type == ShaderResourceType::Input ||
+    resource.type == ShaderResourceType::Output ||
+    resource.type == ShaderResourceType::PushConstant ||
+    resource.type == ShaderResourceType::SpecializationConstant) {
+      return 0;
+  }
+
+  std::hash<uint32_t> hash_uint32;
+  // hash resource part for descriptor binding, no location, location is used for shader input output
+  hash_code = hash_uint32(resource.set);
+  glm::detail::hash_combine(hash_code, hash_uint32(resource.binding));
+  glm::detail::hash_combine(hash_code, std::hash<ShaderResourceType>{}(resource.type));
+  glm::detail::hash_combine(hash_code, std::hash<ShaderResourceMode>{}(resource.mode));
+  return hash_code;
+}
+
 void ShaderModule::load(const std::string &file_path) {
   readGlsl(file_path, stage_, glsl_code_);
   setGlsl(glsl_code_, stage_);
