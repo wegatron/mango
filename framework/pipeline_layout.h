@@ -12,8 +12,11 @@ public:
   PipelineLayout(
     const std::shared_ptr<VkDriver> &driver,
     const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
+  
+  PipelineLayout(const PipelineLayout &) = delete;
+  PipelineLayout &operator=(const PipelineLayout &) = delete;
 
-  ~PipelineLayout() = default;
+  ~PipelineLayout();
 
   PipelineLayout(const PipelineLayout &) = delete;
   PipelineLayout &operator=(const PipelineLayout &) = delete;

@@ -45,6 +45,11 @@ namespace vk_engine
     }
   }
   
+  PipelineLayout::~PipelineLayout()
+  {
+    vkDestroyPipelineLayout(driver_->getDevice(), handle_, nullptr);
+  }
+
   const DescriptorSetLayout &PipelineLayout::getDescriptorSetLayout(const uint32_t set_index) const
   {
     auto &ptr = descriptor_set_layouts_[set_index];

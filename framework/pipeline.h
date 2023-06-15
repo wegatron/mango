@@ -9,6 +9,9 @@ namespace vk_engine
     class Pipeline
     {
     public:
+        Pipeline(const Pipeline &) = delete;
+        Pipeline &operator=(const Pipeline &) = delete;
+
         Pipeline() = default;
         virtual ~Pipeline() = default;
 
@@ -38,7 +41,7 @@ namespace vk_engine
         
         ~GraphicsPipeline() override = default;
 
-    private:
+    private:        
         std::shared_ptr<VkDriver> driver_;
         std::shared_ptr<PipelineLayout> pipeline_layout_;
         std::unique_ptr<PipelineState> pipeline_state_;        
