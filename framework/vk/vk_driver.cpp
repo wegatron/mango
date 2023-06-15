@@ -1,5 +1,4 @@
-#include "framework/vk_driver.h"
-#include "framework/error.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstring>
@@ -11,7 +10,9 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include "framework/physical_device.h"
+#include <framework/vk/physical_device.h>
+#include <framework/vk/vk_driver.h>
+#include <framework/utils/error.h>
 
 const std::vector<const char *> request_validation_layers = {
     "VK_LAYER_KHRONOS_validation",

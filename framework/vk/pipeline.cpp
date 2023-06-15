@@ -1,5 +1,5 @@
-#include <framework/pipeline.h>
-#include <framework/resource_cache.h>
+#include <framework/vk/pipeline.h>
+#include <framework/vk/resource_cache.h>
 
 namespace vk_engine {
 GraphicsPipeline::GraphicsPipeline(

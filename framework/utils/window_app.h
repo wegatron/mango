@@ -1,8 +1,8 @@
 #pragma once
 
 #define GLFW_INCLUDE_VULKAN
-#include "framework/app_base.h"
-#include "framework/vk_driver.h"
+#include <framework/utils/app_base.h>
+#include <framework/vk/vk_driver.h>
 #include <GLFW/glfw3.h>
 #include <memory>
 #include <string>

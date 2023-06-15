@@ -54,8 +54,8 @@ elseif()
 endif()
 add_subdirectory(thirdparty/volk)
 
-file(GLOB src *.cpp framework/*.cpp)
-file(GLOB headers *.h framework/*.h)
+file(GLOB src *.cpp framework/vk/*.cpp framework/utils/*.cpp)
+file(GLOB headers *.h framework/vk/*.h framework/utils/*.h)
 add_executable(vk_triangle
     ${src}
     ${headers})

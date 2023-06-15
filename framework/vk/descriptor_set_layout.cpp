@@ -2,7 +2,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <volk.h>
-#include <framework/descriptor_set_layout.h>
+#include <framework/vk/descriptor_set_layout.h>
 
 
 namespace vk_engine {

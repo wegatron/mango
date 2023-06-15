@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <framework/vk_driver.h>
+#include <framework/vk/vk_driver.h>
 
 namespace vk_engine {
 

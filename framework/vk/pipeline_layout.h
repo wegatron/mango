@@ -2,9 +2,9 @@
 
 #include <volk.h>
 #include <map>
-#include <framework/vk_driver.h>
-#include <framework/shader_module.h>
-#include <framework/descriptor_set_layout.h>
+#include <framework/vk/vk_driver.h>
+#include <framework/vk/shader_module.h>
+#include <framework/vk/descriptor_set_layout.h>
 
 namespace vk_engine {
 class PipelineLayout final {

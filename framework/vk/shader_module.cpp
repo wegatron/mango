@@ -9,8 +9,8 @@
 #include <glm/gtx/hash.hpp>
 
 #include <volk.h>
-#include <framework/logging.h>
-#include <framework/spirv_reflection.h>
+#include <framework/vk/logging.h>
+#include <framework/vk/spirv_reflection.h>
 
 namespace vk_engine {
 

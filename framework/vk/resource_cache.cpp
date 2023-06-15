@@ -1,6 +1,6 @@
 #pragma once
 
-#include <framework/resource_cache.h>
+#include <framework/vk/resource_cache.h>
 #include <glm/gtx/hash.hpp>
 
 namespace vk_engine {

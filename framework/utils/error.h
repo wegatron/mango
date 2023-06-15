@@ -1,7 +1,7 @@
 #pragma once
 
-#include "framework/logging.h"
-#include "framework/strings.h"
+#include <framework/utils/logging.h>
+#include <framework/utils/strings.h>
 
 /// @brief Helper macro to test the result of Vulkan calls which can return an
 /// error.

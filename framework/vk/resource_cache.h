@@ -1,7 +1,7 @@
 #pragma once
-#include <framework/descriptor_set_layout.h>
-#include <framework/pipeline_layout.h>
-#include <framework/shader_module.h>
+#include <framework/vk/descriptor_set_layout.h>
+#include <framework/vk/pipeline_layout.h>
+#include <framework/vk/shader_module.h>
 #include <unordered_map>
 #include <mutex>
 

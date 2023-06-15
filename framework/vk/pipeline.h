@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cassert>
-#include <framework/pipeline_state.h>
+#include <framework/vk/pipeline_state.h>
 
 namespace vk_engine
 {

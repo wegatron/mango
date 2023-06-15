@@ -1,6 +1,6 @@
 #pragma once
 
-#include "framework/shader_module.h"
+#include <framework/vk/shader_module.h>
 #include <spirv_cross.hpp>
 #include <vector>
 #include <vulkan/vulkan.h>

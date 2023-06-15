@@ -2,7 +2,7 @@
 
 #include <memory>
 #include <string>
-#include <framework/resource_cache.h>
+#include <framework/vk/resource_cache.h>
 
 namespace vk_engine {
 class VkDriver;

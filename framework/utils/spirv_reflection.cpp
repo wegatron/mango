@@ -1,8 +1,8 @@
 #include <algorithm>
-#include <framework/spirv_reflection.h>
 #include <limits>
 #include <spirv_glsl.hpp>
-#include <framework/logging.h>
+#include <framework/utils/logging.h>
+#include <framework/utils/spirv_reflection.h>
 
 namespace vk_engine {
 template <ShaderResourceType T>

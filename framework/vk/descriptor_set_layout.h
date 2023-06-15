@@ -1,7 +1,7 @@
 #pragma once
 
-#include <framework/shader_module.h>
-#include <framework/vk_driver.h>
+#include <framework/vk/shader_module.h>
+#include <framework/vk/vk_driver.h>
 #include <memory>
 #include <vector>
 
