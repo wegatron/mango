@@ -11,8 +11,8 @@ void TriangleApp::tick(const float seconds) {
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver) {
   /// prepare data
   // load and compile shader
-  auto vs = resource_cache_->requestShader(driver, "shaders/triangle.vert");
-  auto fs = resource_cache_->requestShader(driver, "shaders/triangle.frag");
+  auto vs = resource_cache_->requestShaderModule("shaders/triangle.vert");
+  auto fs = resource_cache_->requestShaderModule("shaders/triangle.frag");
 
   // create pipeline layout
   

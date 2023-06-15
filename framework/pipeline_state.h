@@ -8,11 +8,14 @@ namespace vk_engine {
 struct VertexInputState {
   std::vector<VkVertexInputBindingDescription> bindings;
   std::vector<VkVertexInputAttributeDescription> attributes;
+  void getCreateInfo(VkPipelineVertexInputStateCreateInfo &create_info) const;
 };
+
 
 struct InputAssemblyState {
   VkPrimitiveTopology topology{VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
   VkBool32 primitive_restart_enable{false};
+  void getCreateInfo(VkPipelineInputAssemblyStateCreateInfo &create_info) const;
 };
 
 struct RasterizationState {
@@ -22,6 +25,7 @@ struct RasterizationState {
   VkCullModeFlags cull_mode{VK_CULL_MODE_BACK_BIT};
   VkFrontFace front_face{VK_FRONT_FACE_CLOCKWISE};
   VkBool32 depth_bias_enable{VK_FALSE};
+  void getCreateInfo(VkPipelineRasterizationStateCreateInfo &create_info) const;
 };
 
 struct ViewPortState {
@@ -36,6 +40,8 @@ struct MultisampleState {
   VkSampleMask sample_mask{};
   VkBool32 alpha_to_coverage_enable{VK_FALSE};
   VkBool32 alpha_to_one_enable{VK_FALSE};
+
+  void getCreateInfo(VkPipelineMultisampleStateCreateInfo &create_info) const;
 };
 
 struct DepthStencilState {
@@ -48,6 +54,8 @@ struct DepthStencilState {
   VkStencilOpState back{};
   float min_depth_bounds{0.0f};
   float max_depth_bounds{1.0f};
+
+  void getCreateInfo(VkPipelineDepthStencilStateCreateInfo &create_info) const;
 };
 
 struct ColorBlendState {
@@ -55,6 +63,8 @@ struct ColorBlendState {
   VkLogicOp logic_op{VK_LOGIC_OP_COPY};
   std::vector<VkPipelineColorBlendAttachmentState> attachments;
   float blend_constants[4]{0.0f, 0.0f, 0.0f, 0.0f};
+
+  void getCreateInfo(VkPipelineColorBlendStateCreateInfo &create_info) const;
 };
 
 // dynamic pipeline state vulkan 1.0: viewport, scissor, line width, depth bias,
@@ -64,9 +74,11 @@ class PipelineState final {
 public:
   PipelineState() = default;
 
+  PipelineState(PipelineState &&) = default;
+
   ~PipelineState() = default;
 
-  void setPipelineLayout(std::shared_ptr<PipelineLayout> &pipeline_layout);
+  void setShaders(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 
   void setVertexInputState(const VertexInputState &state);
 
@@ -82,6 +94,11 @@ public:
 
   void setColorBlendState(const ColorBlendState &state);
 
+  const std::vector<std::shared_ptr<ShaderModule>> &getShaderModules() const
+  {
+    return shader_modules_;
+  }
+
   const VertexInputState &getVertexInputState() const;
 
   const InputAssemblyState &getInputAssemblyState() const;
@@ -96,12 +113,12 @@ public:
 
   const ColorBlendState &getColorBlendState() const;
 
+  void getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo &) const;
+
   bool isDirty() const { return dirty_; }
 
 private:
   
-  std::shared_ptr<PipelineLayout> pipeline_layout_;
-
   VertexInputState vertex_input_state_;
 
   InputAssemblyState input_assembly_state_;
@@ -116,6 +133,10 @@ private:
 
   ColorBlendState color_blend_state_;
 
-  bool dirty_{false};
+  std::vector<std::shared_ptr<ShaderModule>> shader_modules_;
+
+  bool dirty_{true};
+
+  friend class Pipeline;
 };
 } // namespace vk_engine

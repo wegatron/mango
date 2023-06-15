@@ -94,6 +94,8 @@ public:
 
   size_t getHash() const noexcept { return hash_code_; }
 
+  VkShaderStageFlagBits getStage() const noexcept { return stage_; }
+
   const std::vector<ShaderResource> &getResources() const noexcept {
     return resources_;
   }
@@ -108,7 +110,7 @@ public:
 
 private:
   size_t hash_code_{0};
-  VkShaderStageFlagBits stage_;
+  VkShaderStageFlagBits stage_{0};
   std::shared_ptr<VkDriver> driver_;
   std::string glsl_code_;
   std::vector<uint32_t> spirv_code_;
@@ -122,9 +124,10 @@ public:
 
   ~Shader();
 
+  VkShaderModule getHandle() const noexcept { return handle_; }
+
 private:
   std::shared_ptr<VkDriver> driver_;
-  std::shared_ptr<ShaderModule> shader_module_;
   VkShaderModule handle_;
 };
 } // namespace vk_engine

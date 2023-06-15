@@ -2,7 +2,8 @@
 #include <stdexcept>
 namespace vk_engine
 {
-  PipelineLayout::PipelineLayout(std::shared_ptr<VkDriver> &driver,
+  PipelineLayout::PipelineLayout(
+    const std::shared_ptr<VkDriver> &driver,
     const std::vector<std::shared_ptr<ShaderModule>> &shader_modules)
   {
     // all resources statics

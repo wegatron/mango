@@ -8,7 +8,7 @@
 namespace vk_engine {
 class DescriptorSetLayout final {
 public:
-  DescriptorSetLayout(std::shared_ptr<VkDriver> &driver,
+  DescriptorSetLayout(const std::shared_ptr<VkDriver> &driver,
                       const uint32_t set_index,
                       const std::vector<ShaderResource> &resource_set);
 

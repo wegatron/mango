@@ -1,5 +1,6 @@
 #include "pipeline_state.h"
 #include <tuple>
+#include <string.h>
 
 bool operator==(const VkVertexInputBindingDescription &lhs,
                 const VkVertexInputBindingDescription &rhs) {
@@ -94,10 +95,88 @@ bool operator!=(const ColorBlendState &lhs, const ColorBlendState &rhs) {
          lhs.blend_constants != rhs.blend_constants;
 }
 
-void PipelineState::setPipelineLayout(std::shared_ptr<PipelineLayout> &pipeline_layout)
+void VertexInputState::getCreateInfo(VkPipelineVertexInputStateCreateInfo &create_info) const
 {
-  if(pipeline_layout_ == pipeline_layout) return;
-  pipeline_layout_ = pipeline_layout;
+  create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+  create_info.pNext = nullptr;
+  create_info.flags = 0;
+  create_info.vertexBindingDescriptionCount = static_cast<uint32_t>(bindings.size());
+  create_info.pVertexBindingDescriptions = bindings.data();
+  create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributes.size());
+  create_info.pVertexAttributeDescriptions = attributes.data();
+}
+
+void InputAssemblyState::getCreateInfo(VkPipelineInputAssemblyStateCreateInfo &create_info) const
+{
+  create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+  create_info.pNext = nullptr;
+  create_info.flags = 0;
+  create_info.topology = topology;
+  create_info.primitiveRestartEnable = primitive_restart_enable;
+}
+
+void RasterizationState::getCreateInfo(VkPipelineRasterizationStateCreateInfo &create_info) const
+{
+  create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+  create_info.pNext = nullptr;
+  create_info.flags = 0;
+  create_info.depthClampEnable = depth_clamp_enable;
+  create_info.rasterizerDiscardEnable = rasterizer_discard_enable;
+  create_info.polygonMode = polygon_mode;
+  create_info.cullMode = cull_mode;
+  create_info.frontFace = front_face;
+  create_info.depthBiasEnable = depth_bias_enable;
+  create_info.depthBiasConstantFactor = 0.0f;
+  create_info.depthBiasClamp = 1.0f;
+  create_info.depthBiasSlopeFactor = 1.0f;
+  create_info.lineWidth = 1.0f;
+}
+
+void MultisampleState::getCreateInfo(VkPipelineMultisampleStateCreateInfo &create_info) const
+{
+  create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+  create_info.pNext = nullptr;
+  create_info.flags = 0;
+  create_info.rasterizationSamples = rasterization_samples;
+  create_info.sampleShadingEnable = sample_shading_enable;
+  create_info.minSampleShading = min_sample_shading;
+  create_info.pSampleMask = &sample_mask;
+  create_info.alphaToCoverageEnable = alpha_to_coverage_enable;
+  create_info.alphaToOneEnable = alpha_to_one_enable;
+}
+
+void DepthStencilState::getCreateInfo(VkPipelineDepthStencilStateCreateInfo &create_info) const
+{
+  create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+  create_info.pNext = nullptr;
+  create_info.flags = 0;
+  create_info.depthTestEnable = depth_test_enable;
+  create_info.depthWriteEnable = depth_write_enable;
+  create_info.depthCompareOp = depth_compare_op;
+  create_info.depthBoundsTestEnable = depth_bounds_test_enable;
+  create_info.stencilTestEnable = stencil_test_enable;
+  create_info.front = front;
+  create_info.back = back;
+  create_info.minDepthBounds = min_depth_bounds;
+  create_info.maxDepthBounds = max_depth_bounds;
+}
+
+void ColorBlendState::getCreateInfo(VkPipelineColorBlendStateCreateInfo &create_info) const
+{
+  create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+  create_info.pNext = nullptr;
+  create_info.flags = 0;
+  create_info.logicOpEnable = logic_op_enable;
+  create_info.logicOp = logic_op;
+  create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
+  create_info.pAttachments = attachments.data();
+  memcpy(create_info.blendConstants, blend_constants, sizeof(float) * 4);
+}
+
+void PipelineState::setShaders(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules)
+{
+  if (shader_modules == shader_modules_) return;
+  shader_modules_ = shader_modules;
   dirty_ = true;
 }
 
@@ -107,4 +186,23 @@ void PipelineState::setVertexInputState(const VertexInputState &state) {
     dirty_ = true;
   }
 }
+
+void PipelineState::getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo &) const
+{
+	std::array<VkDynamicState, 9> dynamic_states{
+	    VK_DYNAMIC_STATE_VIEWPORT,
+	    VK_DYNAMIC_STATE_SCISSOR,
+	    VK_DYNAMIC_STATE_LINE_WIDTH,
+	    VK_DYNAMIC_STATE_DEPTH_BIAS,
+	    VK_DYNAMIC_STATE_BLEND_CONSTANTS,
+	    VK_DYNAMIC_STATE_DEPTH_BOUNDS,
+	    VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
+	    VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
+	    VK_DYNAMIC_STATE_STENCIL_REFERENCE,
+	};  
+  VkPipelineDynamicStateCreateInfo dynamic_state{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
+	dynamic_state.pDynamicStates    = dynamic_states.data();
+	dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+}
+
 } // namespace vk_engine

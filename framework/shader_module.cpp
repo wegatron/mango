@@ -14,7 +14,7 @@
 
 namespace vk_engine {
 
-size_t ShaderResource::hash(const ShaderResource &resource)
+size_t ShaderResource::hash(const ShaderResource &resource) noexcept
 {
   size_t hash_code = 0;
   if(resource.type == ShaderResourceType::Input ||
@@ -158,19 +158,23 @@ size_t ShaderModule::hash(const std::string &glsl_code,
 
 Shader::Shader(const std::shared_ptr<VkDriver> &driver, const std::shared_ptr<ShaderModule> &shader_module)
 {
+  assert(shader_module != nullptr);
+  
   driver_ = driver;
-  shader_module_ = shader_module;
-
   VkShaderModuleCreateInfo create_info = {};
   create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-  create_info.codeSize = shader_module_->getSpirv().size() * sizeof(uint32_t);
-  create_info.pCode = shader_module_->getSpirv().data();
+  create_info.codeSize = shader_module->getSpirv().size() * sizeof(uint32_t);
+  create_info.pCode = shader_module->getSpirv().data();
 
   if (vkCreateShaderModule(driver_->getDevice(), &create_info, nullptr, &handle_) != VK_SUCCESS) {
     throw std::runtime_error("failed to create shader module!");
   }
 }
 
+Shader::~Shader()
+{
+  vkDestroyShaderModule(driver_->getDevice(), handle_, nullptr);
+}
 
 // helper functions
 EShLanguage findShaderLanguage(VkShaderStageFlagBits stage) {
