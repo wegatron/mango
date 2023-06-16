@@ -68,7 +68,8 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
         attachment_num += subpasses[i].input_attachments.size();
         attachment_num += subpasses[i].output_attachments.size();
         attachment_num += subpasses[i].color_resolve_attachments.size();
-        if(!subpasses[i].disable_depth_stencil_attachment) ++attachment_num;
+        if(subpasses[i].depth_stencil_attachment != 0xFFFFFFFF) ++attachment_num;
+        if(subpasses[i].depth_stencil_resolve_attachment != 0xFFFFFFFF) ++attachment_num;
     }
     size_t ref_ind = 0;
     std::vector<VkAttachmentReference> attachment_refs(attachment_num);
@@ -93,10 +94,24 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
         }
 
         subpass_descriptions[i].pDepthStencilAttachment = nullptr;
-        if(!subpasses[i].disable_depth_stencil_attachment)
+        if(subpasses[i].depth_stencil_attachment != 0xFFFFFFFF)
         {
             subpass_descriptions[i].pDepthStencilAttachment = attachment_refs.data() + ref_ind;
-            // TODO
+            attachment_refs[ref_ind].attachment = subpasses[i].depth_stencil_attachment;
+            attachment_refs[ref_ind].layout = 
+                (attachment_descriptions[subpasses[i].depth_stencil_attachment].initialLayout==VK_IMAGE_LAYOUT_UNDEFINED) 
+                ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : attachment_descriptions[subpasses[i].depth_stencil_attachment].initialLayout;
+            ++ref_ind;
+
+
+            // if(subpasses[i].depth_stencil_resolve_attachment != 0xFFFFFFFF)
+            // {
+            //     subpass_descriptions[i].pDepthStencilResolveAttachment = attachment_refs.data() + ref_ind;
+            //     attachment_refs[ref_ind].attachment = subpasses[i].depth_stencil_resolve_attachment;
+            //     attachment_refs[ref_ind].layout = 
+            //         (attachment_descriptions[subpasses[i].depth_stencil_resolve_attachment].initialLayout==VK_IMAGE_LAYOUT_UNDEFINED) 
+            //         ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : attachment_descriptions[subpasses[i].depth_stencil_resolve_attachment].initialLayout;
+            // }            
         }
     }
 }

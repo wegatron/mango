@@ -37,13 +37,13 @@ struct SubpassInfo
 
 	std::vector<uint32_t> color_resolve_attachments;
 
-	bool disable_depth_stencil_attachment;
+  uint32_t depth_stencil_attachment{0xFFFFFFFF};
 
 	uint32_t depth_stencil_resolve_attachment;
 
-  VkResolveModeFlagBits depth_stencil_resolve_mode;
+	VkResolveModeFlagBits depth_stencil_resolve_mode;
 
-  //std::string debug_name;
+	//std::string debug_name;
 };
 
 class RenderPass final {
