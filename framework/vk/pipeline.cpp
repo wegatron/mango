@@ -1,10 +1,12 @@
 #include <framework/vk/pipeline.h>
 #include <framework/vk/resource_cache.h>
+#include <framework/utils/error.h>
 
 namespace vk_engine {
 GraphicsPipeline::GraphicsPipeline(
     const std::shared_ptr<VkDriver> &driver,
     const std::shared_ptr<ResourceCache> &cache,
+    const std::shared_ptr<RenderPass> &render_pass,
     std::unique_ptr<PipelineState> &&pipeline_state)
     : pipeline_state_(std::move(pipeline_state)), driver_(driver) {
   assert(cache != nullptr);
@@ -74,16 +76,17 @@ GraphicsPipeline::GraphicsPipeline(
 
   auto pipeline_layout = cache->requestPipelineLayout(driver, shader_modules);
   pipeline_info.layout = pipeline_layout->getHandle();
-  //   pipeline_info.renderPass = pipeline_state_->render_pass->getHandle();
-  //   pipeline_info.subpass = pipeline_state_->subpass;
-  //   pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
-  //   pipeline_info.basePipelineIndex = -1;
+  pipeline_info.renderPass = render_pass->getHandle();
+  pipeline_info.subpass = pipeline_state_->getSubpassIndex();
+  pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
+  pipeline_info.basePipelineIndex = -1;
 
   assert(cache->getPipelineCache() != nullptr); // pipeline cache should always exist
-  if (vkCreateGraphicsPipelines(driver->getDevice(), cache->getPipelineCache(),
+  auto result = vkCreateGraphicsPipelines(driver->getDevice(), cache->getPipelineCache(),
                                 1, &pipeline_info, nullptr,
-                                &pipeline_) != VK_SUCCESS)
-    throw std::runtime_error("failed to create graphics pipeline!");
+                                &pipeline_);
+  if(result != VK_SUCCESS)
+    throw VulkanException(result, "failed to create graphics pipeline!");
 
   cleanDirtyFlag();
 }

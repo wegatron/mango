@@ -6,6 +6,7 @@
 namespace vk_engine
 {
     class ResourceCache;
+    class RenderPass;
     class Pipeline
     {
     public:
@@ -32,6 +33,7 @@ namespace vk_engine
         GraphicsPipeline(
             const std::shared_ptr<VkDriver> &driver,
             const std::shared_ptr<ResourceCache> &cache,
+            const std::shared_ptr<RenderPass> &render_pass,
             std::unique_ptr<PipelineState> &&pipeline_state);
 
         PipelineState & getPipelineState() const {

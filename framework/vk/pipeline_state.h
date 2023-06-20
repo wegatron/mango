@@ -94,6 +94,12 @@ public:
 
   void setColorBlendState(const ColorBlendState &state);
 
+  void setSubpassIndex(uint32_t subpass_index) {
+    if(subpass_index == subpass_index_)  return;
+    subpass_index_ = subpass_index;
+    dirty_ = true;
+  }
+
   const std::vector<std::shared_ptr<ShaderModule>> &getShaderModules() const
   {
     return shader_modules_;
@@ -112,6 +118,8 @@ public:
   const DepthStencilState &getDepthStencilState() const;
 
   const ColorBlendState &getColorBlendState() const;
+
+  const uint32_t getSubpassIndex() const { return subpass_index_; }
 
   void getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo &) const;
 
@@ -132,6 +140,8 @@ private:
   DepthStencilState depth_stencil_state_;
 
   ColorBlendState color_blend_state_;
+
+  uint32_t subpass_index_{0};
 
   std::vector<std::shared_ptr<ShaderModule>> shader_modules_;
 
