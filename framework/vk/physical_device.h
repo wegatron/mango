@@ -14,9 +14,6 @@ public:
 
   ~PhysicalDevice() = default;
 
-  PhysicalDevice &operator=(const PhysicalDevice &) = delete;
-  PhysicalDevice(const PhysicalDevice &) = delete;
-
   uint32_t getGraphicsQueueFamilyIndex() const {
     return graphics_queue_family_index_;
   }

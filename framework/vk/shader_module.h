@@ -110,7 +110,7 @@ public:
 
 private:
   size_t hash_code_{0};
-  VkShaderStageFlagBits stage_{0};
+  VkShaderStageFlagBits stage_;
   std::shared_ptr<VkDriver> driver_;
   std::string glsl_code_;
   std::vector<uint32_t> spirv_code_;

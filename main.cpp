@@ -1,11 +1,11 @@
-#include "framework/logging.h"
+#include <framework/utils/logging.h>
 #include <iostream>
 
 #include <cassert>
 #include <volk.h>
 #include <vulkan/vulkan.h>
 
-#include "framework/window_app.h"
+#include <framework/utils/window_app.h>
 #include "triangle_app.h"
 
 int main(int argc, char const *argv[]) {

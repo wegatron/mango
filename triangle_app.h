@@ -1,6 +1,6 @@
 #pragma once
 
-#include "framework/app_base.h"
+#include <framework/utils/app_base.h>
 
 namespace vk_engine {
 class TriangleApp : public AppBase {

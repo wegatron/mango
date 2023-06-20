@@ -87,13 +87,13 @@ ResourceCache::requestRenderPass(const std::shared_ptr<VkDriver> &driver,
 {
   size_t hash_code = 0;
   for (const auto &attachment : attachments) {
-    glm::detail::hash_combine(hash_code, attachment.hash());
+    glm::detail::hash_combine(hash_code, attachment.getHash());
   }
   for (const auto &load_store_info : load_store_infos) {
-    glm::detail::hash_combine(hash_code, load_store_info.hash());
+    glm::detail::hash_combine(hash_code, load_store_info.getHash());
   }
   for (const auto &subpass : subpasses) {
-    glm::detail::hash_combine(hash_code, subpass.hash());
+    glm::detail::hash_combine(hash_code, subpass.getHash());
   }
   std::unique_lock<std::mutex> lock(state_.render_pass_mtx);
   auto itr = state_.render_passes.find(hash_code);
