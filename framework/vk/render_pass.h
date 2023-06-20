@@ -12,6 +12,8 @@ struct LoadStoreInfo
 {
 	VkAttachmentLoadOp load_op = VK_ATTACHMENT_LOAD_OP_CLEAR;
 	VkAttachmentStoreOp store_op = VK_ATTACHMENT_STORE_OP_STORE;
+
+  size_t getHash() const;
 };
 
 struct Attachment {
@@ -27,6 +29,8 @@ struct Attachment {
 
   Attachment(VkFormat format, VkSampleCountFlagBits samples,
              VkImageUsageFlags usage);
+
+  size_t getHash() const;
 };
 
 struct SubpassInfo
@@ -39,11 +43,11 @@ struct SubpassInfo
 
   uint32_t depth_stencil_attachment{0xFFFFFFFF};
 
-	uint32_t depth_stencil_resolve_attachment;
+  size_t getHash() const;
 
-	VkResolveModeFlagBits depth_stencil_resolve_mode;
-
-	//std::string debug_name;
+	// uint32_t depth_stencil_resolve_attachment{0xFFFFFFFF};
+	// VkResolveModeFlagBits depth_stencil_resolve_mode{VK_RESOLVE_MODE_NONE};
+	// std::string debug_name;
 };
 
 class RenderPass final {
@@ -55,7 +59,7 @@ public:
     std::vector<SubpassInfo> subpasses
   );
 
-  ~RenderPass() = default;
+  ~RenderPass();
 
   RenderPass(const RenderPass &) = delete;
   RenderPass &operator=(const RenderPass &) = delete;
@@ -63,6 +67,7 @@ public:
   VkRenderPass getHandle() const { return handle_; }
 
 private:
+  std::shared_ptr<VkDriver> driver_;
   VkRenderPass handle_{VK_NULL_HANDLE};
 };
 } // namespace vk_engine

@@ -1,9 +1,10 @@
 #pragma once
 #include <framework/vk/descriptor_set_layout.h>
 #include <framework/vk/pipeline_layout.h>
+#include <framework/vk/render_pass.h>
 #include <framework/vk/shader_module.h>
-#include <unordered_map>
 #include <mutex>
+#include <unordered_map>
 
 namespace vk_engine {
 struct ResourceCacheState {
@@ -12,16 +13,19 @@ struct ResourceCacheState {
       shader_modules; //!< hash code of shader module(stage, glsl_code) -->
                       //!< ShaderModule
 
-  std::mutex shaders_mtx;                      
+  std::mutex shaders_mtx;
   std::unordered_map<size_t, std::shared_ptr<Shader>>
       shaders; //!< hash code of shader module --> Shader
-  
+
   std::mutex descriptor_set_layouts_mtx;
   std::unordered_map<size_t, std::shared_ptr<DescriptorSetLayout>>
       descriptor_set_layouts;
 
   std::mutex pipeline_layouts_mtx;
   std::unordered_map<size_t, std::shared_ptr<PipelineLayout>> pipeline_layouts;
+
+  std::mutex render_pass_mtx;
+  std::unordered_map<size_t, std::shared_ptr<RenderPass>> render_passes;
 
   VkPipelineCache pipeline_cache{VK_NULL_HANDLE};
 };
@@ -57,11 +61,14 @@ public:
       const std::shared_ptr<VkDriver> &driver,
       const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 
-  VkPipelineCache getPipelineCache() const
-  {
-    return state_.pipeline_cache;
-  }
-  
+  std::shared_ptr<RenderPass>
+  requestRenderPass(const std::shared_ptr<VkDriver> &driver,
+                    std::vector<Attachment> attachments,
+                    std::vector<LoadStoreInfo> load_store_infos,
+                    std::vector<SubpassInfo> subpasses);
+
+  VkPipelineCache getPipelineCache() const { return state_.pipeline_cache; }
+
   void clear();
 
 private:

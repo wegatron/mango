@@ -79,6 +79,33 @@ std::shared_ptr<PipelineLayout> ResourceCache::requestPipelineLayout(
   return pipeline_layout;
 }
 
+std::shared_ptr<RenderPass>
+ResourceCache::requestRenderPass(const std::shared_ptr<VkDriver> &driver,
+                  std::vector<Attachment> attachments,
+                  std::vector<LoadStoreInfo> load_store_infos,
+                  std::vector<SubpassInfo> subpasses)
+{
+  size_t hash_code = 0;
+  for (const auto &attachment : attachments) {
+    glm::detail::hash_combine(hash_code, attachment.hash());
+  }
+  for (const auto &load_store_info : load_store_infos) {
+    glm::detail::hash_combine(hash_code, load_store_info.hash());
+  }
+  for (const auto &subpass : subpasses) {
+    glm::detail::hash_combine(hash_code, subpass.hash());
+  }
+  std::unique_lock<std::mutex> lock(state_.render_pass_mtx);
+  auto itr = state_.render_passes.find(hash_code);
+  if (itr != state_.render_passes.end())
+    return itr->second;
+
+  auto render_pass = std::make_shared<RenderPass>(driver, attachments, load_store_infos, subpasses);
+  state_.render_passes[hash_code] = render_pass;
+  return render_pass;
+}
+
+
 void ResourceCache::clear() {
   std::unique_lock<std::mutex> lock(state_.shaders_mtx);
   state_.shaders.clear();
@@ -91,5 +118,8 @@ void ResourceCache::clear() {
 
   std::unique_lock<std::mutex> lock4(state_.pipeline_layouts_mtx);  
   state_.pipeline_layouts.clear();
+
+  std::unique_lock<std::mutex> lock5(state_.render_pass_mtx);
+  state_.render_passes.clear();
 }
 } // namespace vk_engine

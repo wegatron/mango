@@ -1,6 +1,48 @@
+#include <cassert>
+
+#include <framework/utils/error.h>
 #include <framework/vk/render_pass.h>
+#include <framework/vk/vk_driver.h>
+#include <glm/gtx/hash.hpp>
 
 namespace vk_engine {
+
+size_t LoadStoreInfo::getHash() const
+{
+    std::hash<int> hasher;
+    size_t hash = hasher(static_cast<int>(load_op));
+    glm::detail::hash_combine(hash, hasher(static_cast<int>(store_op)));
+    return hash;
+}
+
+size_t Attachment::getHash() const
+{
+    std::hash<int> hasher;
+    size_t hash = hasher(static_cast<int>(format));
+    glm::detail::hash_combine(hash, hasher(static_cast<int>(samples)));
+    glm::detail::hash_combine(hash, hasher(static_cast<int>(usage)));
+    glm::detail::hash_combine(hash, hasher(static_cast<int>(initial_layout)));
+    return hash;
+}
+
+size_t SubpassInfo::getHash() const
+{
+    size_t hash = 0;
+    std::hash<uint32_t> hasher;
+    for (const auto &input_attachment : input_attachments) {
+        glm::detail::hash_combine(hash, hasher(input_attachment));
+    }
+    for (const auto &output_attachment : output_attachments) {
+        glm::detail::hash_combine(hash, hasher(output_attachment));
+    }
+    for (const auto &resolve_attachment : color_resolve_attachments) {
+        glm::detail::hash_combine(hash, hasher(resolve_attachment));
+    }
+    if (depth_stencil_attachment) {
+        glm::detail::hash_combine(hash, hasher(depth_stencil_attachment));
+    }
+    return hash;
+}
 
 bool is_depth_only_format(VkFormat format)
 {
@@ -47,7 +89,7 @@ void fill_output_attachment_refs(
 RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
            std::vector<Attachment> attachments,
            std::vector<LoadStoreInfo> load_store_infos,
-           std::vector<SubpassInfo> subpasses) 
+           std::vector<SubpassInfo> subpasses) : driver_(driver)
 {
     std::vector<VkAttachmentDescription> attachment_descriptions(attachments.size());
     for (size_t i = 0; i < attachments.size(); ++i) {
@@ -69,7 +111,6 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
         attachment_num += subpasses[i].output_attachments.size();
         attachment_num += subpasses[i].color_resolve_attachments.size();
         if(subpasses[i].depth_stencil_attachment != 0xFFFFFFFF) ++attachment_num;
-        if(subpasses[i].depth_stencil_resolve_attachment != 0xFFFFFFFF) ++attachment_num;
     }
     size_t ref_ind = 0;
     std::vector<VkAttachmentReference> attachment_refs(attachment_num);
@@ -101,19 +142,43 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
             attachment_refs[ref_ind].layout = 
                 (attachment_descriptions[subpasses[i].depth_stencil_attachment].initialLayout==VK_IMAGE_LAYOUT_UNDEFINED) 
                 ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : attachment_descriptions[subpasses[i].depth_stencil_attachment].initialLayout;
-            ++ref_ind;
-
-
-            // if(subpasses[i].depth_stencil_resolve_attachment != 0xFFFFFFFF)
-            // {
-            //     subpass_descriptions[i].pDepthStencilResolveAttachment = attachment_refs.data() + ref_ind;
-            //     attachment_refs[ref_ind].attachment = subpasses[i].depth_stencil_resolve_attachment;
-            //     attachment_refs[ref_ind].layout = 
-            //         (attachment_descriptions[subpasses[i].depth_stencil_resolve_attachment].initialLayout==VK_IMAGE_LAYOUT_UNDEFINED) 
-            //         ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL : attachment_descriptions[subpasses[i].depth_stencil_resolve_attachment].initialLayout;
-            // }            
+            ++ref_ind;          
         }
     }
+
+    // default subpass dependencies
+    std::vector<VkSubpassDependency> subpass_dependencies(subpasses.size() - 1);
+    for (size_t i = 0; i < subpasses.size() - 1; ++i) {
+        subpass_dependencies[i].srcSubpass = i;
+        subpass_dependencies[i].dstSubpass = i + 1;
+        subpass_dependencies[i].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        subpass_dependencies[i].dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        subpass_dependencies[i].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        subpass_dependencies[i].dstAccessMask = VK_ACCESS_INPUT_ATTACHMENT_READ_BIT;
+        subpass_dependencies[i].dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT; // only access samples that match the pixel
+    }
+
+    VkRenderPassCreateInfo render_pass_create_info = {
+        .sType=VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+        .pNext=nullptr,
+        .flags=0,
+        .attachmentCount=static_cast<uint32_t>(attachment_descriptions.size()),
+        .pAttachments=attachment_descriptions.data(),
+        .subpassCount=static_cast<uint32_t>(subpass_descriptions.size()),
+        .pSubpasses=subpass_descriptions.data(),
+        .dependencyCount=static_cast<uint32_t>(subpass_dependencies.size()),
+        .pDependencies=subpass_dependencies.data()
+    };
+    
+    VkResult result = vkCreateRenderPass(driver->getDevice(), &render_pass_create_info, nullptr, &handle_);
+    if (result != VK_SUCCESS) {
+        throw VulkanException(result, "Failed to create render pass");
+    }
+}
+
+RenderPass::~RenderPass()
+{
+    vkDestroyRenderPass(driver_->getDevice(), handle_, nullptr);
 }
 
 }
