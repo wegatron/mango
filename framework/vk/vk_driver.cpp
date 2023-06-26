@@ -10,16 +10,27 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <framework/utils/error.h>
 #include <framework/vk/physical_device.h>
 #include <framework/vk/vk_driver.h>
-#include <framework/utils/error.h>
+
+constexpr uint32_t vulkan_version = VK_API_VERSION_1_0;
 
 const std::vector<const char *> request_validation_layers = {
     "VK_LAYER_KHRONOS_validation",
 };
 
-const std::vector<const char *> request_device_extensions = {
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+struct RequestedDeviceExtension {
+  const char *name;
+  bool required;
+};
+
+const std::vector<RequestedDeviceExtension> request_device_extensions = {
+    {VK_KHR_SWAPCHAIN_EXTENSION_NAME, true},
+    {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, false},
+    {VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, false},
+    {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, false},
+};
 
 namespace vk_engine {
 bool checkValidationLayerSupport() {
@@ -49,7 +60,7 @@ bool checkValidationLayerSupport() {
 }
 
 std::pair<bool, uint32_t>
-VkDriver::selectPhysicalDevice(std::vector<const char *> request_extensions) {
+VkDriver::selectPhysicalDevice(const std::vector<RequestedDeviceExtension> &request_extensions) {
   auto physical_devices = PhysicalDevice::getPhysicalDevices(instance_);
   for (const auto &pd : physical_devices) {
     physical_device_ = pd.getHandle();
@@ -71,12 +82,16 @@ VkDriver::selectPhysicalDevice(std::vector<const char *> request_extensions) {
     for (const auto &req_ext : request_extensions) {
       bool is_find = false;
       for (const auto &ext : device_extensions) {
-        if (strcmp(ext.extensionName, req_ext) == 0) {
+        if (strcmp(ext.extensionName, req_ext.name) == 0) {
           is_find = true;
           break;
         }
       }
-      if (!is_find) {
+      if(is_find) {
+        enabled_device_extensions_.push_back(req_ext.name);
+        continue;
+      }
+      if (req_ext.required) {
         extension_support = false;
         break;
       }
@@ -100,7 +115,7 @@ void VkDriver::initInstance() {
   app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   app_info.pEngineName = "No Engine";
   app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0); // 以上这些意义不大
-  app_info.apiVersion = VK_API_VERSION_1_0;          // vulkan api version
+  app_info.apiVersion = vulkan_version;          // vulkan api version
 
   VkInstanceCreateInfo instance_info{};
   instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -154,8 +169,8 @@ void VkDriver::initDevice() {
   device_info.pQueueCreateInfos = &queue_info;
   device_info.queueCreateInfoCount = 1;
   device_info.pEnabledFeatures = &device_features;
-  device_info.enabledExtensionCount = request_device_extensions.size();
-  device_info.ppEnabledExtensionNames = request_device_extensions.data();
+  device_info.enabledExtensionCount = enabled_device_extensions_.size();
+  device_info.ppEnabledExtensionNames = enabled_device_extensions_.data();
 
   device_features.geometryShader = VK_TRUE;
   if (enable_vk_validation_) {
@@ -190,6 +205,17 @@ void VkDriver::init(const std::string &app_name, const bool enable_validation,
   checkSwapchainAbility();
 
   initSwapchain(window);
+
+  initAllocator();
+}
+
+bool VkDriver::isDeviceExtensionEnabled(const char *extension_name)
+{
+  for (const auto &ext : enabled_device_extensions_) {
+    if (strcmp(ext, extension_name) == 0)
+      return true;
+  }
+  return false;
 }
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL
@@ -356,6 +382,58 @@ void VkDriver::initSwapchain(GLFWwindow *window) {
     image_view_info.image = swapchain_images_[i];
     VK_CHECK(vkCreateImageView(device_, &image_view_info, nullptr,
                                &swapchain_image_views_[i]));
+  }
+}
+
+void VkDriver::initAllocator() {
+  VmaVulkanFunctions vma_vulkan_func{};
+  vma_vulkan_func.vkAllocateMemory = vkAllocateMemory;
+  vma_vulkan_func.vkBindBufferMemory = vkBindBufferMemory;
+  vma_vulkan_func.vkBindImageMemory = vkBindImageMemory;
+  vma_vulkan_func.vkCreateBuffer = vkCreateBuffer;
+  vma_vulkan_func.vkCreateImage = vkCreateImage;
+  vma_vulkan_func.vkDestroyBuffer = vkDestroyBuffer;
+  vma_vulkan_func.vkDestroyImage = vkDestroyImage;
+  vma_vulkan_func.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
+  vma_vulkan_func.vkFreeMemory = vkFreeMemory;
+  vma_vulkan_func.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+  vma_vulkan_func.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+  vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties =
+      vkGetPhysicalDeviceMemoryProperties;
+  vma_vulkan_func.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+  vma_vulkan_func.vkInvalidateMappedMemoryRanges =
+      vkInvalidateMappedMemoryRanges;
+  vma_vulkan_func.vkMapMemory = vkMapMemory;
+  vma_vulkan_func.vkUnmapMemory = vkUnmapMemory;
+  vma_vulkan_func.vkCmdCopyBuffer = vkCmdCopyBuffer;
+
+  VmaAllocatorCreateInfo allocator_info{};
+  allocator_info.physicalDevice = physical_device_;
+  allocator_info.device = device_;
+  allocator_info.instance = instance_;
+  allocator_info.vulkanApiVersion = vulkan_version;
+  allocator_info.pVulkanFunctions = &vma_vulkan_func;
+
+  bool can_get_memory_requirements = isDeviceExtensionEnabled(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+  bool has_dedicated_allocation = isDeviceExtensionEnabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+  bool can_get_buffer_device_address = isDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+
+	if (can_get_memory_requirements && has_dedicated_allocation)
+	{
+		allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+		vma_vulkan_func.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
+		vma_vulkan_func.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
+	}
+
+  if(can_get_buffer_device_address)
+  {
+    allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+  }
+
+  auto result = vmaCreateAllocator(&allocator_info, &allocator_);
+  if(result != VK_SUCCESS)
+  {
+    throw VulkanException(result, "failed to create vma allocator");
   }
 }
 
