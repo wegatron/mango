@@ -2,23 +2,26 @@
 
 #include <framework/vk/vk_driver.h>
 #include <memory>
+#include <vk_mem_alloc.h>
 
 namespace vk_engine {
 class Image final {
 public:
-  Image(std::shared_ptr<VkDriver> driver, const VkExtent3D &extent,
-        VkFormat format, VkImageUsageFlags image_usage,
-        VkSampleCountFlagBits sample_count);
+  Image(const std::shared_ptr<VkDriver> &driver, VkFormat format,
+        const VkExtent3D &extent, VkSampleCountFlagBits sample_count,
+        VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage);
 
   Image(const Image &) = delete;
   Image(Image &&) = delete;
-  Image &operator=(const Image &) = delete;  
+  Image &operator=(const Image &) = delete;
 
   ~Image();
 
   VkImage getHandle() const { return image_; }
+
 private:
   std::shared_ptr<VkDriver> driver_;
+  VmaAllocation memory_{VK_NULL_HANDLE};
   VkExtent3D extent_;
   VkFormat format_;
   VkImageUsageFlags image_usage_;
