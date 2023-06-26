@@ -94,30 +94,47 @@ public:
 
   void setColorBlendState(const ColorBlendState &state);
 
-  void setSubpassIndex(uint32_t subpass_index) {
-    if(subpass_index == subpass_index_)  return;
-    subpass_index_ = subpass_index;
-    dirty_ = true;
-  }
+  void setSubpassIndex(uint32_t subpass_index);
 
   const std::vector<std::shared_ptr<ShaderModule>> &getShaderModules() const
   {
     return shader_modules_;
   }
 
-  const VertexInputState &getVertexInputState() const;
+  const VertexInputState &getVertexInputState() const
+  {
+    return vertex_input_state_;
+  }
 
-  const InputAssemblyState &getInputAssemblyState() const;
+  const InputAssemblyState &getInputAssemblyState() const
+  {
+    return input_assembly_state_;
+  }
 
-  const RasterizationState &getRasterizationState() const;
+  const RasterizationState &getRasterizationState() const
+  {
+    return rasterization_state_;
+  }
 
-  const ViewPortState &getViewportState() const;
+  const ViewPortState &getViewportState() const
+  {
+    return viewport_state_;
+  }
 
-  const MultisampleState &getMultisampleState() const;
+  const MultisampleState &getMultisampleState() const
+  {
+    return multisample_state_;
+  }
 
-  const DepthStencilState &getDepthStencilState() const;
+  const DepthStencilState &getDepthStencilState() const
+  {
+    return depth_stencil_state_;
+  }
 
-  const ColorBlendState &getColorBlendState() const;
+  const ColorBlendState &getColorBlendState() const
+  {
+    return color_blend_state_;
+  }
 
   const uint32_t getSubpassIndex() const { return subpass_index_; }
 

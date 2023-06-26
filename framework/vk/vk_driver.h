@@ -8,6 +8,12 @@
 #include <GLFW/glfw3.h>
 
 namespace vk_engine {
+
+struct RequestedDeviceExtension {
+  const char *name;
+  bool required;
+};
+  
 class VkDriver {
 public:
   VkDriver() = default;

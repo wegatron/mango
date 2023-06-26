@@ -187,6 +187,60 @@ void PipelineState::setVertexInputState(const VertexInputState &state) {
   }
 }
 
+void PipelineState::setInputAssemblyState(const InputAssemblyState &state)
+{
+  if (state != input_assembly_state_) {
+    input_assembly_state_ = state;
+    dirty_ = true;
+  }
+}
+
+void PipelineState::setRasterizationState(const RasterizationState &state)
+{
+  if (state != rasterization_state_) {
+    rasterization_state_ = state;
+    dirty_ = true;
+  }
+}
+
+void PipelineState::setViewportState(const ViewPortState &state)
+{
+  if (state != viewport_state_) {
+    viewport_state_ = state;
+    dirty_ = true;
+  }
+}
+
+void PipelineState::setMultisampleState(const MultisampleState &state)
+{
+  if (state != multisample_state_) {
+    multisample_state_ = state;
+    dirty_ = true;
+  }
+}
+
+void PipelineState::setDepthStencilState(const DepthStencilState &state)
+{
+  if (state != depth_stencil_state_) {
+    depth_stencil_state_ = state;
+    dirty_ = true;
+  }
+}
+
+void PipelineState::setColorBlendState(const ColorBlendState &state)
+{
+  if (state != color_blend_state_) {
+    color_blend_state_ = state;
+    dirty_ = true;
+  }
+}
+
+void PipelineState::setSubpassIndex(uint32_t subpass_index) {
+  if(subpass_index == subpass_index_)  return;
+  subpass_index_ = subpass_index;
+  dirty_ = true;
+}
+
 void PipelineState::getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo &) const
 {
 	std::array<VkDynamicState, 9> dynamic_states{

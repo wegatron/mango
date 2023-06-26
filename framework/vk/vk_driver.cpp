@@ -14,15 +14,11 @@
 #include <framework/vk/physical_device.h>
 #include <framework/vk/vk_driver.h>
 
+namespace vk_engine {
 constexpr uint32_t vulkan_version = VK_API_VERSION_1_0;
 
 const std::vector<const char *> request_validation_layers = {
     "VK_LAYER_KHRONOS_validation",
-};
-
-struct RequestedDeviceExtension {
-  const char *name;
-  bool required;
 };
 
 const std::vector<RequestedDeviceExtension> request_device_extensions = {
@@ -32,7 +28,7 @@ const std::vector<RequestedDeviceExtension> request_device_extensions = {
     {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, false},
 };
 
-namespace vk_engine {
+
 bool checkValidationLayerSupport() {
   uint32_t layer_count = 0;
   vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
