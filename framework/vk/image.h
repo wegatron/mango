@@ -7,9 +7,10 @@
 namespace vk_engine {
 class Image final {
 public:
-  Image(const std::shared_ptr<VkDriver> &driver, VkFormat format,
-        const VkExtent3D &extent, VkSampleCountFlagBits sample_count,
-        VkImageUsageFlags image_usage, VmaMemoryUsage memory_usage);
+  Image(const std::shared_ptr<VkDriver> &driver, VkImageCreateFlags flags,
+        VkFormat format, const VkExtent3D &extent,
+        VkSampleCountFlagBits sample_count, VkImageUsageFlags image_usage,
+        VmaMemoryUsage memory_usage);
 
   Image(const Image &) = delete;
   Image(Image &&) = delete;
@@ -21,11 +22,14 @@ public:
 
 private:
   std::shared_ptr<VkDriver> driver_;
-  VmaAllocation memory_{VK_NULL_HANDLE};
-  VkExtent3D extent_;
+  VkImageCreateFlags flags_;
   VkFormat format_;
-  VkImageUsageFlags image_usage_;
+  VkExtent3D extent_;
   VkSampleCountFlagBits sample_count_;
+  VkImageUsageFlags image_usage_;
+  VmaMemoryUsage memory_usage_;
+
+  VmaAllocation allocation_{VK_NULL_HANDLE};
   VkImage image_{VK_NULL_HANDLE};
 };
 } // namespace vk_engine

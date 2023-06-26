@@ -1,14 +1,20 @@
 #pragma once
 
+#include <framework/vk/resource_cache.h>
 #include <memory>
 #include <string>
-#include <framework/vk/resource_cache.h>
 
 namespace vk_engine {
 class VkDriver;
 class AppBase {
 public:
-  AppBase(const std::string &name) : name_(name) {}
+  AppBase(const std::string &name,
+          const std::shared_ptr<ResourceCache> &resource_cache)
+      : name_(name), resource_cache_(resource_cache) {
+    if (resource_cache_ == nullptr)
+      resource_cache_ = std::make_shared<ResourceCache>();
+  }
+
   virtual ~AppBase() = default;
 
   AppBase(const AppBase &) = delete;

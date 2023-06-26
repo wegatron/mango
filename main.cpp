@@ -9,7 +9,7 @@
 #include "triangle_app.h"
 
 int main(int argc, char const *argv[]) {
-  auto app = std::make_shared<vk_engine::TriangleApp>("triangle");
+  auto app = std::make_shared<vk_engine::TriangleApp>("triangle", nullptr);
   auto window_app =
       std::make_shared<vk_engine::WindowApp>("triangle", 800, 600);
 

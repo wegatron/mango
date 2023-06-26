@@ -1,5 +1,3 @@
-#pragma once
-
 #include <framework/vk/resource_cache.h>
 #include <glm/gtx/hash.hpp>
 
