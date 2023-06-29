@@ -12,11 +12,22 @@ void TriangleApp::tick(const float seconds) {
 }
 
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver) {
+  driver_ = driver;
   /// prepare data
   // vertex data
   std::vector<float> vertex_data = {-0.5, -0.5, 0, 0, 0, 1, 0,   0,
                                     0.5,  -0.5, 0, 0, 0, 1, 1,   0,
                                     0.5,   0.5, 0, 0, 0, 1, 0.5, 0.5};
+
+  // use device local, and transfer by staging buffer is better
+  vertex_buffer_ = std::make_shared<Buffer>(
+    driver_, 0, sizeof(float) * 8 * 3,
+    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+    VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+    VMA_MEMORY_USAGE_AUTO_PREFER_HOST);
+
+  vertex_buffer_->update(reinterpret_cast<uint8_t *>(vertex_data.data()),
+                         sizeof(float) * 8 * 3);
 
   // load and compile shader
   auto vs = resource_cache_->requestShaderModule("shaders/triangle.vert");

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <framework/utils/app_base.h>
+#include <framework/vk/buffer.h>
 
 namespace vk_engine {
 class TriangleApp : public AppBase {
@@ -11,5 +12,8 @@ public:
   void init(const std::shared_ptr<VkDriver> &driver) override;
 
   void tick(const float seconds) override;
+
+private:
+  std::shared_ptr<Buffer> vertex_buffer_;
 };
 } // namespace vk_engine

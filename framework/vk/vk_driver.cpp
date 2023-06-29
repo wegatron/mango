@@ -26,6 +26,9 @@ const std::vector<RequestedDeviceExtension> request_device_extensions = {
     {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, false},
     {VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, false},
     {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, false},
+    {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, false},
+    {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, false},
+    {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, false},
 };
 
 
@@ -146,6 +149,29 @@ void VkDriver::initDevice() {
   auto select_ret = selectPhysicalDevice(request_device_extensions);
   if (!select_ret.first) {
     throw std::runtime_error("failed to select suitable physical device!");
+  }
+
+  // for print out memory infos
+  VkPhysicalDeviceMemoryProperties memory_properties;
+  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);  
+  for(uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
+    std::cout << " heap size " << std::dec << memory_properties.memoryHeaps[i].size / 1000000 << "MB"
+              << " flags " << std::hex << memory_properties.memoryHeaps[i].flags << std::endl;
+  }
+  for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
+    std::cout << " heap index " << memory_properties.memoryTypes[i].heapIndex 
+              << " memory property flags ";
+    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+      std::cout << "VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ";
+    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+      std::cout << "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ";
+    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+      std::cout << "VK_MEMORY_PROPERTY_HOST_COHERENT_BIT ";
+    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
+      std::cout << "VK_MEMORY_PROPERTY_HOST_CACHED_BIT ";
+    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
+      std::cout << "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT ";
+    std::cout << std::endl;
   }
 
   // queue info
