@@ -16,12 +16,14 @@ public:
 
 private:  
 
-  void setupRenderPipeline();
+  void setupScene();
+
+  void setupRender(VkFormat color_format, VkFormat ds_format);
 
   void buildCommandBuffers();
   
   std::shared_ptr<Buffer> vertex_buffer_;
   std::shared_ptr<RenderPass> render_pass_;
-  std::shared_ptr<Pipeline> pipeline_;
+  std::shared_ptr<GraphicsPipeline> pipeline_;  
 };
 } // namespace vk_engine

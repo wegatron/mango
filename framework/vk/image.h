@@ -32,4 +32,21 @@ private:
   VmaAllocation allocation_{VK_NULL_HANDLE};
   VkImage image_{VK_NULL_HANDLE};
 };
+
+class ImageView final {
+public:
+  ImageView(const std::shared_ptr<Image> &image, VkImageViewType view_type,
+            VkFormat format, uint32_t base_mip_level, uint32_t base_array_layer,
+            uint32_t n_mip_levels, uint32_t n_array_layers);
+
+private:  
+  VkImageViewType view_type_;
+  VkFormat format_;
+  VkImageSubresourceRange subresource_range_;
+  
+  VkImageView image_view_{VK_NULL_HANDLE};
+
+  std::shared_ptr<Image> image_;
+};
+
 } // namespace vk_engine
