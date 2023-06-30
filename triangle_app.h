@@ -14,8 +14,14 @@ public:
 
   void tick(const float seconds) override;
 
-private:
+private:  
+
+  void setupRenderPipeline();
+
+  void buildCommandBuffers();
+  
   std::shared_ptr<Buffer> vertex_buffer_;
   std::shared_ptr<RenderPass> render_pass_;
+  std::shared_ptr<Pipeline> pipeline_;
 };
 } // namespace vk_engine

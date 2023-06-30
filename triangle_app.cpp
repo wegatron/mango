@@ -74,6 +74,8 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver, VkFormat color_f
      }
   };
   render_pass_ = resource_cache_->requestRenderPass(driver, attachments, load_store_infos, subpass_infos);
+
+  pipeline_ = std::make_shared<Pipeline>(driver, pipeline_state, render_pass_);
   
 }
 } // namespace vk_engine
