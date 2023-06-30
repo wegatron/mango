@@ -38,4 +38,31 @@ Image::Image(const std::shared_ptr<VkDriver> &driver, VkImageCreateFlags flags,
     throw VulkanException(result, "failed to create image!");
   }
 }
+
+  ImageView::ImageView(const std::shared_ptr<Image> &image, VkImageViewType view_type,
+            VkFormat format, uint32_t base_mip_level, uint32_t base_array_layer,
+            uint32_t n_mip_levels, uint32_t n_array_layers)
+  {
+    VkImageViewCreateInfo view_info = {};
+    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    view_info.image = image->getHandle();
+    view_info.viewType = view_type;
+    view_info.format = format;
+    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    view_info.subresourceRange.baseMipLevel = base_mip_level;
+    view_info.subresourceRange.levelCount = n_mip_levels;
+    view_info.subresourceRange.baseArrayLayer = base_array_layer;
+    view_info.subresourceRange.layerCount = n_array_layers;
+
+    #if !NDEBUG
+    view_type_ = view_type;
+    format_ = format;
+    subresource_range_ = view_info.subresourceRange;
+    #endif
+
+    auto result = vkCreateImageView(image->getDriver()->getDevice(), &view_info, nullptr, &image_view_);
+    if (result != VK_SUCCESS) {
+      throw VulkanException(result, "failed to create image view!");
+    }
+  }
 } // namespace vk_engine

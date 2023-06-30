@@ -20,6 +20,8 @@ public:
 
   VkImage getHandle() const { return image_; }
 
+  std::shared_ptr<VkDriver> getDriver() const { return driver_; }
+
 private:
   std::shared_ptr<VkDriver> driver_;
   VkImageCreateFlags flags_;
@@ -40,10 +42,11 @@ public:
             uint32_t n_mip_levels, uint32_t n_array_layers);
 
 private:  
+#if !NDEBUG
   VkImageViewType view_type_;
   VkFormat format_;
   VkImageSubresourceRange subresource_range_;
-  
+#endif  
   VkImageView image_view_{VK_NULL_HANDLE};
 
   std::shared_ptr<Image> image_;

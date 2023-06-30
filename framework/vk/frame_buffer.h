@@ -24,8 +24,7 @@ public:
                              uint32_t width, uint32_t height, uint32_t layers);
 
   static RenderTarget
-  create(const std::vector<std::shared_ptr<Image>> &images,
-         const std::vector<std::shared_ptr<ImageView>> &image_views);
+  create(const std::vector<std::shared_ptr<ImageView>> &image_views);
 
   uint32_t getWidth() const { return width_; }
 
@@ -48,7 +47,7 @@ private:
 };
 
 /**
- * \brief framebuffer is a combination of render target and render pass,\
+ * \brief framebuffer is a combination of render target and render pass,
  * and used for manage the VkFramebuffer
  */
 class FrameBuffer final {
