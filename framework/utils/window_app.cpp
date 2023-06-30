@@ -1,7 +1,7 @@
-#include <framework/utils/window_app.h>
-#include <framework/utils/logging.h>
 #include <cassert>
-#include <iostream>
+#include <framework/utils/logging.h>
+#include <framework/utils/window_app.h>
+#include <framework/vk/image.h>
 
 namespace vk_engine {
 WindowApp::~WindowApp() {
@@ -34,8 +34,12 @@ bool WindowApp::init() {
     return false;
   }
 
+  // create swapchain
+  initSwapchain();
+  initDepthStencil();
+
   assert(app_ != nullptr);
-  app_->init(driver_);
+  app_->init(driver_, swapchain_->getImageFormat(), depth_format_);
   return true;
 }
 
@@ -48,6 +52,30 @@ void WindowApp::run() {
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
     app_->tick(0.016f); // 60fps
+  }
+}
+
+void WindowApp::initSwapchain() {
+  int width = 0;
+  int height = 0;
+  // real resolution compatiable with highdpi
+  glfwGetFramebufferSize(window_, &width, &height);
+  SwapchainProperties properties{
+      .extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}};
+  swapchain_ =
+      std::make_shared<Swapchain>(driver_, driver_->getSurface(), properties);  
+}
+
+void WindowApp::initDepthStencil()
+{
+  depth_format_ = VK_FORMAT_D24_UNORM_S8_UINT;
+  const auto img_cnt = swapchain_->getImageCount();
+  depth_images_.resize(img_cnt);
+  for (uint32_t i = 0; i < img_cnt; ++i) {
+    depth_images_[i] = std::make_shared<Image>(
+        driver_, 0,
+        depth_format_, swapchain_->getExtent(), 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
   }
 }
 } // namespace vk_engine

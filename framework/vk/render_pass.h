@@ -37,9 +37,9 @@ struct SubpassInfo
 {
 	std::vector<uint32_t> input_attachments;
 
-	std::vector<uint32_t> output_attachments;
+	std::vector<uint32_t> output_attachments; // color attachments output
 
-	std::vector<uint32_t> color_resolve_attachments;
+	std::vector<uint32_t> color_resolve_attachments; // for MSAA
 
   uint32_t depth_stencil_attachment{0xFFFFFFFF};
 
@@ -54,9 +54,9 @@ class RenderPass final {
 public:
   RenderPass(
     const std::shared_ptr<VkDriver> &driver,
-    std::vector<Attachment> attachments,
-    std::vector<LoadStoreInfo> load_store_infos,
-    std::vector<SubpassInfo> subpasses
+    const std::vector<Attachment> &attachments,
+    const std::vector<LoadStoreInfo> &load_store_infos,
+    const std::vector<SubpassInfo> &subpasses
   );
 
   ~RenderPass();

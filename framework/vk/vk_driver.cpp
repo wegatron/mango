@@ -224,10 +224,6 @@ void VkDriver::init(const std::string &app_name, const bool enable_validation,
 
   initDevice();
 
-  checkSwapchainAbility();
-
-  initSwapchain(window);
-
   initAllocator();
 }
 
@@ -319,94 +315,6 @@ void VkDriver::checkSwapchainAbility() {
   }
 }
 
-void VkDriver::initSwapchain(GLFWwindow *window) {
-  VkSurfaceCapabilitiesKHR surface_capabilities;
-  vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physical_device_, surface_,
-                                            &surface_capabilities);
-  VkSurfaceFormatKHR surface_format{VK_FORMAT_B8G8R8A8_SRGB,
-                                    VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
-
-  // real resolution for highdpi
-  int width, height;
-  glfwGetFramebufferSize(window, &width, &height);
-  VkExtent2D extent = {static_cast<uint32_t>(width),
-                       static_cast<uint32_t>(height)};
-  extent.width =
-      std::clamp(extent.width, surface_capabilities.minImageExtent.width,
-                 surface_capabilities.maxImageExtent.width);
-  extent.height =
-      std::clamp(extent.height, surface_capabilities.minImageExtent.height,
-                 surface_capabilities.maxImageExtent.height);
-
-  uint32_t image_count = surface_capabilities.minImageCount + 1;
-  if (surface_capabilities.maxImageCount > 0 &&
-      image_count > surface_capabilities.maxImageCount)
-    image_count = surface_capabilities.maxImageCount;
-
-  // create swapchain
-  VkSwapchainCreateInfoKHR swapchain_info{};
-  swapchain_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-  swapchain_info.surface = surface_;
-  swapchain_info.imageExtent = extent;
-  swapchain_info.minImageCount = image_count;
-
-  swapchain_info.imageFormat = surface_format.format;
-  swapchain_info.imageColorSpace = surface_format.colorSpace;
-  swapchain_info.imageArrayLayers = 1;
-  swapchain_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-  swapchain_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-  swapchain_info.preTransform = surface_capabilities.currentTransform;
-  swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-  swapchain_info.clipped = VK_TRUE;
-  swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-  swapchain_info.oldSwapchain = swapchain_;
-
-  // vkCreateSwapchainKHR maybe null if not enable VK_KHR_swapchain
-  // make sure eanbleExtensionCount is correct when create logical device
-  // refer to:
-  // https://stackoverflow.com/questions/55131406/why-would-vkcreateswapchainkhr-result-in-an-access-violation-at-0
-  VK_CHECK(
-      vkCreateSwapchainKHR(device_, &swapchain_info, nullptr, &swapchain_));
-
-  // retrieve swapchain images
-  if (swapchain_info.oldSwapchain != VK_NULL_HANDLE) {
-    throw std::runtime_error("recreate swapchain is not implemented!");
-    for (auto &image_view : swapchain_image_views_) {
-      vkDestroyImageView(device_, image_view, nullptr);
-    }
-    vkDestroySwapchainKHR(device_, swapchain_info.oldSwapchain, nullptr);
-  }
-
-  VK_CHECK(vkGetSwapchainImagesKHR(device_, swapchain_, &image_count, nullptr));
-  swapchain_images_.resize(image_count);
-  vkGetSwapchainImagesKHR(device_, swapchain_, &image_count,
-                          swapchain_images_.data());
-  swapchain_extent_ = extent;
-  swapchain_image_format_ = surface_format.format;
-
-  // image views
-  swapchain_image_views_.resize(swapchain_images_.size());
-  VkImageViewCreateInfo image_view_info{};
-  image_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-  image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-  image_view_info.format = swapchain_image_format_;
-  image_view_info.subresourceRange.baseMipLevel = 0;
-  image_view_info.subresourceRange.levelCount = 1;
-  image_view_info.subresourceRange.baseArrayLayer = 0;
-  image_view_info.subresourceRange.layerCount = 1;
-  image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-  image_view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-  image_view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-  image_view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-  image_view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-  for (size_t i = 0; i < swapchain_images_.size(); ++i) {
-    image_view_info.image = swapchain_images_[i];
-    VK_CHECK(vkCreateImageView(device_, &image_view_info, nullptr,
-                               &swapchain_image_views_[i]));
-  }
-}
-
 void VkDriver::initAllocator() {
   VmaVulkanFunctions vma_vulkan_func{};
   vma_vulkan_func.vkAllocateMemory = vkAllocateMemory;
@@ -460,10 +368,6 @@ void VkDriver::initAllocator() {
 }
 
 VkDriver::~VkDriver() {
-  for (auto &image_view : swapchain_image_views_) {
-    vkDestroyImageView(device_, image_view, nullptr);
-  }
-  vkDestroySwapchainKHR(device_, swapchain_, nullptr);
   vkDestroyDevice(device_, nullptr);
   vkDestroySurfaceKHR(instance_, surface_, nullptr);
   vkDestroyInstance(instance_, nullptr);

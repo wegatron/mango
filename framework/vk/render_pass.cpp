@@ -87,9 +87,9 @@ void fill_output_attachment_refs(
 }
 
 RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
-           std::vector<Attachment> attachments,
-           std::vector<LoadStoreInfo> load_store_infos,
-           std::vector<SubpassInfo> subpasses) : driver_(driver)
+           const std::vector<Attachment> &attachments,
+           const std::vector<LoadStoreInfo> &load_store_infos,
+           const std::vector<SubpassInfo> &subpasses) : driver_(driver)
 {
     std::vector<VkAttachmentDescription> attachment_descriptions(attachments.size());
     for (size_t i = 0; i < attachments.size(); ++i) {

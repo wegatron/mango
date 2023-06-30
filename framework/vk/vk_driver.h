@@ -24,9 +24,13 @@ public:
   void init(const std::string &app_name, const bool enable_validation,
             GLFWwindow *window);
 
+  VkPhysicalDevice getPhysicalDevice() const { return physical_device_; }
+  
   VkDevice getDevice() const { return device_; }
 
   VmaAllocator getAllocator() const { return allocator_; }
+
+  VkSurfaceKHR getSurface() const { return surface_; }
 
 private:
   void initInstance();
@@ -54,12 +58,6 @@ private:
 
   VkQueue graphics_queue_{VK_NULL_HANDLE};
   VkSurfaceKHR surface_{VK_NULL_HANDLE};
-
-  VkSwapchainKHR swapchain_{VK_NULL_HANDLE};
-  std::vector<VkImage> swapchain_images_;
-  std::vector<VkImageView> swapchain_image_views_;
-  VkExtent2D swapchain_extent_;
-  VkFormat swapchain_image_format_;
 
   VmaAllocator allocator_{VK_NULL_HANDLE};
 

@@ -4,17 +4,19 @@
 #include <framework/vk/vk_driver.h>
 #include <framework/vk/pipeline_state.h>
 #include <framework/vk/pipeline.h>
+#include <framework/vk/swapchain.h>
 #include <framework/vk/render_pass.h>
+
 
 namespace vk_engine {
 void TriangleApp::tick(const float seconds) {
   // TODO render one frame
 }
 
-void TriangleApp::init(const std::shared_ptr<VkDriver> &driver) {
+void TriangleApp::init(const std::shared_ptr<VkDriver> &driver, VkFormat color_format, VkFormat ds_format) {
   driver_ = driver;
-  /// prepare data
-  // vertex data
+
+  /// vertex data
   std::vector<float> vertex_data = {-0.5, -0.5, 0, 0, 0, 1, 0,   0,
                                     0.5,  -0.5, 0, 0, 0, 1, 1,   0,
                                     0.5,   0.5, 0, 0, 0, 1, 0.5, 0.5};
@@ -54,12 +56,24 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver) {
   pipeline_state.setDepthStencilState({true, true, VK_COMPARE_OP_LESS, false, false, {}, {}, 0, 1});
   pipeline_state.setSubpassIndex(0);
 
-  // std::vector<Attachment> attachments{{VK_FORMAT_R8G8B8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_CLEAR,
-  //                                      VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-  //                                      VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_UNDEFINED,
-  //                                      VK_IMAGE_LAYOUT_PRESENT_SRC_KHR}};
-  // std::vector<LoadStoreInfo> load_store_infos;
-  // std::vector<SubpassInfo> subpass_infos; 
-  // auto render_pass = resource_cache_->requestRenderPass(driver, attachments, load_store_infos, subpass_infos);
+  std::vector<Attachment> attachments{
+    Attachment{color_format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT},
+    Attachment{ds_format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT}
+  };
+  std::vector<LoadStoreInfo> load_store_infos
+  {
+    {VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE},
+    {VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE}
+  };
+  std::vector<SubpassInfo> subpass_infos
+  {
+    {{}, // no input attachment
+     {0}, // color attachment index 
+     {}, // no msaa
+     1 // depth stencil attachment index
+     }
+  };
+  render_pass_ = resource_cache_->requestRenderPass(driver, attachments, load_store_infos, subpass_infos);
+  
 }
 } // namespace vk_engine

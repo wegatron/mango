@@ -1,11 +1,14 @@
 #pragma once
 
-#define GLFW_INCLUDE_VULKAN
-#include <framework/utils/app_base.h>
-#include <framework/vk/vk_driver.h>
-#include <GLFW/glfw3.h>
 #include <memory>
 #include <string>
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+#include <framework/utils/app_base.h>
+#include <framework/vk/vk_driver.h>
+#include <framework/vk/swapchain.h>
 
 namespace vk_engine {
 class WindowApp final {
@@ -23,8 +26,17 @@ public:
   void run();
 
 private:
+  
+  void initSwapchain();
+
+  void initDepthStencil();
+  
   std::shared_ptr<VkDriver> driver_;
-  std::shared_ptr<AppBase> app_;
+  std::shared_ptr<Swapchain> swapchain_;
+  VkFormat depth_format_;
+  std::vector<std::shared_ptr<Image>> depth_images_;
+
+  std::shared_ptr<AppBase> app_;  
   GLFWwindow *window_;
 
   uint32_t width_;

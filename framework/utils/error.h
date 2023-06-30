@@ -51,3 +51,8 @@ class VulkanException : public std::runtime_error
 	std::string error_message;
 };
 }
+
+#define VK_THROW_IF_ERROR(result)                                              \
+  if (result != VK_SUCCESS) {                                                  \
+    throw vk_engine::VulkanException(result, "Vulkan error");                  \
+  }

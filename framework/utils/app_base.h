@@ -21,7 +21,7 @@ public:
   AppBase &operator=(const AppBase &) = delete;
 
   virtual void tick(const float seconds) = 0;
-  virtual void init(const std::shared_ptr<VkDriver> &driver) = 0;
+  virtual void init(const std::shared_ptr<VkDriver> &driver, VkFormat color_format, VkFormat ds_format) = 0;
 
 protected:
   const std::string name_;
