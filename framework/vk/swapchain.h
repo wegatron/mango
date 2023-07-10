@@ -4,6 +4,7 @@
 #include <volk.h>
 
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/image.h>
 
 namespace vk_engine {
 
@@ -38,7 +39,7 @@ public:
 
   uint32_t getImageCount() const { return image_count_; }
 
-  VkImageView getImageView(uint32_t index) const { return image_views_[index]; }
+  std::shared_ptr<ImageView> getImageView(uint32_t index) const { return image_views_[index]; }
 
 private:
   void initSwapchain(const SwapchainProperties &properties);
@@ -52,7 +53,7 @@ private:
   VkFormat image_format_;
   uint32_t image_count_;
   std::vector<VkImage> images_;
-  std::vector<VkImageView> image_views_;
+  std::vector<std::shared_ptr<ImageView>> image_views_;
 };
 
 } // namespace vk_engine

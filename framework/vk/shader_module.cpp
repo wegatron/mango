@@ -24,12 +24,12 @@ size_t ShaderResource::hash(const ShaderResource &resource) noexcept
       return 0;
   }
 
-  std::hash<uint32_t> hash_uint32;
+  std::hash<int> hasher;
   // hash resource part for descriptor binding, no location, location is used for shader input output
-  hash_code = hash_uint32(resource.set);
-  glm::detail::hash_combine(hash_code, hash_uint32(resource.binding));
-  glm::detail::hash_combine(hash_code, std::hash<ShaderResourceType>{}(resource.type));
-  glm::detail::hash_combine(hash_code, std::hash<ShaderResourceMode>{}(resource.mode));
+  hash_code = hasher(resource.set);
+  glm::detail::hash_combine(hash_code, hasher(resource.binding));
+  glm::detail::hash_combine(hash_code, hasher(static_cast<int>(resource.type)));
+  glm::detail::hash_combine(hash_code, hasher(static_cast<int>(resource.mode)));
   return hash_code;
 }
 

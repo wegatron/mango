@@ -17,7 +17,7 @@ struct ShaderResourceQualifiers {
 };
 
 /// Types of shader resources
-enum class ShaderResourceType {
+enum class ShaderResourceType : int {
   Input,
   InputAttachment,
   Output,

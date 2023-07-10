@@ -3,6 +3,7 @@
 #include <framework/utils/app_base.h>
 #include <framework/vk/buffer.h>
 #include <framework/vk/image.h>
+#include <framework/vk/pipeline.h>
 
 namespace vk_engine {
 class TriangleApp : public AppBase {

@@ -35,7 +35,6 @@ public:
 private:
   RenderTarget() = default;
 
-  bool own_images_{false};
   uint32_t width_{0};
   uint32_t height_{0};
   uint32_t layers_{0};

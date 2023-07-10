@@ -46,8 +46,8 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
   auto fs = resource_cache_->requestShaderModule("shaders/triangle.frag");
 
   // create pipeline
-  PipelineState pipeline_state;
-  pipeline_state.setShaders({vs, fs});
+  std::unique_ptr<PipelineState> pipeline_state = std::make_unique<PipelineState>();
+  pipeline_state->setShaders({vs, fs});
 
   VertexInputState vertex_input_state;
   vertex_input_state.bindings = {
@@ -57,18 +57,18 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 12}, // 3 floats normal
       {2, 0, VK_FORMAT_R32G32_SFLOAT, 24}     // 2 floats uv
   };
-  pipeline_state.setVertexInputState(vertex_input_state);
-  pipeline_state.setInputAssemblyState(
+  pipeline_state->setVertexInputState(vertex_input_state);
+  pipeline_state->setInputAssemblyState(
       {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false});
-  pipeline_state.setRasterizationState(RasterizationState{
+  pipeline_state->setRasterizationState(RasterizationState{
       false, false, VK_POLYGON_MODE_FILL, VK_CULL_MODE_BACK_BIT,
       VK_FRONT_FACE_CLOCKWISE, false});
-  pipeline_state.setViewportState({1, 1});
-  pipeline_state.setMultisampleState(
+  pipeline_state->setViewportState({1, 1});
+  pipeline_state->setMultisampleState(
       {VK_SAMPLE_COUNT_1_BIT, false, 1.0f, 0, false, false});
-  pipeline_state.setDepthStencilState(
+  pipeline_state->setDepthStencilState(
       {true, true, VK_COMPARE_OP_LESS, false, false, {}, {}, 0, 1});
-  pipeline_state.setSubpassIndex(0);
+  pipeline_state->setSubpassIndex(0);
 
   std::vector<Attachment> attachments{
       Attachment{color_format, VK_SAMPLE_COUNT_1_BIT,
@@ -86,7 +86,7 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
   }};
   render_pass_ = resource_cache_->requestRenderPass(
       driver_, attachments, load_store_infos, subpass_infos);
-  pipeline_ = std::make_shared<GraphicsPipeline>(driver_, resource_cache_, render_pass_, pipeline_state);
+  pipeline_ = std::make_shared<GraphicsPipeline>(driver_, resource_cache_, render_pass_, std::move(pipeline_state));
 }
 
 void TriangleApp::buildCommandBuffers() {

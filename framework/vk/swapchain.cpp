@@ -65,31 +65,17 @@ void Swapchain::initImages() {
 
   // image views
   image_views_.resize(images_.size());
-  VkImageViewCreateInfo image_view_info{};
-  image_view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-  image_view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-  image_view_info.format = image_format_;
-  image_view_info.subresourceRange.baseMipLevel = 0;
-  image_view_info.subresourceRange.levelCount = 1;
-  image_view_info.subresourceRange.baseArrayLayer = 0;
-  image_view_info.subresourceRange.layerCount = 1;
-  image_view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-  image_view_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-  image_view_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-  image_view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-  image_view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-
-  for (size_t i = 0; i < images_.size(); ++i) {
-    image_view_info.image = images_[i];
-    VK_THROW_IF_ERROR(vkCreateImageView(driver_->getDevice(), &image_view_info,
-                                        nullptr, &image_views_[i]));
+  for(auto i=0; i<images_.size(); ++i) {
+    image_views_[i] = std::make_shared<ImageView>(driver_, images_[i], VK_IMAGE_VIEW_TYPE_2D, image_format_, 0, 0, 1, 1);  
   }
 }
 
 Swapchain::~Swapchain()
 {
   for (auto &image_view : image_views_) {
-    vkDestroyImageView(driver_->getDevice(), image_view, nullptr);
+    assert(image_view.use_count() == 1);
+    image_view.reset();
+    //vkDestroyImageView(driver_->getDevice(), image_view, nullptr);
   }
   vkDestroySwapchainKHR(driver_->getDevice(), swapchain_, nullptr);  
 }

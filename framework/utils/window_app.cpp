@@ -71,11 +71,12 @@ void WindowApp::initDepthStencil()
   depth_format_ = VK_FORMAT_D24_UNORM_S8_UINT;
   const auto img_cnt = swapchain_->getImageCount();
   depth_images_.resize(img_cnt);
+  VkExtent3D extent{swapchain_->getExtent().width, swapchain_->getExtent().height, 1};
   for (uint32_t i = 0; i < img_cnt; ++i) {
     depth_images_[i] = std::make_shared<Image>(
         driver_, 0,
-        depth_format_, swapchain_->getExtent(), 1, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        depth_format_, extent, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
   }
 }
 } // namespace vk_engine

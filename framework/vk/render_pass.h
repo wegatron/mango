@@ -25,11 +25,6 @@ struct Attachment {
 
   VkImageLayout initial_layout{VK_IMAGE_LAYOUT_UNDEFINED};
 
-  Attachment() = default;
-
-  Attachment(VkFormat format, VkSampleCountFlagBits samples,
-             VkImageUsageFlags usage);
-
   size_t getHash() const;
 };
 
