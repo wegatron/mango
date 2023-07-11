@@ -89,7 +89,7 @@ void WindowApp::initRenderTargets()
   render_targets_.resize(img_cnt);
   for(uint32_t i = 0; i < img_cnt; ++i) {
     render_targets_[i] = std::make_shared<RenderTarget>(
-      driver_, {swapchain_->getImageFormat()},
+      driver_, std::initializer_list<VkFormat>{swapchain_->getImageFormat()},
       ds_format_, extent.width,
       extent.height, 1u);
   }

@@ -17,7 +17,7 @@ public:
 
   RenderTarget(const RenderTarget &) = delete;
   RenderTarget &operator=(const RenderTarget &) = delete;
-
+  
   RenderTarget(const std::shared_ptr<VkDriver> &driver,
                std::initializer_list<VkFormat> color_format, VkFormat ds_format,
                uint32_t width, uint32_t height, uint32_t layers);

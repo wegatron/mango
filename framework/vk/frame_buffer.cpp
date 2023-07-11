@@ -53,22 +53,24 @@ RenderTarget::RenderTarget(const std::shared_ptr<VkDriver> &driver,
   VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                             VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT |
                             VK_IMAGE_USAGE_SAMPLED_BIT;
+  VkExtent3D extent = {width_, height_, 1};                            
   for (auto format : color_formats_) {
-    auto image = std::make_shared<Image>(driver_, format, width_, height_,
-                                         layers_, usage);
+    auto image = std::make_shared<Image>(driver_, 0, format, extent, VK_SAMPLE_COUNT_1_BIT,
+                                         usage, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     images_.push_back(image);
     auto image_view = std::make_shared<ImageView>(
-        driver_, image, VK_IMAGE_VIEW_TYPE_2D, format, 0, 0, 1, 1);
+        image, VK_IMAGE_VIEW_TYPE_2D, format, 0, 0, 1, 1);
     images_views_.push_back(image_view);
   }
 
   if (ds_format_ != VK_FORMAT_UNDEFINED) {
     auto image =
-        std::make_shared<Image>(driver_, ds_format_, width_, height_, layers_,
-                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        std::make_shared<Image>(driver_, 0, ds_format_, extent, VK_SAMPLE_COUNT_1_BIT,
+                                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                                VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     images_.push_back(image);
     auto image_view = std::make_shared<ImageView>(
-        driver_, image, VK_IMAGE_VIEW_TYPE_2D, ds_format_);
+        image, VK_IMAGE_VIEW_TYPE_2D, ds_format_, 0, 0, 1, 1);
     images_views_.push_back(image_view);
   }
 }
