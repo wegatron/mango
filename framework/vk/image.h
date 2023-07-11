@@ -49,6 +49,8 @@ public:
   ImageView(ImageView &&) = delete;
   ImageView &operator=(const ImageView &) = delete;
 
+  VkImageView getHandle() const { return image_view_; }
+
   ~ImageView();
 private:  
 #if !NDEBUG
