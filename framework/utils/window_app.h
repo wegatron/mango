@@ -9,6 +9,7 @@
 #include <framework/utils/app_base.h>
 #include <framework/vk/vk_driver.h>
 #include <framework/vk/swapchain.h>
+#include <framework/vk/frame_buffer.h>
 
 namespace vk_engine {
 class WindowApp final {
@@ -29,11 +30,13 @@ private:
   
   void initSwapchain();
 
-  void initDepthStencil();
+  void initRenderTargets();
   
   std::shared_ptr<VkDriver> driver_;
   std::shared_ptr<Swapchain> swapchain_;
-  VkFormat depth_format_;
+  std::vector<std::shared_ptr<RenderTarget>> render_targets_;
+
+  VkFormat ds_format_;
   std::vector<std::shared_ptr<Image>> depth_images_;
 
   std::shared_ptr<AppBase> app_;  

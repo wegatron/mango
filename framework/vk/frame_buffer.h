@@ -1,8 +1,8 @@
 #pragma once
 
-#include <framework/vk/vk_driver.h>
-#include <framework/vk/render_pass.h>
 #include <framework/vk/image.h>
+#include <framework/vk/render_pass.h>
+#include <framework/vk/vk_driver.h>
 #include <volk.h>
 
 namespace vk_engine {
@@ -18,13 +18,13 @@ public:
   RenderTarget(const RenderTarget &) = delete;
   RenderTarget &operator=(const RenderTarget &) = delete;
 
-  static RenderTarget create(const std::shared_ptr<VkDriver> &driver,
-                             uint32_t color_attachment_count,
-                             VkFormat color_format, VkFormat ds_format,
-                             uint32_t width, uint32_t height, uint32_t layers);
+  RenderTarget(const std::shared_ptr<VkDriver> &driver,
+               std::initializer_list<VkFormat> color_format, VkFormat ds_format,
+               uint32_t width, uint32_t height, uint32_t layers);
 
-  static RenderTarget
-  create(const std::vector<std::shared_ptr<ImageView>> &image_views);
+  RenderTarget(const std::vector<std::shared_ptr<ImageView>> &image_views,
+               std::initializer_list<VkFormat> color_format, VkFormat ds_format,
+               uint32_t width, uint32_t height, uint32_t layers);
 
   const std::vector<std::shared_ptr<ImageView>> &getImageViews() const {
     return images_views_;
@@ -37,8 +37,6 @@ public:
   uint32_t getLayers() const { return layers_; }
 
 private:
-  RenderTarget() = default;
-
   uint32_t width_{0};
   uint32_t height_{0};
   uint32_t layers_{1}; // should be one, for multiview
@@ -46,19 +44,22 @@ private:
   std::shared_ptr<VkDriver> driver_;
   std::vector<std::shared_ptr<ImageView>> images_views_;
   std::vector<std::shared_ptr<Image>> images_;
+  std::vector<VkFormat> color_formats_;
+  VkFormat ds_format_{VK_FORMAT_UNDEFINED}; // undefined means no depth-stencil
 };
 
 /**
  * \brief framebuffer is a combination of render target and render pass,
  * and used for manage the VkFramebuffer.
- * 
- * render pass defining what render passes the framebuffer will be compatible with.
+ *
+ * render pass defining what render passes the framebuffer will be compatible
+ * with.
  */
 class FrameBuffer final {
 public:
   FrameBuffer(const std::shared_ptr<VkDriver> &driver,
-            const std::shared_ptr<RenderPass> &render_pass,
-            const std::shared_ptr<RenderTarget> &render_target);
+              const std::shared_ptr<RenderPass> &render_pass,
+              const std::shared_ptr<RenderTarget> &render_target);
 
   FrameBuffer(const FrameBuffer &) = delete;
   FrameBuffer &operator=(const FrameBuffer &) = delete;
@@ -75,10 +76,10 @@ public:
   uint32_t getLayers() const { return render_target_->getLayers(); }
 
 private:
-    std::shared_ptr<VkDriver> driver_;
-    std::shared_ptr<RenderPass> render_pass_;
-    std::shared_ptr<RenderTarget> render_target_;
-    
-    VkFramebuffer framebuffer_{VK_NULL_HANDLE};
+  std::shared_ptr<VkDriver> driver_;
+  std::shared_ptr<RenderPass> render_pass_;
+  std::shared_ptr<RenderTarget> render_target_;
+
+  VkFramebuffer framebuffer_{VK_NULL_HANDLE};
 };
 } // namespace vk_engine

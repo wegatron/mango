@@ -5,8 +5,15 @@
 
 namespace vk_engine {
 WindowApp::~WindowApp() {
+  app_.reset();
+  // destroy render targets(ImageView) before swapchain and depth images
+  for(auto &rt : render_targets_) {
+    rt.reset();
+  }
   glfwDestroyWindow(window_);
   glfwTerminate();
+
+  // destroy swapchain and depth images implicitly
 }
 
 bool WindowApp::init() {
@@ -36,10 +43,10 @@ bool WindowApp::init() {
 
   // create swapchain
   initSwapchain();
-  initDepthStencil();
+  initRenderTargets();
 
   assert(app_ != nullptr);
-  app_->init(driver_, swapchain_->getImageFormat(), depth_format_);
+  app_->init(driver_, swapchain_->getImageFormat(), ds_format_);
   return true;
 }
 
@@ -66,17 +73,25 @@ void WindowApp::initSwapchain() {
       std::make_shared<Swapchain>(driver_, driver_->getSurface(), properties);  
 }
 
-void WindowApp::initDepthStencil()
+void WindowApp::initRenderTargets()
 {
-  depth_format_ = VK_FORMAT_D24_UNORM_S8_UINT;
+  // depth stencil images
+  ds_format_ = VK_FORMAT_D24_UNORM_S8_UINT;
   const auto img_cnt = swapchain_->getImageCount();
   depth_images_.resize(img_cnt);
   VkExtent3D extent{swapchain_->getExtent().width, swapchain_->getExtent().height, 1};
   for (uint32_t i = 0; i < img_cnt; ++i) {
     depth_images_[i] = std::make_shared<Image>(
         driver_, 0,
-        depth_format_, extent, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+        ds_format_, extent, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
+  }
+  render_targets_.resize(img_cnt);
+  for(uint32_t i = 0; i < img_cnt; ++i) {
+    render_targets_[i] = std::make_shared<RenderTarget>(
+      driver_, {swapchain_->getImageFormat()},
+      ds_format_, extent.width,
+      extent.height, 1u);
   }
 }
 } // namespace vk_engine
