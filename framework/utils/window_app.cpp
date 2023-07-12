@@ -58,6 +58,7 @@ void WindowApp::setApp(const std::shared_ptr<AppBase> &app) {
 void WindowApp::run() {
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
+    // TODO sync to get an free render target to render into
     app_->tick(0.016f); // 60fps
   }
 }
