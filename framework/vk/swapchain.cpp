@@ -80,4 +80,11 @@ Swapchain::~Swapchain()
   vkDestroySwapchainKHR(driver_->getDevice(), swapchain_, nullptr);  
 }
 
+uint32_t Swapchain::acquireNextImage(VkSemaphore semaphore, VkFence fence)
+{
+  uint32_t image_index;
+  vkAcquireNextImageKHR(driver_->getDevice(), swapchain_, UINT64_MAX, semaphore, fence, &image_index);
+  return image_index;
+}
+
 } // namespace vk_engine

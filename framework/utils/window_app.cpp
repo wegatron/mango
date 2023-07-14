@@ -2,6 +2,7 @@
 #include <framework/utils/logging.h>
 #include <framework/utils/window_app.h>
 #include <framework/vk/image.h>
+#include <framework/vk/syncs.h>
 
 namespace vk_engine {
 WindowApp::~WindowApp() {
@@ -46,7 +47,7 @@ bool WindowApp::init() {
   initRenderTargets();
 
   assert(app_ != nullptr);
-  app_->init(driver_, swapchain_->getImageFormat(), ds_format_);
+  app_->init(driver_, render_targets_);
   return true;
 }
 
@@ -58,8 +59,11 @@ void WindowApp::setApp(const std::shared_ptr<AppBase> &app) {
 void WindowApp::run() {
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
-    // TODO sync to get an free render target to render into
-    app_->tick(0.016f); // 60fps
+    auto &render_output_sync = app_->getRenderOutputSync(current_frame_index_);
+    uint32_t rt_index = swapchain_->acquireNextImage(render_output_sync.present_semaphore->getHandle(), VK_NULL_HANDLE);
+    // current_frame_index_ maybe different with rt_index, depends on the swapchain present mode
+    app_->tick(0.016f, rt_index, current_frame_index_); // 60fps
+    current_frame_index_ = (current_frame_index_ + 1) % render_targets_.size();
   }
 }
 

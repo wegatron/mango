@@ -11,9 +11,9 @@ public:
   TriangleApp(const std::string &name, const std::shared_ptr<ResourceCache> &resource_cache) 
     : AppBase(name, resource_cache) {}
 
-  void init(const std::shared_ptr<VkDriver> &driver, VkFormat color_format, VkFormat ds_format) override;
+  void init(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
-  void tick(const float seconds) override;
+  void tick(const float seconds, const uint32_t render_target_index, const uint32_t frame_index) override;
 
 private:  
 

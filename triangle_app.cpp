@@ -5,20 +5,33 @@
 #include <framework/vk/shader_module.h>
 #include <framework/vk/swapchain.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/syncs.h>
 #include <memory>
 
+
 namespace vk_engine {
-void TriangleApp::tick(const float seconds) {
+void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
+                       const uint32_t frame_index) {
   // TODO render one frame
+  render_output_syncs_[frame_index].render_fence->wait();
+  // update command buffer if needed
 }
 
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
-                       VkFormat color_format, VkFormat ds_format) {
+                       const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   driver_ = driver;
 
   setupScene();
 
-  setupRender(color_format, ds_format);
+  assert(rts.size() > 0 && rts[0] != nullptr);
+  setupRender(rts[0]->getColorFormat(0), rts[0]->getDSFormat());
+
+  render_output_syncs_.resize(rts.size());
+  for (auto &sync : render_output_syncs_) {
+    sync.render_fence = std::make_shared<Fence>(driver_);
+    sync.render_semaphore = std::make_shared<Semaphore>(driver_);
+    sync.present_semaphore = std::make_shared<Semaphore>(driver_);
+  }
 
   buildCommandBuffers();
 }
@@ -46,7 +59,8 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
   auto fs = resource_cache_->requestShaderModule("shaders/triangle.frag");
 
   // create pipeline
-  std::unique_ptr<PipelineState> pipeline_state = std::make_unique<PipelineState>();
+  std::unique_ptr<PipelineState> pipeline_state =
+      std::make_unique<PipelineState>();
   pipeline_state->setShaders({vs, fs});
 
   VertexInputState vertex_input_state;
@@ -86,7 +100,8 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
   }};
   render_pass_ = resource_cache_->requestRenderPass(
       driver_, attachments, load_store_infos, subpass_infos);
-  pipeline_ = std::make_shared<GraphicsPipeline>(driver_, resource_cache_, render_pass_, std::move(pipeline_state));
+  pipeline_ = std::make_shared<GraphicsPipeline>(
+      driver_, resource_cache_, render_pass_, std::move(pipeline_state));
 }
 
 void TriangleApp::buildCommandBuffers() {

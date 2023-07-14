@@ -36,6 +36,12 @@ public:
 
   uint32_t getLayers() const { return layers_; }
 
+  VkFormat getColorFormat(uint32_t index) const {
+    return color_formats_[index];
+  }
+
+  VkFormat getDSFormat() const { return ds_format_; }
+
 private:
   uint32_t width_{0};
   uint32_t height_{0};

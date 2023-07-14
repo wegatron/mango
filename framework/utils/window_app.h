@@ -15,7 +15,7 @@ namespace vk_engine {
 class WindowApp final {
 public:
   WindowApp(const std::string &window_title, const int width, const int height)
-      : window_title_(window_title), width_(width), height_(height) {}
+      : window_title_(window_title), width_(width), height_(height), current_frame_index_(0) {}
 
   ~WindowApp();
 
@@ -45,5 +45,6 @@ private:
   uint32_t width_;
   uint32_t height_;
   std::string window_title_;
+  uint32_t current_frame_index_;
 };
 } // namespace vk_engine

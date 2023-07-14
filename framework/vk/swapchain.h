@@ -41,6 +41,8 @@ public:
 
   std::shared_ptr<ImageView> getImageView(uint32_t index) const { return image_views_[index]; }
 
+  uint32_t acquireNextImage(VkSemaphore semaphore, VkFence fence);
+
 private:
   void initSwapchain(const SwapchainProperties &properties);
 
