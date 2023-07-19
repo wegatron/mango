@@ -13,12 +13,6 @@ class Semaphore;
 
 struct RenderOutputSync
 {
-  RenderOutputSync()
-  {
-    render_fence = std::make_shared<Fence>();
-    render_semaphore = std::make_shared<Semaphore>();
-    present_semaphore = std::make_shared<Semaphore>();
-  }
   std::shared_ptr<Fence> render_fence;
   std::shared_ptr<Semaphore> render_semaphore;
   std::shared_ptr<Semaphore> present_semaphore;

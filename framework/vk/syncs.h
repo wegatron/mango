@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <framework/vk/vk_driver.h>
 
 namespace vk_engine

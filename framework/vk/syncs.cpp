@@ -27,7 +27,7 @@ namespace vk_engine
         vkResetFences(driver_->getDevice(), 1, &handle_);
     }
 
-    void Fence::wait(const uint64_t timeout = std::numeric_limits<uint64_t>::max()) const
+    void Fence::wait(const uint64_t timeout) const
     {        
         vkWaitForFences(driver_->getDevice(), 1, &handle_, VK_TRUE, timeout);
     }
