@@ -15,7 +15,7 @@
 #include <framework/vk/vk_driver.h>
 
 namespace vk_engine {
-constexpr uint32_t vulkan_version = VK_API_VERSION_1_0;
+constexpr uint32_t vulkan_version = VK_API_VERSION_1_2;
 
 const std::vector<const char *> request_validation_layers = {
     "VK_LAYER_KHRONOS_validation",
@@ -25,10 +25,10 @@ const std::vector<RequestedDeviceExtension> request_device_extensions = {
     {VK_KHR_SWAPCHAIN_EXTENSION_NAME, true},
     {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, false},
     {VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, false},
-    {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, false},
     {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, false},
-    {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, false},
-    {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, false},
+    {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, false},
+    {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, false},    
+    {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, false},    
 };
 
 
@@ -77,6 +77,11 @@ VkDriver::selectPhysicalDevice(const std::vector<RequestedDeviceExtension> &requ
       continue;
 
     const auto &device_extensions = pd.getExtensionProperties();
+    #if !defined(NDEBUG)
+    for(const auto &ext : device_extensions) {
+      LOGI("device extension: {}", ext.extensionName);
+    }
+    #endif
     bool extension_support = true;
     for (const auto &req_ext : request_extensions) {
       bool is_find = false;

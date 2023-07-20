@@ -8,9 +8,9 @@ public:
   static std::vector<PhysicalDevice> getPhysicalDevices(VkInstance instance);
 
   PhysicalDevice() = default;
-  
+
   PhysicalDevice(const PhysicalDevice &) = delete;
-  PhysicalDevice & operator=(const PhysicalDevice &) = delete;
+  PhysicalDevice &operator=(const PhysicalDevice &) = delete;
 
   ~PhysicalDevice() = default;
 

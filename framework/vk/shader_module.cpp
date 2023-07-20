@@ -95,10 +95,10 @@ void ShaderModule::compile2spirv(
   }
 
   auto shader_log = shader.getInfoLog();
-  if (shader_log)
+  if (strlen(shader_log)>0)
     LOGI(shader_log);
   auto program_log = program.getInfoLog();
-  if (program_log)
+  if (strlen(program_log))
     LOGI(program_log);
 
   glslang::TIntermediate *intermediate = program.getIntermediate(lang);
@@ -108,7 +108,9 @@ void ShaderModule::compile2spirv(
 
   spv::SpvBuildLogger logger;
   glslang::GlslangToSpv(*intermediate, spirv_code, &logger);
-  LOGI(logger.getAllMessages());
+  auto log_str = logger.getAllMessages();
+  if(log_str.length() > 0)
+    LOGI(logger.getAllMessages());
   glslang::FinalizeProcess();
 }
 
