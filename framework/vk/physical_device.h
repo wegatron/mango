@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <map>
 #include <volk.h>
 
 namespace vk_engine {
@@ -31,8 +32,8 @@ public:
 private:
   VkPhysicalDevice physical_device_{VK_NULL_HANDLE};
   VkPhysicalDeviceProperties properties_;
-  VkPhysicalDeviceFeatures features_;
-  std::vector<VkExtensionProperties> extensions_;
+  VkPhysicalDeviceFeatures features_; //!< supported features
+  std::vector<VkExtensionProperties> extensions_; //!< supported extensions
   uint32_t graphics_queue_family_index_{0xFFFFFFFF};
   std::vector<VkQueueFamilyProperties> queue_families_;
 };

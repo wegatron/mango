@@ -15,7 +15,7 @@
 #include <framework/vk/vk_driver.h>
 
 namespace vk_engine {
-constexpr uint32_t vulkan_version = VK_API_VERSION_1_2;
+constexpr uint32_t vulkan_version = VK_API_VERSION_1_1;
 
 const std::vector<const char *> request_validation_layers = {
     "VK_LAYER_KHRONOS_validation",
@@ -31,32 +31,9 @@ const std::vector<RequestedDeviceExtension> request_device_extensions = {
     {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, false},    
 };
 
-
-bool checkValidationLayerSupport() {
-  uint32_t layer_count = 0;
-  vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-  std::vector<VkLayerProperties> available_layers(layer_count);
-  vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-
-  for (const auto &name : request_validation_layers) {
-    bool is_find = false;
-    for (const auto &l : available_layers) {
-      if (strcmp(l.layerName, name) == 0) {
-        is_find = true;
-        break;
-      }
-    }
-
-    if (!is_find) {
-      std::string error_msg = std::string("validation layer ") +
-                              std::string(name) +
-                              " requested, but not available!";
-      throw std::runtime_error(error_msg);
-      return false;
-    }
-  }
-  return true;
-}
+const VkPhysicalDeviceFeatures request_features = {
+    .geometryShader = VK_TRUE,
+};
 
 std::pair<bool, uint32_t>
 VkDriver::selectPhysicalDevice(const std::vector<RequestedDeviceExtension> &request_extensions) {
