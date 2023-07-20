@@ -120,4 +120,11 @@ void ResourceCache::clear() {
   std::unique_lock<std::mutex> lock5(state_.render_pass_mtx);
   state_.render_passes.clear();
 }
+
+VkPipelineCacheWraper::VkPipelineCacheWraper(VkDevice device) : device_(device)
+{
+	VkPipelineCacheCreateInfo create_info{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};  
+  vkCreatePipelineCache(device, &create_info, nullptr, &handle_);
+}
+
 } // namespace vk_engine

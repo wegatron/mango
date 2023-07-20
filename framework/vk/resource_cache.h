@@ -5,8 +5,30 @@
 #include <framework/vk/shader_module.h>
 #include <mutex>
 #include <unordered_map>
+#include <cassert>
 
 namespace vk_engine {
+
+class VkPipelineCacheWraper
+{
+public:
+  VkPipelineCacheWraper(VkDevice device);
+
+  VkPipelineCacheWraper(const VkPipelineCacheWraper &) = delete;
+  VkPipelineCacheWraper &operator=(const VkPipelineCacheWraper &) = delete;
+  VkPipelineCacheWraper(VkPipelineCacheWraper &&) = delete;
+
+  ~VkPipelineCacheWraper() {
+    assert(device_ != VK_NULL_HANDLE);
+    vkDestroyPipelineCache(device_, handle_, nullptr);
+  }
+
+  VkPipelineCache getHandle() const { return handle_; }
+private:
+  VkPipelineCache handle_{VK_NULL_HANDLE};
+  VkDevice device_{VK_NULL_HANDLE};
+};
+
 struct ResourceCacheState {
   std::mutex shader_modules_mtx;
   std::unordered_map<size_t, std::shared_ptr<ShaderModule>>
@@ -27,7 +49,7 @@ struct ResourceCacheState {
   std::mutex render_pass_mtx;
   std::unordered_map<size_t, std::shared_ptr<RenderPass>> render_passes;
 
-  VkPipelineCache pipeline_cache{VK_NULL_HANDLE};
+  std::unique_ptr<VkPipelineCacheWraper> pipeline_cache;
 };
 
 class ResourceCache final {
@@ -67,8 +89,15 @@ public:
                     std::vector<LoadStoreInfo> load_store_infos,
                     std::vector<SubpassInfo> subpasses);
 
-  VkPipelineCache getPipelineCache() const { return state_.pipeline_cache; }
-
+  VkPipelineCache getPipelineCache() const {
+    return (state_.pipeline_cache == nullptr) ? VK_NULL_HANDLE : state_.pipeline_cache->getHandle();
+  }
+  
+  void setPipelineCache(std::unique_ptr<VkPipelineCacheWraper> &&pipeline_cache)
+  {
+    state_.pipeline_cache = std::move(pipeline_cache);
+  }
+  
   void clear();
 
 private:

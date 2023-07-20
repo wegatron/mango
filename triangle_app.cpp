@@ -11,14 +11,20 @@
 namespace vk_engine {
 void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
                        const uint32_t frame_index) {
-  // TODO render one frame
   render_output_syncs_[frame_index].render_fence->wait();
   // update command buffer if needed
+  // update data if needed
+  // TODO submit command buffer
 }
 
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
                        const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   driver_ = driver;
+  if(resource_cache_->getPipelineCache() == nullptr)
+  {
+     auto pcw = std::make_unique<VkPipelineCacheWraper>(driver_->getDevice());
+     resource_cache_->setPipelineCache(std::move(pcw));
+  }
 
   setupScene();
 

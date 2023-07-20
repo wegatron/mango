@@ -32,6 +32,11 @@ namespace vk_engine
     for(auto itr=resources_.begin(); itr!=resources_.end(); ++itr)
     {
       auto &resource = itr->second;
+      if(resource.type == ShaderResourceType::Input 
+        || resource.type == ShaderResourceType::Output
+        || resource.type == ShaderResourceType::InputAttachment
+        || resource.type == ShaderResourceType::PushConstant)
+        continue;
       auto &set_resources = set_resources_[resource.set];
       set_resources.emplace_back(resource);
       max_set_index = std::max(max_set_index, resource.set);
