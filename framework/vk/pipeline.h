@@ -43,6 +43,8 @@ namespace vk_engine
         
         ~GraphicsPipeline() override = default;
 
+        std::shared_ptr<PipelineLayout> getPipelineLayout() const { return pipeline_layout_; }
+
     private:        
         std::shared_ptr<VkDriver> driver_;
         std::shared_ptr<PipelineLayout> pipeline_layout_;

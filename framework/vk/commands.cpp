@@ -44,9 +44,8 @@ namespace vk_engine
 
     std::shared_ptr<CommandBuffer> CommandPool::requestCommandBuffer(VkCommandBufferLevel level)
     {
-        auto cmdb = std::make_shared<CommandBuffer>(driver_, *this, level);
+        std::shared_ptr<CommandBuffer> cmdb(new CommandBuffer(driver_, *this, level));
         command_buffers_.emplace_back(cmdb);
-
         return cmdb;
     }
 

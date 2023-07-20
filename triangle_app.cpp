@@ -4,10 +4,9 @@
 #include <framework/vk/render_pass.h>
 #include <framework/vk/shader_module.h>
 #include <framework/vk/swapchain.h>
-#include <framework/vk/vk_driver.h>
 #include <framework/vk/syncs.h>
+#include <framework/vk/vk_driver.h>
 #include <memory>
-
 
 namespace vk_engine {
 void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
@@ -25,8 +24,9 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
 
   assert(rts.size() > 0 && rts[0] != nullptr);
   setupRender(rts[0]->getColorFormat(0), rts[0]->getDSFormat());
-
-  render_output_syncs_.resize(rts.size());
+  
+  frames_inflight_ = rts.size();
+  render_output_syncs_.resize(frames_inflight_);
   for (auto &sync : render_output_syncs_) {
     sync.render_fence = std::make_shared<Fence>(driver_);
     sync.render_semaphore = std::make_shared<Semaphore>(driver_);
@@ -51,6 +51,15 @@ void TriangleApp::setupScene() {
 
   vertex_buffer_->update(reinterpret_cast<uint8_t *>(vertex_data.data()),
                          sizeof(float) * 8 * 3);
+
+  // uniform buffer
+  uniform_buffer_ = std::make_shared<Buffer>(
+      driver_, 0, sizeof(float) * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+      VMA_ALLOCATION_CREATE_MAPPED_BIT |
+          VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+      VMA_MEMORY_USAGE_AUTO_PREFER_HOST);
+
+  frame_data_.resize(frames_inflight_);
 }
 
 void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
@@ -102,6 +111,17 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       driver_, attachments, load_store_infos, subpass_infos);
   pipeline_ = std::make_shared<GraphicsPipeline>(
       driver_, resource_cache_, render_pass_, std::move(pipeline_state));
+
+  std::vector<VkDescriptorPoolSize> pool_size = {
+        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1*frames_inflight_},
+  };
+  descriptor_pool_ = std::make_shared<DescriptorPool>(driver_, pool_size, frames_inflight_);
+  const auto &ds_layout = pipeline_->getPipelineLayout()->getDescriptorSetLayout(0);
+  
+  for(auto &frame_data : frame_data_)
+  {
+    frame_data.descriptor_set = descriptor_pool_->requestDescriptorSet(ds_layout);
+  }
 }
 
 void TriangleApp::buildCommandBuffers() {

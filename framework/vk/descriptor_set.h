@@ -35,10 +35,6 @@ namespace vk_engine
     class DescriptorSet
     {
     public:
-        DescriptorSet(const std::shared_ptr<VkDriver> &driver,
-                      DescriptorPool &pool,
-                      const DescriptorSetLayout &layout);
-
         DescriptorSet(const DescriptorSet &) = delete;
         DescriptorSet &operator=(const DescriptorSet &) = delete;
 
@@ -46,9 +42,16 @@ namespace vk_engine
 
         VkDescriptorSet getHandle() const { return descriptor_set_; }
 
+        void update(const std::vector<VkWriteDescriptorSet> &descriptor_writes);
+        
     private:
+        DescriptorSet(const std::shared_ptr<VkDriver> &driver,
+                      DescriptorPool &pool,
+                      const DescriptorSetLayout &layout);        
         std::shared_ptr<VkDriver> driver_;
         VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
         VkDescriptorSet descriptor_set_{VK_NULL_HANDLE};
+
+        friend class DescriptorPool;
     };
 }

@@ -4,6 +4,8 @@
 #include <framework/vk/buffer.h>
 #include <framework/vk/image.h>
 #include <framework/vk/pipeline.h>
+#include <framework/vk/descriptor_set.h>
+#include <Eigen/Dense>
 
 namespace vk_engine {
 class TriangleApp : public AppBase {
@@ -15,7 +17,20 @@ public:
 
   void tick(const float seconds, const uint32_t render_target_index, const uint32_t frame_index) override;
 
-private:  
+private:
+
+  struct FrameData
+  {
+    Eigen::Matrix4f model;
+    Eigen::Matrix4f view_proj;
+
+    std::shared_ptr<DescriptorSet> descriptor_set;
+    
+    FrameData() {
+      model.setIdentity();
+      view_proj.setIdentity();
+    }
+  };
 
   void setupScene();
 
@@ -23,8 +38,12 @@ private:
 
   void buildCommandBuffers();
   
+  uint32_t frames_inflight_{0};
   std::shared_ptr<Buffer> vertex_buffer_;
+  std::shared_ptr<Buffer> uniform_buffer_;
   std::shared_ptr<RenderPass> render_pass_;
-  std::shared_ptr<GraphicsPipeline> pipeline_;  
+  std::shared_ptr<GraphicsPipeline> pipeline_;
+  std::shared_ptr<DescriptorPool> descriptor_pool_;
+  std::vector<FrameData> frame_data_;
 };
 } // namespace vk_engine

@@ -43,8 +43,6 @@ namespace vk_engine
     class CommandBuffer final
     {
     public:
-        CommandBuffer(const std::shared_ptr<VkDriver> &driver, CommandPool &command_pool, VkCommandBufferLevel level);
-
         CommandBuffer(const CommandBuffer &) = delete;
         CommandBuffer &operator=(const CommandBuffer &) = delete;
         CommandBuffer(CommandBuffer &&) = delete;
@@ -56,11 +54,14 @@ namespace vk_engine
         VkCommandBuffer getHandle() const { return command_buffer_; }
 
     private:
+        CommandBuffer(const std::shared_ptr<VkDriver> &driver, CommandPool &command_pool, VkCommandBufferLevel level);    
         std::shared_ptr<VkDriver> driver_;
         VkCommandPool command_pool_;
         VkCommandBuffer command_buffer_{VK_NULL_HANDLE};
         #if !defined(NDEBUG)
         bool resetable_;
         #endif
+
+        friend class CommandPool;
     };
 }

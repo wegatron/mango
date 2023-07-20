@@ -48,9 +48,9 @@ void DescriptorPool::reset()
 
 std::shared_ptr<DescriptorSet> DescriptorPool::requestDescriptorSet(const DescriptorSetLayout &layout)
 {
-    auto descriptor_set_ptr = std::make_shared<DescriptorSet>(driver_, *this, layout);
-    descriptor_sets_.emplace_back(descriptor_set_ptr);
-    return descriptor_set_ptr;
+    std::shared_ptr<DescriptorSet> ptr(new DescriptorSet(driver_, *this, layout));
+    descriptor_sets_.emplace_back(ptr);
+    return ptr;
 }
 
 
@@ -78,6 +78,11 @@ DescriptorSet::DescriptorSet(const std::shared_ptr<VkDriver> &driver,
 DescriptorSet::~DescriptorSet()
 {
     vkFreeDescriptorSets(driver_->getDevice(), descriptor_pool_, 1, &descriptor_set_);
+}
+
+void DescriptorSet::update(const std::vector<VkWriteDescriptorSet> &descriptor_writes)
+{
+    vkUpdateDescriptorSets(driver_->getDevice(), descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
 }
 
 } // namespace vk_engine
