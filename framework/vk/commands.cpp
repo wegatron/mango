@@ -17,9 +17,10 @@ namespace vk_engine
         pool_info.queueFamilyIndex = queue_family_index;
         pool_info.flags = flags[static_cast<int>(mode)];
         
-        if (vkCreateCommandPool(driver->getDevice(), &pool_info, nullptr, &command_pool_) != VK_SUCCESS)
+        auto result = vkCreateCommandPool(driver->getDevice(), &pool_info, nullptr, &command_pool_);
+        if(result != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to create command pool!");
+            throw VulkanException(result, "failed to create command pool!");
         }
     }
 
@@ -62,9 +63,11 @@ namespace vk_engine
         alloc_info.level = level;
         alloc_info.commandBufferCount = 1;
 
-        if (vkAllocateCommandBuffers(driver_->getDevice(), &alloc_info, &command_buffer_) != VK_SUCCESS)
+        auto result = vkAllocateCommandBuffers(driver_->getDevice(), &alloc_info, &command_buffer_);
+
+        if(result != VK_SUCCESS)
         {
-            throw std::runtime_error("failed to allocate command buffers!");
+            throw VulkanException(result, "failed to allocate command buffers!");
         }
     }
 
@@ -81,7 +84,7 @@ namespace vk_engine
         #if !defined(NDEBUG)
         if(!resetable_)
         {
-            throw std::runtime_error("command buffer is not resetable!");
+            throw VulkanException(VK_RESULT_MAX_ENUM, "command buffer is not resetable!");
         }
         #endif
 
