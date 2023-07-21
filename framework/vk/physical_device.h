@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include <map>
+#include <vector>
 #include <volk.h>
 
 namespace vk_engine {
@@ -29,10 +29,19 @@ public:
     return extensions_;
   }
 
+  void getExtensionFeatures(void *feature_extension_list) const {
+    // Get the extension feature
+    VkPhysicalDeviceFeatures2KHR physical_device_features{
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2_KHR};
+    physical_device_features.pNext = feature_extension_list;
+    vkGetPhysicalDeviceFeatures2KHR(physical_device_,
+                                    &physical_device_features);
+  }
+
 private:
   VkPhysicalDevice physical_device_{VK_NULL_HANDLE};
   VkPhysicalDeviceProperties properties_;
-  VkPhysicalDeviceFeatures features_; //!< supported features
+  VkPhysicalDeviceFeatures features_;             //!< supported features
   std::vector<VkExtensionProperties> extensions_; //!< supported extensions
   uint32_t graphics_queue_family_index_{0xFFFFFFFF};
   std::vector<VkQueueFamilyProperties> queue_families_;

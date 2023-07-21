@@ -31,11 +31,17 @@ bool WindowApp::init() {
   window_ = glfwCreateWindow(width_, height_, window_title_.c_str(), nullptr,
                              nullptr);
   driver_ = std::make_shared<VkDriver>();
+  auto config = std::make_shared<Vk11Config>();
+  config->setDeviceType(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+  config->setFeatureEnabled(VkConfig::FeatureExtension::INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
+                            VkConfig::EnableState::REQUIRED);
   try {
 #ifdef NDEBUG
-    driver_->init(window_title_, false, window_);
+    driver_->init(window_title_, config, window_);
 #else
-    driver_->init(window_title_, true, window_);
+    config->setFeatureEnabled(VkConfig::FeatureExtension::KHR_VALIDATION_LAYER,
+                              VkConfig::EnableState::REQUIRED);
+    driver_->init(window_title_, config, window_);
 #endif
   } catch (const std::runtime_error &e) {
     LOGE(e.what());

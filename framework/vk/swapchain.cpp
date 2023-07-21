@@ -1,5 +1,6 @@
 #include <framework/utils/error.h>
 #include <framework/vk/swapchain.h>
+#include <framework/utils/error.h>
 
 namespace vk_engine {
 Swapchain::Swapchain(const std::shared_ptr<VkDriver> &driver,
@@ -51,7 +52,7 @@ void Swapchain::initSwapchain(const SwapchainProperties &properties) {
   // refer to:
   // https://stackoverflow.com/questions/55131406/why-would-vkcreateswapchainkhr-result-in-an-access-violation-at-0
   VK_THROW_IF_ERROR(vkCreateSwapchainKHR(driver_->getDevice(), &swapchain_info,
-                                         nullptr, &swapchain_));
+                                         nullptr, &swapchain_), "vulkan failed to create swapchain");
 }
 
 void Swapchain::initImages() {

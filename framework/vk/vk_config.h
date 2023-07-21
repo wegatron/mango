@@ -1,6 +1,9 @@
 #pragma once
+
 #include <cstdint>
 #include <vector>
+#include <map>
+#include <memory>
 #include <volk.h>
 
 #include <framework/vk/physical_device.h>
@@ -19,6 +22,7 @@ public:
     //// instance extension
     INSTANCE_EXTENSION_BEGIN_PIVOT,
     GLFW_EXTENSION,
+    INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
     INSTANCE_EXTENSION_END_PIVOT,
 
     //// device extension
@@ -28,7 +32,6 @@ public:
     // VMA support these extensions
     KHR_GET_MEMORY_REQUIREMENTS_2,
     KHR_DEDICATED_ALLOCATION,
-    KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
     KHR_BUFFER_DEVICE_ADDRESS,
     KHR_DEVICE_GROUP_CREATION,
     KHR_DEVICE_GROUP,
@@ -46,12 +49,12 @@ public:
 
       "INSTANCE_EXTENSION_BEGIN_PIVOT",
       "GLFW_EXTENSION",
+      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
       "INSTANCE_EXTENSION_END_PIVOT",
 
       "DEVICE_EXTENSION_BEGIN_PIVOT",
       VK_KHR_SWAPCHAIN_EXTENSION_NAME,
       VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
       VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
       VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
       VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
@@ -98,13 +101,13 @@ protected:
   VkPhysicalDeviceType device_type_;
   
   std::vector<std::pair<const char *, EnableState>> request_layers_;
-  std::vector<std::pair<const char *, EnableState>>
-      request_instance_extensions_;
   std::vector<std::pair<const char *, EnableState>> request_device_extensions_;
     
   std::vector<const char *> enabled_layers_;
   std::vector<const char *> enabled_instance_extensions_;
   std::vector<const char *> enabled_device_extensions_;
+  std::map<VkStructureType, std::shared_ptr<void>> extension_features_;
+  void * extension_features_list_; //!< wrapper not own memory
 };
 
 class Vk11Config : public VkConfig {
@@ -112,8 +115,8 @@ public:
   Vk11Config() : VkConfig() {
     // for vma
     for (auto i = static_cast<uint32_t>(
-             FeatureExtension::KHR_GET_MEMORY_REQUIREMENTS_2);
-         i <= static_cast<uint32_t>(FeatureExtension::KHR_DEVICE_GROUP); ++i) {
+             FeatureExtension::DEVICE_EXTENSION_BEGIN_PIVOT);
+         i < static_cast<uint32_t>(FeatureExtension::DEVICE_EXTENSION_END_PIVOT); ++i) {
       enableds_[i] = EnableState::REQUIRED;
     }
   }

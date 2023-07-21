@@ -7,6 +7,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+#include <framework/vk/vk_config.h>
+
 namespace vk_engine {
 
 struct RequestedDeviceExtension {
@@ -21,7 +23,7 @@ public:
 
   VkDriver(const VkDriver &) = delete;
   VkDriver &operator=(const VkDriver &) = delete;
-  void init(const std::string &app_name, const bool enable_validation,
+  void init(const std::string &app_name, const std::shared_ptr<VkConfig> &config,
             GLFWwindow *window);
 
   VkPhysicalDevice getPhysicalDevice() const { return physical_device_; }
@@ -50,6 +52,7 @@ private:
 
   bool isDeviceExtensionEnabled(const char *extension_name);
 
+  std::shared_ptr<VkConfig> config_;
   VkInstance instance_{VK_NULL_HANDLE};
   VkPhysicalDevice physical_device_{VK_NULL_HANDLE};
   VkDevice device_{VK_NULL_HANDLE};
@@ -60,8 +63,6 @@ private:
   VkSurfaceKHR surface_{VK_NULL_HANDLE};
 
   VmaAllocator allocator_{VK_NULL_HANDLE};
-
-  bool enable_vk_validation_{true};
 
   VkDebugUtilsMessengerEXT debug_messenger_;
 };

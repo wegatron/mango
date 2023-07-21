@@ -17,74 +17,6 @@
 namespace vk_engine {
 constexpr uint32_t vulkan_version = VK_API_VERSION_1_1;
 
-const std::vector<const char *> request_validation_layers = {
-    "VK_LAYER_KHRONOS_validation",
-};
-
-const std::vector<RequestedDeviceExtension> request_device_extensions = {
-    {VK_KHR_SWAPCHAIN_EXTENSION_NAME, true},
-    {VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, false},
-    {VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, false},
-    {VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, false},
-    {VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, false},
-    {VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, false},    
-    {VK_KHR_DEVICE_GROUP_EXTENSION_NAME, false},    
-};
-
-const VkPhysicalDeviceFeatures request_features = {
-    .geometryShader = VK_TRUE,
-};
-
-std::pair<bool, uint32_t>
-VkDriver::selectPhysicalDevice(const std::vector<RequestedDeviceExtension> &request_extensions) {
-  auto physical_devices = PhysicalDevice::getPhysicalDevices(instance_);
-  for (const auto &pd : physical_devices) {
-    physical_device_ = pd.getHandle();
-    uint32_t graphics_queue_family_index = pd.getGraphicsQueueFamilyIndex();
-    if (graphics_queue_family_index == 0XFFFFFFFF)
-      continue;
-    VkBool32 surface_support = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(physical_device_,
-                                         graphics_queue_family_index, surface_,
-                                         &surface_support);
-    if (!surface_support ||
-        (pd.getProperties().deviceType !=
-         VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) ||
-        !(pd.getFeatures().geometryShader))
-      continue;
-
-    const auto &device_extensions = pd.getExtensionProperties();
-    #if !defined(NDEBUG)
-    for(const auto &ext : device_extensions) {
-      LOGI("device extension: {}", ext.extensionName);
-    }
-    #endif
-    bool extension_support = true;
-    for (const auto &req_ext : request_extensions) {
-      bool is_find = false;
-      for (const auto &ext : device_extensions) {
-        if (strcmp(ext.extensionName, req_ext.name) == 0) {
-          is_find = true;
-          break;
-        }
-      }
-      if(is_find) {
-        enabled_device_extensions_.push_back(req_ext.name);
-        continue;
-      }
-      if (req_ext.required) {
-        extension_support = false;
-        break;
-      }
-    }
-    if (!extension_support)
-      continue;
-    return std::make_pair(true, graphics_queue_family_index);
-  }
-
-  return std::make_pair(false, -1);
-}
-
 void VkDriver::initInstance() {
   if (VK_SUCCESS != volkInitialize()) {
     throw std::runtime_error("failed to initialize volk!");
@@ -96,30 +28,12 @@ void VkDriver::initInstance() {
   app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   app_info.pEngineName = "No Engine";
   app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0); // 以上这些意义不大
-  app_info.apiVersion = vulkan_version;          // vulkan api version
+  app_info.apiVersion = vulkan_version;              // vulkan api version
 
   VkInstanceCreateInfo instance_info{};
   instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
   instance_info.pApplicationInfo = &app_info;
-
-  // glfw extension
-  uint32_t glfw_extension_count = 0;
-  const char **glfw_extensions =
-      glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-  instance_info.enabledExtensionCount = glfw_extension_count;
-  instance_info.ppEnabledExtensionNames = glfw_extensions;
-
-  // validation layer
-  instance_info.enabledLayerCount = 0;
-
-  // install vulkan sdk for validation support
-  if (enable_vk_validation_) {
-    if (!checkValidationLayerSupport())
-      return;
-    instance_info.enabledLayerCount =
-        static_cast<uint32_t>(request_validation_layers.size());
-    instance_info.ppEnabledLayerNames = request_validation_layers.data();
-  }
+  config_->checkAndUpdate(instance_info);
 
   if (VK_SUCCESS != vkCreateInstance(&instance_info, nullptr, &instance_))
     throw std::runtime_error("failed to create instance");
@@ -128,89 +42,90 @@ void VkDriver::initInstance() {
 }
 
 void VkDriver::initDevice() {
-  auto select_ret = selectPhysicalDevice(request_device_extensions);
-  if (!select_ret.first) {
-    throw std::runtime_error("failed to select suitable physical device!");
+  auto physical_devices = PhysicalDevice::getPhysicalDevices(instance_);
+  VkDeviceCreateInfo device_info{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+  const uint32_t physical_device_index =
+      config_->checkSelectAndUpdate(physical_devices, device_info, surface_);
+
+  if (physical_device_index == -1) {
+    throw std::runtime_error("failed to select physical device!");
   }
 
-  // for print out memory infos
+  physical_device_ = physical_devices[physical_device_index].getHandle();
+  const uint32_t queue_index =
+      physical_devices[physical_device_index].getGraphicsQueueFamilyIndex();
+
+// for print out memory infos
+#if !defined(NDEBUG)
   VkPhysicalDeviceMemoryProperties memory_properties;
-  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);  
-  for(uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
-    std::cout << " heap size " << std::dec << memory_properties.memoryHeaps[i].size / 1000000 << "MB"
-              << " flags " << std::hex << memory_properties.memoryHeaps[i].flags << std::endl;
+  vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
+  for (uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
+    std::cout << " heap size " << std::dec
+              << memory_properties.memoryHeaps[i].size / 1000000 << "MB"
+              << " flags " << std::hex << memory_properties.memoryHeaps[i].flags
+              << std::endl;
   }
   for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-    std::cout << " heap index " << memory_properties.memoryTypes[i].heapIndex 
+    std::cout << " heap index " << memory_properties.memoryTypes[i].heapIndex
               << " memory property flags ";
-    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
       std::cout << "VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ";
-    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
       std::cout << "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ";
-    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
       std::cout << "VK_MEMORY_PROPERTY_HOST_COHERENT_BIT ";
-    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
       std::cout << "VK_MEMORY_PROPERTY_HOST_CACHED_BIT ";
-    if(memory_properties.memoryTypes[i].propertyFlags & VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
+    if (memory_properties.memoryTypes[i].propertyFlags &
+        VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
       std::cout << "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT ";
     std::cout << std::endl;
   }
+#endif
 
   // queue info
   VkDeviceQueueCreateInfo queue_info{};
   float queue_priority = 1.0f;
   queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queue_info.queueFamilyIndex = select_ret.second;
+  queue_info.queueFamilyIndex = queue_index;
   queue_info.queueCount = 1;
   queue_info.pQueuePriorities = &queue_priority;
 
   // logical device
-  VkDeviceCreateInfo device_info{};
-  VkPhysicalDeviceFeatures
-      device_features{}; // no need to set, all false, when use features to
-                         // enable all supported features may crash
   device_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
   device_info.pQueueCreateInfos = &queue_info;
   device_info.queueCreateInfoCount = 1;
-  device_info.pEnabledFeatures = &device_features;
-  device_info.enabledExtensionCount = enabled_device_extensions_.size();
-  device_info.ppEnabledExtensionNames = enabled_device_extensions_.data();
 
-  device_features.geometryShader = VK_TRUE;
-  if (enable_vk_validation_) {
-    device_info.enabledLayerCount = request_validation_layers.size();
-    device_info.ppEnabledLayerNames = request_validation_layers.data();
-  } else
-    device_info.enabledLayerCount = 0;
-
-  if (VK_SUCCESS !=
-      vkCreateDevice(physical_device_, &device_info, nullptr, &device_)) {
-    throw std::runtime_error("failed to create vulkan device!");
-  }
+  VK_THROW_IF_ERROR(
+      vkCreateDevice(physical_device_, &device_info, nullptr, &device_),
+      "failed to create vulkan device!");
 
   volkLoadDevice(device_);
 
-  vkGetDeviceQueue(device_, select_ret.second, 0, &graphics_queue_);
+  vkGetDeviceQueue(device_, queue_index, 0, &graphics_queue_);
 }
 
-void VkDriver::init(const std::string &app_name, const bool enable_validation,
+void VkDriver::init(const std::string &app_name,
+                    const std::shared_ptr<VkConfig> &config,
                     GLFWwindow *window) {
-  enable_vk_validation_ = enable_validation;
+  config_ = config;
   initInstance();
 
   assert(window != nullptr);
-  if (VK_SUCCESS !=
-      glfwCreateWindowSurface(instance_, window, nullptr, &surface_)) {
-    throw std::runtime_error("failed to create window surface!");
-  }
+  VK_THROW_IF_ERROR(glfwCreateWindowSurface(instance_, window, nullptr,
+                                            &surface_),
+                    "failed to create window surface!");
 
   initDevice();
 
   initAllocator();
 }
 
-bool VkDriver::isDeviceExtensionEnabled(const char *extension_name)
-{
+bool VkDriver::isDeviceExtensionEnabled(const char *extension_name) {
   for (const auto &ext : enabled_device_extensions_) {
     if (strcmp(ext, extension_name) == 0)
       return true;
@@ -326,25 +241,27 @@ void VkDriver::initAllocator() {
   allocator_info.vulkanApiVersion = vulkan_version;
   allocator_info.pVulkanFunctions = &vma_vulkan_func;
 
-  bool can_get_memory_requirements = isDeviceExtensionEnabled(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
-  bool has_dedicated_allocation = isDeviceExtensionEnabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
-  bool can_get_buffer_device_address = isDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
+  bool can_get_memory_requirements =
+      isDeviceExtensionEnabled(VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME);
+  bool has_dedicated_allocation =
+      isDeviceExtensionEnabled(VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME);
+  bool can_get_buffer_device_address =
+      isDeviceExtensionEnabled(VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME);
 
-	if (can_get_memory_requirements && has_dedicated_allocation)
-	{
-		allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
-		vma_vulkan_func.vkGetBufferMemoryRequirements2KHR = vkGetBufferMemoryRequirements2KHR;
-		vma_vulkan_func.vkGetImageMemoryRequirements2KHR  = vkGetImageMemoryRequirements2KHR;
-	}
+  if (can_get_memory_requirements && has_dedicated_allocation) {
+    allocator_info.flags |= VMA_ALLOCATOR_CREATE_KHR_DEDICATED_ALLOCATION_BIT;
+    vma_vulkan_func.vkGetBufferMemoryRequirements2KHR =
+        vkGetBufferMemoryRequirements2KHR;
+    vma_vulkan_func.vkGetImageMemoryRequirements2KHR =
+        vkGetImageMemoryRequirements2KHR;
+  }
 
-  if(can_get_buffer_device_address)
-  {
+  if (can_get_buffer_device_address) {
     allocator_info.flags |= VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
   }
 
   auto result = vmaCreateAllocator(&allocator_info, &allocator_);
-  if(result != VK_SUCCESS)
-  {
+  if (result != VK_SUCCESS) {
     throw VulkanException(result, "failed to create vma allocator");
   }
 }
