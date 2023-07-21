@@ -38,11 +38,11 @@ private:
 class ImageView final {
 public:
   ImageView(const std::shared_ptr<Image> &image, VkImageViewType view_type,
-            VkFormat format, uint32_t base_mip_level, uint32_t base_array_layer,
+            VkFormat format, VkImageAspectFlags aspect_flags, uint32_t base_mip_level, uint32_t base_array_layer,
             uint32_t n_mip_levels, uint32_t n_array_layers);
 
   ImageView(const std::shared_ptr<VkDriver> &driver, VkImage image,
-            VkImageViewType view_type, VkFormat format, uint32_t base_mip_level,
+            VkImageViewType view_type, VkFormat format, VkImageAspectFlags aspect_flags, uint32_t base_mip_level,
             uint32_t base_array_layer, uint32_t n_mip_levels,
             uint32_t n_array_layers);
 

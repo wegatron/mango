@@ -67,7 +67,7 @@ void Swapchain::initImages() {
   // image views
   image_views_.resize(images_.size());
   for(auto i=0; i<images_.size(); ++i) {
-    image_views_[i] = std::make_shared<ImageView>(driver_, images_[i], VK_IMAGE_VIEW_TYPE_2D, image_format_, 0, 0, 1, 1);  
+    image_views_[i] = std::make_shared<ImageView>(driver_, images_[i], VK_IMAGE_VIEW_TYPE_2D, image_format_, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1, 1);  
   }
 }
 

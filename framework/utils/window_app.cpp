@@ -103,7 +103,8 @@ void WindowApp::initRenderTargets()
         ds_format_, extent, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
         VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     auto depth_img_view = std::make_shared<ImageView>(
-        depth_images_[i], VK_IMAGE_VIEW_TYPE_2D, ds_format_, 0, 0, 1, 1);        
+        depth_images_[i], VK_IMAGE_VIEW_TYPE_2D, ds_format_,
+        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1, 1);        
     render_targets_[i] = std::make_shared<RenderTarget>(
       std::initializer_list<std::shared_ptr<ImageView>>{swapchain_->getImageView(i), depth_img_view},
       std::initializer_list<VkFormat>{swapchain_->getImageFormat()},

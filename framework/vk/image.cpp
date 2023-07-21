@@ -47,6 +47,7 @@ Image::~Image() {
 
 ImageView::ImageView(const std::shared_ptr<Image> &image,
                      VkImageViewType view_type, VkFormat format,
+                     VkImageAspectFlags aspect_flags,
                      uint32_t base_mip_level, uint32_t base_array_layer,
                      uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(image->getDriver())
 {
@@ -55,7 +56,7 @@ ImageView::ImageView(const std::shared_ptr<Image> &image,
   view_info.image = image->getHandle();
   view_info.viewType = view_type;
   view_info.format = format;
-  view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  view_info.subresourceRange.aspectMask = aspect_flags;
   view_info.subresourceRange.baseMipLevel = base_mip_level;
   view_info.subresourceRange.levelCount = n_mip_levels;
   view_info.subresourceRange.baseArrayLayer = base_array_layer;
@@ -80,6 +81,7 @@ ImageView::ImageView(const std::shared_ptr<Image> &image,
 }
 
 ImageView::ImageView(const std::shared_ptr<VkDriver> &driver, VkImage image, VkImageViewType view_type, VkFormat format,
+          VkImageAspectFlags aspect_flags,
           uint32_t base_mip_level, uint32_t base_array_layer,
           uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(driver) 
 {
@@ -88,7 +90,7 @@ VkImageViewCreateInfo view_info = {};
   view_info.image = image;
   view_info.viewType = view_type;
   view_info.format = format;
-  view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  view_info.subresourceRange.aspectMask = aspect_flags;
   view_info.subresourceRange.baseMipLevel = base_mip_level;
   view_info.subresourceRange.levelCount = n_mip_levels;
   view_info.subresourceRange.baseArrayLayer = base_array_layer;

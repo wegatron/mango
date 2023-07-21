@@ -59,7 +59,7 @@ RenderTarget::RenderTarget(const std::shared_ptr<VkDriver> &driver,
                                          usage, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     images_.push_back(image);
     auto image_view = std::make_shared<ImageView>(
-        image, VK_IMAGE_VIEW_TYPE_2D, format, 0, 0, 1, 1);
+        image, VK_IMAGE_VIEW_TYPE_2D, format, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1, 1);
     images_views_.push_back(image_view);
   }
 
@@ -70,7 +70,7 @@ RenderTarget::RenderTarget(const std::shared_ptr<VkDriver> &driver,
                                 VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     images_.push_back(image);
     auto image_view = std::make_shared<ImageView>(
-        image, VK_IMAGE_VIEW_TYPE_2D, ds_format_, 0, 0, 1, 1);
+        image, VK_IMAGE_VIEW_TYPE_2D, ds_format_, VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 0, 1, 1);
     images_views_.push_back(image_view);
   }
 }
