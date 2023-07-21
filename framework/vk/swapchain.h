@@ -50,10 +50,10 @@ private:
 
   std::shared_ptr<VkDriver> driver_;
   VkSurfaceKHR surface_;
-  VkSwapchainKHR swapchain_;
+  VkSwapchainKHR swapchain_{VK_NULL_HANDLE};
   VkExtent2D extent_;
   VkFormat image_format_;
-  uint32_t image_count_;
+  uint32_t image_count_{0};
   std::vector<VkImage> images_;
   std::vector<std::shared_ptr<ImageView>> image_views_;
 };

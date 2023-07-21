@@ -65,7 +65,7 @@ public:
   VkConfig()
       : enableds_(static_cast<uint32_t>(
                       FeatureExtension::MAX_FEATURE_EXTENSION_COUNT),
-                  EnableState::DISABLED), device_type_(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)  {}
+                  EnableState::DISABLED) {}
 
   virtual ~VkConfig() = default;
 
@@ -99,7 +99,7 @@ public:
 
 protected:
   std::vector<EnableState> enableds_;
-  VkPhysicalDeviceType device_type_;
+  VkPhysicalDeviceType device_type_{VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU};
   
   std::vector<std::pair<const char *, EnableState>> request_layers_;
   std::vector<std::pair<const char *, EnableState>> request_device_extensions_;
@@ -108,7 +108,8 @@ protected:
   std::vector<const char *> enabled_instance_extensions_;
   std::vector<const char *> enabled_device_extensions_;
   std::map<VkStructureType, std::shared_ptr<void>> extension_features_;
-  void * extension_features_list_; //!< wrapper not own memory
+  void * extension_features_list_{nullptr}; //!< wrapper not own memory
+  VkPhysicalDeviceFeatures device_features_{VK_FALSE};
 };
 
 class Vk11Config : public VkConfig {

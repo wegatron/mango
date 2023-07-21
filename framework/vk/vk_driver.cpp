@@ -225,6 +225,7 @@ void VkDriver::initAllocator() {
   vma_vulkan_func.vkFreeMemory = vkFreeMemory;
   vma_vulkan_func.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
   vma_vulkan_func.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
+  vma_vulkan_func.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
   vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties =
       vkGetPhysicalDeviceMemoryProperties;
   vma_vulkan_func.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;

@@ -100,11 +100,10 @@ uint32_t Vk11Config::checkSelectAndUpdate(
   if (selected_physical_device_index == -1)
     return selected_physical_device_index;
 
+  // TODO setup device features
+
   // update device create info
-  VkPhysicalDeviceFeatures
-      device_features{}; // no need to set, all false, when use features to
-                         // enable all supported features may crash
-  create_info.pEnabledFeatures = &device_features;
+  create_info.pEnabledFeatures = &device_features_;
   create_info.enabledExtensionCount = enabled_device_extensions_.size();
   create_info.ppEnabledExtensionNames = enabled_device_extensions_.data();
   create_info.pNext = extension_features_list_;
