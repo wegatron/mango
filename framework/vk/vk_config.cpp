@@ -28,9 +28,10 @@ uint32_t Vk11Config::checkSelectAndUpdate(
   if (enableds_[static_cast<uint32_t>(
           FeatureExtension::KHR_BUFFER_DEVICE_ADDRESS)] !=
       EnableState::DISABLED) {
-    auto ext_feature = std::make_shared<
-        VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
-    ext_feature->sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
+    auto ext_feature =
+        std::make_shared<VkPhysicalDeviceBufferDeviceAddressFeaturesKHR>();
+    ext_feature->sType =
+        VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR;
     extension_features_.emplace(
         VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_BUFFER_DEVICE_ADDRESS_FEATURES_KHR,
         ext_feature);
@@ -56,9 +57,15 @@ uint32_t Vk11Config::checkSelectAndUpdate(
 
     const auto &device_extensions = pd.getExtensionProperties();
 #if !defined(NDEBUG)
-    // TODO output device name
+    LOGD("device name: {}", pd.getProperties().deviceName);
     for (const auto &ext : device_extensions)
       LOGD("device extension: {}", ext.extensionName);
+
+    LOGD("---------requested extension begin-------");
+    for(const auto &ext : request_device_extensions_) {
+      LOGD("{}", ext.first);
+    }
+    LOGD("---------requested extension end---------");
 #endif
     bool extension_support = true;
     for (const auto &req_ext : request_device_extensions_) {
@@ -90,10 +97,13 @@ uint32_t Vk11Config::checkSelectAndUpdate(
     break;
   }
 
+  if (selected_physical_device_index == -1)
+    return selected_physical_device_index;
+
   // update device create info
   VkPhysicalDeviceFeatures
-    device_features{}; // no need to set, all false, when use features to
-                        // enable all supported features may crash
+      device_features{}; // no need to set, all false, when use features to
+                         // enable all supported features may crash
   create_info.pEnabledFeatures = &device_features;
   create_info.enabledExtensionCount = enabled_device_extensions_.size();
   create_info.ppEnabledExtensionNames = enabled_device_extensions_.data();

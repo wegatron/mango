@@ -9,6 +9,9 @@
 #include "triangle_app.h"
 
 int main(int argc, char const *argv[]) {
+  #if !NDEBUG
+  spdlog::set_level(spdlog::level::debug);
+  #endif
   auto app = std::make_shared<vk_engine::TriangleApp>("triangle", nullptr);
   auto window_app =
       std::make_shared<vk_engine::WindowApp>("triangle", 800, 600);

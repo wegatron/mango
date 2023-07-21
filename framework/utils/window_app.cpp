@@ -33,6 +33,10 @@ bool WindowApp::init() {
   driver_ = std::make_shared<VkDriver>();
   auto config = std::make_shared<Vk11Config>();
   config->setDeviceType(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
+  config->setFeatureEnabled(VkConfig::FeatureExtension::GLFW_EXTENSION,
+                            VkConfig::EnableState::REQUIRED);  
+  config->setFeatureEnabled(VkConfig::FeatureExtension::KHR_SWAPCHAIN,
+                            VkConfig::EnableState::REQUIRED);
   config->setFeatureEnabled(VkConfig::FeatureExtension::INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
                             VkConfig::EnableState::REQUIRED);
   try {

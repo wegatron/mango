@@ -16,26 +16,26 @@ public:
   enum class FeatureExtension : uint32_t {
     //// instance layers
     LAYER_BEGIN_PIVOT = 0,
-    KHR_VALIDATION_LAYER,
-    LAYER_END_PIVOT,
+    KHR_VALIDATION_LAYER = 1,
+    LAYER_END_PIVOT = 2,
 
     //// instance extension
-    INSTANCE_EXTENSION_BEGIN_PIVOT,
-    GLFW_EXTENSION,
-    INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
-    INSTANCE_EXTENSION_END_PIVOT,
+    INSTANCE_EXTENSION_BEGIN_PIVOT = 3,
+    GLFW_EXTENSION = 4,
+    INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2 = 5,
+    KHR_DEVICE_GROUP_CREATION = 6,
+    INSTANCE_EXTENSION_END_PIVOT = 7,
 
     //// device extension
-    DEVICE_EXTENSION_BEGIN_PIVOT,
-    KHR_SWAPCHAIN,
+    DEVICE_EXTENSION_BEGIN_PIVOT = 8,
+    KHR_SWAPCHAIN = 9,
 
     // VMA support these extensions
-    KHR_GET_MEMORY_REQUIREMENTS_2,
-    KHR_DEDICATED_ALLOCATION,
-    KHR_BUFFER_DEVICE_ADDRESS,
-    KHR_DEVICE_GROUP_CREATION,
-    KHR_DEVICE_GROUP,
-    DEVICE_EXTENSION_END_PIVOT,
+    KHR_GET_MEMORY_REQUIREMENTS_2 = 10,
+    KHR_DEDICATED_ALLOCATION = 11,
+    KHR_BUFFER_DEVICE_ADDRESS = 12,
+    KHR_DEVICE_GROUP = 13,
+    DEVICE_EXTENSION_END_PIVOT = 14,
 
     //// Device features
     MAX_FEATURE_EXTENSION_COUNT
@@ -43,22 +43,23 @@ public:
 
   const char *const kFeatureExtensionNames[static_cast<uint32_t>(
       FeatureExtension::MAX_FEATURE_EXTENSION_COUNT)] = {
-      "LAYER_BEGIN_PIVOT",
-      "VK_LAYER_KHRONOS_validation",
-      "LAYER_END_PIVOT",
+      "LAYER_BEGIN_PIVOT", // 0
+      "VK_LAYER_KHRONOS_validation", // 1
+      "LAYER_END_PIVOT", // 2
 
-      "INSTANCE_EXTENSION_BEGIN_PIVOT",
-      "GLFW_EXTENSION",
-      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
-      "INSTANCE_EXTENSION_END_PIVOT",
+      "INSTANCE_EXTENSION_BEGIN_PIVOT", // 3
+      "GLFW_EXTENSION", // 4
+      VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME, // 5
+      VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME, // 6
+      "INSTANCE_EXTENSION_END_PIVOT", // 7
 
-      "DEVICE_EXTENSION_BEGIN_PIVOT",
-      VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
-      VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME,
-      VK_KHR_DEVICE_GROUP_CREATION_EXTENSION_NAME,
-      VK_KHR_DEVICE_GROUP_EXTENSION_NAME,
-      "DEVICE_EXTENSION_END_PIVOT",
+      "DEVICE_EXTENSION_BEGIN_PIVOT", // 8
+      VK_KHR_SWAPCHAIN_EXTENSION_NAME, // 9
+      VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME, // 10
+      VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME, // 11
+      VK_KHR_BUFFER_DEVICE_ADDRESS_EXTENSION_NAME, // 12
+      VK_KHR_DEVICE_GROUP_EXTENSION_NAME, // 13
+      "DEVICE_EXTENSION_END_PIVOT", // 14
   };
 
   VkConfig()
@@ -114,11 +115,11 @@ class Vk11Config : public VkConfig {
 public:
   Vk11Config() : VkConfig() {
     // for vma
-    for (auto i = static_cast<uint32_t>(
-             FeatureExtension::DEVICE_EXTENSION_BEGIN_PIVOT);
-         i < static_cast<uint32_t>(FeatureExtension::DEVICE_EXTENSION_END_PIVOT); ++i) {
-      enableds_[i] = EnableState::REQUIRED;
-    }
+    enableds_[static_cast<uint32_t>(FeatureExtension::KHR_GET_MEMORY_REQUIREMENTS_2)] = EnableState::REQUIRED;
+    enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEDICATED_ALLOCATION)] = EnableState::REQUIRED;
+    enableds_[static_cast<uint32_t>(FeatureExtension::KHR_BUFFER_DEVICE_ADDRESS)] = EnableState::REQUIRED;
+    enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEVICE_GROUP_CREATION)] = EnableState::REQUIRED;
+    enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEVICE_GROUP)] = EnableState::REQUIRED;
   }
 
   ~Vk11Config() = default;
