@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstring>
-#include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 #include <volk.h>
@@ -59,31 +59,33 @@ void VkDriver::initDevice() {
 #if !defined(NDEBUG)
   VkPhysicalDeviceMemoryProperties memory_properties;
   vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
+  const char * flag_names [] = {"NONE",
+                                "VK_MEMORY_HEAP_DEVICE_LOCAL_BIT",
+                                "VK_MEMORY_HEAP_MULTI_INSTANCE_BIT",
+                                "VK_MEMORY_HEAP_MULTI_INSTANCE_BIT_KHR"};
   for (uint32_t i = 0; i < memory_properties.memoryHeapCount; ++i) {
-    std::cout << " heap size " << std::dec
-              << memory_properties.memoryHeaps[i].size / 1000000 << "MB"
-              << " flags " << std::hex << memory_properties.memoryHeaps[i].flags
-              << std::endl;
+    LOGD("heap {0:d} size {1:d}MB flags {2:s}", i, memory_properties.memoryHeaps[i].size / 1000000,
+         flag_names[static_cast<uint32_t>(memory_properties.memoryHeaps[i].flags)]);
   }
   for (uint32_t i = 0; i < memory_properties.memoryTypeCount; ++i) {
-    std::cout << " heap index " << memory_properties.memoryTypes[i].heapIndex
-              << " memory property flags ";
+    std::stringstream ss;
     if (memory_properties.memoryTypes[i].propertyFlags &
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-      std::cout << "VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ";
+      ss << "VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT ";
     if (memory_properties.memoryTypes[i].propertyFlags &
         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)
-      std::cout << "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ";
+      ss << "VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT ";
     if (memory_properties.memoryTypes[i].propertyFlags &
         VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-      std::cout << "VK_MEMORY_PROPERTY_HOST_COHERENT_BIT ";
+      ss << "VK_MEMORY_PROPERTY_HOST_COHERENT_BIT ";
     if (memory_properties.memoryTypes[i].propertyFlags &
         VK_MEMORY_PROPERTY_HOST_CACHED_BIT)
-      std::cout << "VK_MEMORY_PROPERTY_HOST_CACHED_BIT ";
+      ss << "VK_MEMORY_PROPERTY_HOST_CACHED_BIT ";
     if (memory_properties.memoryTypes[i].propertyFlags &
         VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT)
-      std::cout << "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT ";
-    std::cout << std::endl;
+      ss << "VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT ";
+    LOGD("heap index {0:d} memory property flags {1:x} {2:s}", memory_properties.memoryTypes[i].heapIndex,
+         memory_properties.memoryTypes[i].propertyFlags, ss.str());      
   }
 #endif
 
@@ -138,8 +140,7 @@ debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
               VkDebugUtilsMessageTypeFlagsEXT messageType,
               const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
               void *pUserData) {
-  std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
-
+  LOGE("validation layer: {}", pCallbackData->pMessage);
   return VK_FALSE;
 }
 
@@ -224,6 +225,7 @@ void VkDriver::initAllocator() {
   vma_vulkan_func.vkFlushMappedMemoryRanges = vkFlushMappedMemoryRanges;
   vma_vulkan_func.vkFreeMemory = vkFreeMemory;
   vma_vulkan_func.vkGetBufferMemoryRequirements = vkGetBufferMemoryRequirements;
+  vma_vulkan_func.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
   vma_vulkan_func.vkGetImageMemoryRequirements = vkGetImageMemoryRequirements;
   vma_vulkan_func.vkGetImageMemoryRequirements2KHR = vkGetImageMemoryRequirements2KHR;
   vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties =

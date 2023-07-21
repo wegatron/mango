@@ -44,7 +44,7 @@ FrameBuffer::~FrameBuffer() {
 }
 
 RenderTarget::RenderTarget(const std::shared_ptr<VkDriver> &driver,
-                           std::initializer_list<VkFormat> color_format,
+                           const std::initializer_list<VkFormat> &color_format,
                            VkFormat ds_format, uint32_t width, uint32_t height,
                            uint32_t layers)
     : color_formats_(color_format), ds_format_(ds_format), width_(width),
@@ -76,9 +76,9 @@ RenderTarget::RenderTarget(const std::shared_ptr<VkDriver> &driver,
 }
 
 RenderTarget::RenderTarget(
-    const std::vector<std::shared_ptr<ImageView>> &image_views,
-    std::initializer_list<VkFormat> color_format, VkFormat ds_format,
+    const std::initializer_list<std::shared_ptr<ImageView>> &image_views,
+    const std::initializer_list<VkFormat> &color_format, VkFormat ds_format,
     uint32_t width, uint32_t height, uint32_t layers)
     : color_formats_(color_format), ds_format_(ds_format), width_(width),
-      height_(height), layers_(layers) {}
+      height_(height), layers_(layers), images_views_(image_views) {}
 } // namespace vk_engine

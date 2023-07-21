@@ -19,11 +19,11 @@ public:
   RenderTarget &operator=(const RenderTarget &) = delete;
   
   RenderTarget(const std::shared_ptr<VkDriver> &driver,
-               std::initializer_list<VkFormat> color_format, VkFormat ds_format,
+               const std::initializer_list<VkFormat> &color_format, VkFormat ds_format,
                uint32_t width, uint32_t height, uint32_t layers);
 
-  RenderTarget(const std::vector<std::shared_ptr<ImageView>> &image_views,
-               std::initializer_list<VkFormat> color_format, VkFormat ds_format,
+  RenderTarget(const std::initializer_list<std::shared_ptr<ImageView>> &image_views,
+               const std::initializer_list<VkFormat> &color_format, VkFormat ds_format,
                uint32_t width, uint32_t height, uint32_t layers);
 
   const std::vector<std::shared_ptr<ImageView>> &getImageViews() const {
