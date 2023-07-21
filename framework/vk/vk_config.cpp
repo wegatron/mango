@@ -14,10 +14,10 @@ void Vk11Config::checkAndUpdate(VkInstanceCreateInfo &create_info)
 
 uint32_t Vk11Config::checkSelectAndUpdate(
     const std::vector<PhysicalDevice> &physical_devices,
-    VkDeviceCreateInfo &create_info) 
+    VkDeviceCreateInfo &create_info, VkSurfaceKHR surface) 
 {
-    for(auto i=static_cast<uint32_t>(FeatureExtension::KHR_SWAPCHAIN);
-        i<static_cast<uint32_t>(FeatureExtension::KHR_DEVICE_GROUP); ++i)
+    for(auto i=static_cast<uint32_t>(FeatureExtension::DEVICE_EXTENSION_BEGIN_PIVOT)+1;
+        i<static_cast<uint32_t>(FeatureExtension::DEVICE_EXTENSION_END_PIVOT); ++i)
     {
         if(enableds_[i] != EnableState::DISABLED)
         {
@@ -25,77 +25,84 @@ uint32_t Vk11Config::checkSelectAndUpdate(
         }
     }
 
-    for (const auto &pd : physical_devices) {
+    uint32_t selected_physical_device_index = -1;
+    enabled_device_extensions_.reserve(request_device_extensions_.size());
+    for (uint32_t device_index = 0; device_index < physical_devices.size();
+         ++device_index)
+    {
+        enabled_device_extensions_.clear();
+        auto &pd = physical_devices[device_index];
         auto handle = pd.getHandle();
         uint32_t graphics_queue_family_index = pd.getGraphicsQueueFamilyIndex();
         if (graphics_queue_family_index == 0XFFFFFFFF)
-        continue;
+          continue;
         VkBool32 surface_support = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(handle,
-                                            graphics_queue_family_index, surface_,
+                                            graphics_queue_family_index, surface,
                                             &surface_support);
-        if (!surface_support ||
-            (pd.getProperties().deviceType !=
-            VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) ||
-            !(pd.getFeatures().geometryShader))
-        continue;
+        if (!surface_support || (pd.getProperties().deviceType != device_type_))
+          continue;
 
         const auto &device_extensions = pd.getExtensionProperties();
         #if !defined(NDEBUG)
+        // TODO output device name
         for(const auto &ext : device_extensions)
             LOGD("device extension: {}", ext.extensionName);
         #endif
         bool extension_support = true;
-        for (const auto &req_ext : request_extensions) {
-        bool is_find = false;
-        for (const auto &ext : device_extensions) {
-            if (strcmp(ext.extensionName, req_ext.name) == 0) {
-            is_find = true;
-            break;
-            }
+        for (const auto &req_ext : request_device_extensions_) {
+          bool is_find = false;
+          for (const auto &ext : device_extensions) {
+              if (strcmp(ext.extensionName, req_ext.first) == 0) {
+                is_find = true;
+                break;
+              }
+          }
+          if(is_find) {
+              enabled_device_extensions_.emplace_back(req_ext.first);
+              continue;
+          }
+          if (req_ext.second == EnableState::REQUIRED) {
+              extension_support = false;
+              break;
+          }
         }
-        if(is_find) {
-            enabled_device_extensions_.push_back(req_ext.name);
-            continue;
-        }
-        if (req_ext.required) {
-            extension_support = false;
-            break;
-        }
-        }
-        if (!extension_support)
-        continue;
-        return std::make_pair(true, graphics_queue_family_index);
-    }
 
-    return 0;
+        if(extension_support)
+        {
+            selected_physical_device_index = device_index;
+            break;
+        }
+    }
+    return selected_physical_device_index;
 }
 
 
 void Vk11Config::checkAndUpdateLayers(VkInstanceCreateInfo &create_info)
 {
-  auto enb_state =
-      enableds_[static_cast<uint32_t>(FeatureExtension::KHR_VALIDATION_LAYER)];
-  std::string layer_name = "VK_LAYER_KHRONOS_validation";
-
-  request_layers_ = std::vector<std::pair<std::string, EnableState>>{
-    {layer_name, EnableState::REQUIRED}
-  };
+    for(auto i=static_cast<uint32_t>(FeatureExtension::LAYER_BEGIN_PIVOT)+1;
+        i<static_cast<uint32_t>(FeatureExtension::LAYER_END_PIVOT); ++i)
+    {
+        if(enableds_[i] != EnableState::DISABLED)
+        {
+            request_layers_.emplace_back(kFeatureExtensionNames[i], enableds_[i]);
+        }
+    }  
 
   uint32_t layer_count = 0;
   vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
   std::vector<VkLayerProperties> available_layers(layer_count);
   vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
-  std::vector<const char *> enabled_layers; enabled_layers.reserve(request_layers_.size());
+  enabled_layers_.reserve(request_layers_.size());
   for(const auto layer : request_layers_)
   {
     bool is_find = false;
     for(const auto &l : available_layers)
     {
-      if(strcmp(l.layerName, layer.first.c_str()) == 0)
+      if(strcmp(l.layerName, layer.first) == 0)
       {
         is_find = true;
-        enabled_layers.emplace_back(layer.first);
+        enabled_layers_.emplace_back(layer.first);
         break;
       }
     }
@@ -115,8 +122,8 @@ void Vk11Config::checkAndUpdateLayers(VkInstanceCreateInfo &create_info)
     }
   }
 
-  create_info.enabledLayerCount = enabled_layers.size();
-  create_info.ppEnabledLayerNames = enabled_layers.data();
+  create_info.enabledLayerCount = enabled_layers_.size();
+  create_info.ppEnabledLayerNames = enabled_layers_.data();
 }
 
 
