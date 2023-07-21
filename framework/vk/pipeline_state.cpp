@@ -241,22 +241,12 @@ void PipelineState::setSubpassIndex(uint32_t subpass_index) {
   dirty_ = true;
 }
 
-void PipelineState::getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo &) const
+void PipelineState::getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo & dynamic_state) const
 {
-	std::array<VkDynamicState, 9> dynamic_states{
-	    VK_DYNAMIC_STATE_VIEWPORT,
-	    VK_DYNAMIC_STATE_SCISSOR,
-	    VK_DYNAMIC_STATE_LINE_WIDTH,
-	    VK_DYNAMIC_STATE_DEPTH_BIAS,
-	    VK_DYNAMIC_STATE_BLEND_CONSTANTS,
-	    VK_DYNAMIC_STATE_DEPTH_BOUNDS,
-	    VK_DYNAMIC_STATE_STENCIL_COMPARE_MASK,
-	    VK_DYNAMIC_STATE_STENCIL_WRITE_MASK,
-	    VK_DYNAMIC_STATE_STENCIL_REFERENCE,
-	};  
-  VkPipelineDynamicStateCreateInfo dynamic_state{VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
-	dynamic_state.pDynamicStates    = dynamic_states.data();
-	dynamic_state.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+  dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	dynamic_state.pDynamicStates = dynamic_states_.data();
+	dynamic_state.dynamicStateCount = dynamic_states_.size();
+  dynamic_state.flags=0;
 }
 
 } // namespace vk_engine
