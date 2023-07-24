@@ -5,9 +5,11 @@
 #include <framework/vk/image.h>
 #include <framework/vk/pipeline.h>
 #include <framework/vk/descriptor_set.h>
+
 #include <Eigen/Dense>
 
 namespace vk_engine {
+class CommandBuffer;
 class TriangleApp : public AppBase {
 public:
   TriangleApp(const std::string &name, const std::shared_ptr<ResourceCache> &resource_cache) 
@@ -23,8 +25,9 @@ private:
   {
     Eigen::Matrix4f model;
     Eigen::Matrix4f view_proj;
-
     std::shared_ptr<DescriptorSet> descriptor_set;
+    std::unique_ptr<Buffer> uniform_buffer; // dynaic data
+    std::shared_ptr<CommandBuffer> cmd_buffer;
     
     FrameData() {
       model.setIdentity();
@@ -39,8 +42,7 @@ private:
   void buildCommandBuffers();
   
   uint32_t frames_inflight_{0};
-  std::shared_ptr<Buffer> vertex_buffer_;
-  std::shared_ptr<Buffer> uniform_buffer_;
+  std::shared_ptr<Buffer> vertex_buffer_; //!< static vertex buffer
   std::shared_ptr<RenderPass> render_pass_;
   std::shared_ptr<GraphicsPipeline> pipeline_;
   std::shared_ptr<DescriptorPool> descriptor_pool_;

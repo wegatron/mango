@@ -9,7 +9,7 @@ layout(location=2) in vec2 uv;
 layout(location=0) out vec2 o_uv;
 layout(location=1) out vec3 o_normal;
 
-layout(set=0, binding = 2) uniform GlobalUniform
+layout(set=0, binding = 0) uniform GlobalUniform
 {
     mat4 model;
     mat4 view_proj;

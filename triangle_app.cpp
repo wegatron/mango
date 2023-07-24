@@ -58,14 +58,16 @@ void TriangleApp::setupScene() {
   vertex_buffer_->update(reinterpret_cast<uint8_t *>(vertex_data.data()),
                          sizeof(float) * 8 * 3);
 
-  // uniform buffer
-  uniform_buffer_ = std::make_shared<Buffer>(
-      driver_, 0, sizeof(float) * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-      VMA_ALLOCATION_CREATE_MAPPED_BIT |
-          VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-      VMA_MEMORY_USAGE_AUTO_PREFER_HOST);
-
   frame_data_.resize(frames_inflight_);
+  // uniform buffer
+  for(auto &fd : frame_data_)
+  {
+    fd.uniform_buffer = std::make_unique<Buffer>(
+        driver_, 0, sizeof(float) * 16, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_ALLOCATION_CREATE_MAPPED_BIT |
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        VMA_MEMORY_USAGE_AUTO_PREFER_HOST);
+  }
 }
 
 void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
@@ -136,11 +138,44 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
   for(auto &frame_data : frame_data_)
   {
     frame_data.descriptor_set = descriptor_pool_->requestDescriptorSet(ds_layout);
+    VkDescriptorBufferInfo desc_buffer_info{
+      .buffer = frame_data.uniform_buffer->getHandle(),
+      .offset = 0,
+      .range = sizeof(float) * 32,
+    };
+    frame_data.descriptor_set->update({
+      {
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = frame_data.descriptor_set->getHandle(),
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = &desc_buffer_info
+      }
+    });
   }
 }
 
 void TriangleApp::buildCommandBuffers() {
-  // TODO build command buffers
+  // build command buffers
+  for (uint32_t i = 0; i < frames_inflight_; ++i) {
+    auto &frame_data = frame_data_[i];
+    auto &sync = render_output_syncs_[i];
+    frame_data.cmd_buffer = std::make_shared<CommandBuffer>(
+        driver_, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    auto cmd_buf = frame_data.cmd_buffer;
+    cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+    cmd_buf->beginRenderPass(render_pass_, sync.render_semaphore,
+                             sync.present_semaphore, sync.render_fence,
+                             {0.0f, 0.0f, 0.0f, 1.0f}, 1.0f, 0);
+    cmd_buf->bindPipeline(pipeline_);
+    cmd_buf->bindVertexBuffer(vertex_buffer_, 0);
+    cmd_buf->bindDescriptorSet(pipeline_->getPipelineLayout(), 0,
+                               frame_data.descriptor_set);
+    cmd_buf->draw(3, 1, 0, 0);
+    cmd_buf->endRenderPass();
+    cmd_buf->end();
+  }
 }
 
 } // namespace vk_engine
