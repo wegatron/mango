@@ -127,7 +127,7 @@ void RasterizationState::getCreateInfo(VkPipelineRasterizationStateCreateInfo &c
   create_info.frontFace = front_face;
   create_info.depthBiasEnable = depth_bias_enable;
   create_info.depthBiasConstantFactor = 0.0f;
-  create_info.depthBiasClamp = 1.0f;
+  create_info.depthBiasClamp = depth_clamp_enable ? 1.0f : 0.0f;
   create_info.depthBiasSlopeFactor = 1.0f;
   create_info.lineWidth = 1.0f;
 }

@@ -121,15 +121,15 @@ void ShaderModule::readGlsl(const std::string &file_path, VkShaderStageFlagBits 
   if(len <= 4)
     throw std::runtime_error("invalid shader file path");
   
-  if(file_path.compare(len-4, 4, ".vert"))
+  if(file_path.compare(len-5, 5, ".vert") == 0)
   {
     stage = VK_SHADER_STAGE_VERTEX_BIT;
   }
-  else if(file_path.compare(len-4, 4, ".frag"))
+  else if(file_path.compare(len-5, 5, ".frag") == 0)
   {
     stage = VK_SHADER_STAGE_FRAGMENT_BIT;
   }
-  else if(file_path.compare(len-4, 4, ".comp"))
+  else if(file_path.compare(len-5, 5, ".comp") == 0)
   {
     stage = VK_SHADER_STAGE_COMPUTE_BIT;
   } else {

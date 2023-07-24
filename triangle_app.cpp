@@ -20,6 +20,7 @@ void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
                        const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   driver_ = driver;
+  frames_inflight_ = rts.size();
   if(resource_cache_->getPipelineCache() == nullptr)
   {
      auto pcw = std::make_unique<VkPipelineCacheWraper>(driver_->getDevice());
@@ -31,7 +32,6 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
   assert(rts.size() > 0 && rts[0] != nullptr);
   setupRender(rts[0]->getColorFormat(0), rts[0]->getDSFormat());
   
-  frames_inflight_ = rts.size();
   render_output_syncs_.resize(frames_inflight_);
   for (auto &sync : render_output_syncs_) {
     sync.render_fence = std::make_shared<Fence>(driver_);
@@ -97,6 +97,15 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       {VK_SAMPLE_COUNT_1_BIT, false, 1.0f, 0, false, false});
   pipeline_state->setDepthStencilState(
       {true, true, VK_COMPARE_OP_LESS, false, false, {}, {}, 0, 1});
+
+  pipeline_state->setColorBlendState(ColorBlendState{
+    .attachments = {
+      {
+        .blendEnable = VK_FALSE,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      }
+    }
+  });
   pipeline_state->setSubpassIndex(0);
 
   std::vector<Attachment> attachments{

@@ -13,18 +13,23 @@ namespace vk_engine
         Pipeline(const Pipeline &) = delete;
         Pipeline &operator=(const Pipeline &) = delete;
 
-        Pipeline() = default;
-        virtual ~Pipeline() = default;
+        Pipeline(const std::shared_ptr<VkDriver> &driver,
+            std::unique_ptr<PipelineState> &&pipeline_state)
+            : driver_(driver), pipeline_state_(std::move(pipeline_state)) {}
 
-        const std::shared_ptr<PipelineState> getPipelineState() const { return pipeline_state_; }
+        virtual ~Pipeline() = default;
 
         VkPipeline getHandle() const { return pipeline_; }
 
+        std::shared_ptr<PipelineLayout> getPipelineLayout() const { return pipeline_layout_; }        
+        
         void cleanDirtyFlag() { pipeline_state_->dirty_ = false; }
 
     protected:
-        VkPipeline pipeline_{VK_NULL_HANDLE};        
-        std::shared_ptr<PipelineState> pipeline_state_;
+        VkPipeline pipeline_{VK_NULL_HANDLE};
+        std::shared_ptr<VkDriver> driver_;
+        std::unique_ptr<PipelineState> pipeline_state_;
+        std::shared_ptr<PipelineLayout> pipeline_layout_;
     };
 
     class GraphicsPipeline : public Pipeline
@@ -42,12 +47,5 @@ namespace vk_engine
         }
         
         ~GraphicsPipeline() override = default;
-
-        std::shared_ptr<PipelineLayout> getPipelineLayout() const { return pipeline_layout_; }
-
-    private:        
-        std::shared_ptr<VkDriver> driver_;
-        std::shared_ptr<PipelineLayout> pipeline_layout_;
-        std::unique_ptr<PipelineState> pipeline_state_;        
     };
 }

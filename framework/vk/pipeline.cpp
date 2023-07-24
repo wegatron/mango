@@ -8,7 +8,7 @@ GraphicsPipeline::GraphicsPipeline(
     const std::shared_ptr<ResourceCache> &cache,
     const std::shared_ptr<RenderPass> &render_pass,
     std::unique_ptr<PipelineState> &&pipeline_state)
-    : pipeline_state_(std::move(pipeline_state)), driver_(driver) {
+    : Pipeline(driver, std::move(pipeline_state)) {
   assert(cache != nullptr);
   auto &shader_modules = pipeline_state_->getShaderModules();
   pipeline_layout_ = cache->requestPipelineLayout(driver, shader_modules);
