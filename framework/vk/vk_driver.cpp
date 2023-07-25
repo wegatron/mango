@@ -52,7 +52,7 @@ void VkDriver::initDevice() {
   }
 
   physical_device_ = physical_devices[physical_device_index].getHandle();
-  const uint32_t queue_index =
+  graphics_queue_family_index_ =
       physical_devices[physical_device_index].getGraphicsQueueFamilyIndex();
 
 // for print out memory infos
@@ -93,7 +93,7 @@ void VkDriver::initDevice() {
   VkDeviceQueueCreateInfo queue_info{};
   float queue_priority = 1.0f;
   queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queue_info.queueFamilyIndex = queue_index;
+  queue_info.queueFamilyIndex = graphics_queue_family_index_;
   queue_info.queueCount = 1;
   queue_info.pQueuePriorities = &queue_priority;
 
@@ -108,7 +108,7 @@ void VkDriver::initDevice() {
 
   volkLoadDevice(device_);
 
-  vkGetDeviceQueue(device_, queue_index, 0, &graphics_queue_);
+  vkGetDeviceQueue(device_, graphics_queue_family_index_, 0, &graphics_queue_);
 }
 
 void VkDriver::init(const std::string &app_name,

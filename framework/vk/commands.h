@@ -65,11 +65,11 @@ public:
   void beginRenderPass(const std::shared_ptr<Fence> &render_fence,
                        const std::shared_ptr<Semaphore> &render_semaphore,
                        const std::shared_ptr<RenderPass> &render_pass,
-                       const std::shared_ptr<FrameBuffer> &frame_buffer);
+                       const std::unique_ptr<FrameBuffer> &frame_buffer);
 
-  void setViewPort(const std::vector<VkViewport> &viewports);
+  void setViewPort(const std::initializer_list<VkViewport> &viewports);
 
-  void setScissor(const std::vector<VkRect2D> &scissors);
+  void setScissor(const std::initializer_list<VkRect2D> &scissors);
 
   void bindPipelineWithDescriptorSets(
     const std::shared_ptr<Pipeline> &pipeline,

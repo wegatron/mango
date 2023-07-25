@@ -5,7 +5,8 @@
 #include <framework/vk/image.h>
 #include <framework/vk/pipeline.h>
 #include <framework/vk/descriptor_set.h>
-
+#include <framework/vk/commands.h>
+#include <framework/vk/frame_buffer.h>
 #include <Eigen/Dense>
 
 namespace vk_engine {
@@ -28,6 +29,7 @@ private:
     std::shared_ptr<DescriptorSet> descriptor_set;
     std::unique_ptr<Buffer> uniform_buffer; // dynaic data
     std::shared_ptr<CommandBuffer> cmd_buffer;
+    std::unique_ptr<FrameBuffer> frame_buffer;
     
     FrameData() {
       model.setIdentity();
@@ -36,6 +38,8 @@ private:
   };
 
   void setupScene();
+
+  void setupFramebuffers(const std::vector<std::shared_ptr<RenderTarget>> &rts);
 
   void setupRender(VkFormat color_format, VkFormat ds_format);
 
@@ -47,5 +51,6 @@ private:
   std::shared_ptr<GraphicsPipeline> pipeline_;
   std::shared_ptr<DescriptorPool> descriptor_pool_;
   std::vector<FrameData> frame_data_;
+  std::unique_ptr<CommandPool> command_pool_;
 };
 } // namespace vk_engine

@@ -176,6 +176,6 @@ private:
 
   bool dirty_{true};
 
-  friend class Pipeline;
+  friend class GraphicsPipeline;
 };
 } // namespace vk_engine

@@ -1,5 +1,7 @@
 #include <framework/utils/error.h>
+#include <framework/vk/buffer.h>
 #include <framework/vk/commands.h>
+#include <framework/vk/descriptor_set.h>
 #include <framework/vk/frame_buffer.h>
 #include <framework/vk/pipeline.h>
 
@@ -65,7 +67,6 @@ CommandBuffer::CommandBuffer(const std::shared_ptr<VkDriver> &driver,
 
   auto result = vkAllocateCommandBuffers(driver_->getDevice(), &alloc_info,
                                          &command_buffer_);
-
   if (result != VK_SUCCESS) {
     throw VulkanException(result, "failed to allocate command buffers!");
   }
@@ -110,15 +111,7 @@ void CommandBuffer::beginRenderPass(
     const std::shared_ptr<Fence> &render_fence,
     const std::shared_ptr<Semaphore> &render_semaphore,
     const std::shared_ptr<RenderPass> &render_pass,
-    const std::shared_ptr<FrameBuffer> &frame_buffer) {
-  VkCommandBufferBeginInfo begin_info = {};
-  begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-  begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-  begin_info.pInheritanceInfo = nullptr; // primary command buffer
-
-  auto result = vkBeginCommandBuffer(command_buffer_, &begin_info);
-  VK_THROW_IF_ERROR(result, "failed to begin recording command buffer!");
-
+    const std::unique_ptr<FrameBuffer> &frame_buffer) {
   VkClearValue clear_values[2]; // 与render pass load store clear attachment对应
   clear_values[0].color = {0.0f, 0.0f, 0.0f, 1.0f};
   clear_values[1].depthStencil = {1.0f, 0};
@@ -137,12 +130,13 @@ void CommandBuffer::beginRenderPass(
                        VK_SUBPASS_CONTENTS_INLINE);
 }
 
-void CommandBuffer::setViewPort(const std::vector<VkViewport> &viewports) {
-  vkCmdSetViewport(command_buffer_, 0, viewports.size(), viewports.data());
+void CommandBuffer::setViewPort(const std::initializer_list<VkViewport> &viewports)
+{
+  vkCmdSetViewport(command_buffer_, 0, viewports.size(), viewports.begin());
 }
 
-void CommandBuffer::setScissor(const std::vector<VkRect2D> &scissors) {
-  vkCmdSetScissor(command_buffer_, 0, scissors.size(), scissors.data());
+void CommandBuffer::setScissor(const std::initializer_list<VkRect2D> &scissors) {
+  vkCmdSetScissor(command_buffer_, 0, scissors.size(), scissors.begin());
 }
 
 void CommandBuffer::bindPipelineWithDescriptorSets(
@@ -156,35 +150,52 @@ void CommandBuffer::bindPipelineWithDescriptorSets(
                                  : VK_PIPELINE_BIND_POINT_COMPUTE;
   vkCmdBindPipeline(command_buffer_, pipeline_bind_point,
                     pipeline->getHandle());
-  vkCmdBindDescriptorSets(
-      command_buffer_, pipeline_bind_point,
-      pipeline->getPipelineLayout()->getHandle(), first_set,
-      descriptor_sets.size(),
-      reinterpret_cast<const VkDescriptorSet *>(descriptor_sets.begin()),
-      dynamic_offsets.size(), dynamic_offsets.begin());
+
+  std::vector<VkDescriptorSet> ds(descriptor_sets.size());
+  for (auto i = 0; i < descriptor_sets.size(); ++i) {
+    ds[i] = descriptor_sets.begin()[i]->getHandle();
+  }
+  vkCmdBindDescriptorSets(command_buffer_, pipeline_bind_point,
+                          pipeline->getPipelineLayout()->getHandle(), first_set,
+                          descriptor_sets.size(), ds.data(),
+                          dynamic_offsets.size(), dynamic_offsets.begin());
 }
 
 void CommandBuffer::bindVertexBuffer(
-    const std::initializer_list<std::shared_ptr<Buffer>> &buffer,
+    const std::initializer_list<std::shared_ptr<Buffer>> &buffers,
     const std::initializer_list<VkDeviceSize> &offsets,
-    const uint32_t first_binding) {}
+    const uint32_t first_binding) {
+  std::vector<VkBuffer> bs(buffers.size());
+  for (auto i = 0; i < buffers.size(); ++i) {
+    bs[i] = buffers.begin()[i]->getHandle();
+  }
+  vkCmdBindVertexBuffers(command_buffer_, first_binding, buffers.size(),
+                         bs.data(), offsets.begin());
+}
 
 void CommandBuffer::bindIndexBuffer(const std::shared_ptr<Buffer> &buffer,
                                     const VkDeviceSize offset,
-                                    const VkIndexType index_type) {}
+                                    const VkIndexType index_type) {
+  vkCmdBindIndexBuffer(command_buffer_, buffer->getHandle(), offset,
+                       index_type);
+}
 
 void CommandBuffer::draw(const uint32_t vertex_count,
                          const uint32_t instance_count,
                          const uint32_t first_vertex,
-                         const uint32_t first_instance) {}
+                         const uint32_t first_instance) {
+  vkCmdDraw(command_buffer_, vertex_count, instance_count, first_vertex,
+            first_instance);
+}
 
 void CommandBuffer::drawIndexed(const uint32_t index_count,
                                 const uint32_t instance_count,
                                 const uint32_t first_index,
                                 const int32_t vertex_offset,
-                                const uint32_t first_instance) {}
+                                const uint32_t first_instance) {
+  vkCmdDrawIndexed(command_buffer_, index_count, instance_count, first_index,
+                   vertex_offset, first_instance);
+}
 
-void CommandBuffer::endRenderPass() {}
-
-void CommandBuffer::end() {}
+void CommandBuffer::endRenderPass() { vkCmdEndRenderPass(command_buffer_); }
 } // namespace vk_engine

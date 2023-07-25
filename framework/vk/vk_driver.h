@@ -34,6 +34,8 @@ public:
 
   VkSurfaceKHR getSurface() const { return surface_; }
 
+  uint32_t getGraphicsQueueFamilyIndex() const { return graphics_queue_family_index_; }
+
 private:
   void initInstance();
 
@@ -60,6 +62,8 @@ private:
   std::vector<const char *> enabled_device_extensions_;
 
   VkQueue graphics_queue_{VK_NULL_HANDLE};
+  uint32_t graphics_queue_family_index_{0};
+
   VkSurfaceKHR surface_{VK_NULL_HANDLE};
 
   VmaAllocator allocator_{VK_NULL_HANDLE};
