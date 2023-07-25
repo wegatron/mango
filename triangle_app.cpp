@@ -165,9 +165,11 @@ void TriangleApp::buildCommandBuffers() {
         driver_, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     auto cmd_buf = frame_data.cmd_buffer;
     cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-    cmd_buf->beginRenderPass(render_pass_, sync.render_semaphore,
-                             sync.present_semaphore, sync.render_fence,
-                             {0.0f, 0.0f, 0.0f, 1.0f}, 1.0f, 0);
+    cmd_buf->beginRenderPass(
+      sync.render_fence,
+      sync.render_semaphore,
+      render_pass_,
+      {0.0f, 0.0f, 0.0f, 1.0f}, 1.0f, 0);
     cmd_buf->bindPipeline(pipeline_);
     cmd_buf->bindVertexBuffer(vertex_buffer_, 0);
     cmd_buf->bindDescriptorSet(pipeline_->getPipelineLayout(), 0,

@@ -10,25 +10,30 @@ namespace vk_engine
     class Pipeline
     {
     public:
+        enum class Type
+        {
+            UNKNOWN = 0,
+            GRAPHICS,
+            COMPUTE,
+            //RAY_TRACYING
+        };
         Pipeline(const Pipeline &) = delete;
         Pipeline &operator=(const Pipeline &) = delete;
 
-        Pipeline(const std::shared_ptr<VkDriver> &driver,
-            std::unique_ptr<PipelineState> &&pipeline_state)
-            : driver_(driver), pipeline_state_(std::move(pipeline_state)) {}
+        Pipeline(const std::shared_ptr<VkDriver> &driver, const Type type)
+            : driver_(driver), type_(type) {}
 
         virtual ~Pipeline() = default;
 
         VkPipeline getHandle() const { return pipeline_; }
 
-        std::shared_ptr<PipelineLayout> getPipelineLayout() const { return pipeline_layout_; }        
-        
-        void cleanDirtyFlag() { pipeline_state_->dirty_ = false; }
+        std::shared_ptr<PipelineLayout> getPipelineLayout() const { return pipeline_layout_; }
 
+        Type getType() const { return type_; }
     protected:
+        Type type_;
         VkPipeline pipeline_{VK_NULL_HANDLE};
         std::shared_ptr<VkDriver> driver_;
-        std::unique_ptr<PipelineState> pipeline_state_;
         std::shared_ptr<PipelineLayout> pipeline_layout_;
     };
 
@@ -47,5 +52,10 @@ namespace vk_engine
         }
         
         ~GraphicsPipeline() override = default;
+
+        void cleanDirtyFlag() { pipeline_state_->dirty_ = false; }
+
+    private:
+        std::unique_ptr<PipelineState> pipeline_state_;
     };
 }

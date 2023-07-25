@@ -90,8 +90,11 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
       attachments.size());
   for (size_t i = 0; i < attachments.size(); ++i) {
     attachment_descriptions[i].flags = 0;
+    // renderpass compatibility options
     attachment_descriptions[i].format = attachments[i].format;
     attachment_descriptions[i].samples = attachments[i].samples;
+
+    // allow different between compatible render passes
     attachment_descriptions[i].loadOp = load_store_infos[i].load_op;
     attachment_descriptions[i].storeOp = load_store_infos[i].store_op;
     attachment_descriptions[i].stencilLoadOp = load_store_infos[i].load_op;
