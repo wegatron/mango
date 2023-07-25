@@ -24,17 +24,10 @@ private:
 
   struct FrameData
   {
-    Eigen::Matrix4f model;
-    Eigen::Matrix4f view_proj;
     std::shared_ptr<DescriptorSet> descriptor_set;
     std::unique_ptr<Buffer> uniform_buffer; // dynaic data
     std::shared_ptr<CommandBuffer> cmd_buffer;
     std::unique_ptr<FrameBuffer> frame_buffer;
-    
-    FrameData() {
-      model.setIdentity();
-      view_proj.setIdentity();
-    }
   };
 
   void setupScene();

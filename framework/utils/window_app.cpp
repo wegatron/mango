@@ -73,6 +73,18 @@ void WindowApp::run() {
     uint32_t rt_index = swapchain_->acquireNextImage(render_output_sync.present_semaphore->getHandle(), VK_NULL_HANDLE);
     // current_frame_index_ maybe different with rt_index, depends on the swapchain present mode
     app_->tick(0.016f, rt_index, current_frame_index_); // 60fps
+    
+    // present
+    VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    VkSwapchainKHR swapchain = swapchain_->getHandle();
+    VkSemaphore render_semaphore = render_output_sync.render_semaphore->getHandle();
+    present.swapchainCount     = 1;
+    present.pSwapchains        = &swapchain;
+    present.pImageIndices      = &rt_index;
+    present.waitSemaphoreCount = 1;
+    present.pWaitSemaphores    = &render_semaphore;
+    // Present swapchain image
+    vkQueuePresentKHR(driver_->getGraphicsQueue(), &present);   
     current_frame_index_ = (current_frame_index_ + 1) % render_targets_.size();
   }
 }

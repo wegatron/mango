@@ -36,6 +36,8 @@ public:
 
   uint32_t getGraphicsQueueFamilyIndex() const { return graphics_queue_family_index_; }
 
+  VkQueue getGraphicsQueue() const { return graphics_queue_; }
+
 private:
   void initInstance();
 

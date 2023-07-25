@@ -1,4 +1,5 @@
 #include "triangle_app.h"
+#include <framework/utils/error.h>
 #include <framework/vk/pipeline.h>
 #include <framework/vk/pipeline_state.h>
 #include <framework/vk/render_pass.h>
@@ -12,19 +13,47 @@ namespace vk_engine {
 void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
                        const uint32_t frame_index) {
   render_output_syncs_[frame_index].render_fence->wait();
-  // update command buffer if needed
-  // update data if needed
-  // TODO submit command buffer
+  // update command buffer if needed, reset pool and rebuild command buffer
+  // TODO update uniform buffer data
+  Eigen::Matrix4f mats[2];
+  Eigen::Matrix4f &model_view = mats[0];
+  Eigen::Matrix4f &projection = mats[1];
+  model_view.setIdentity();
+  projection.setIdentity();
+  frame_data_[frame_index].uniform_buffer->update(
+      reinterpret_cast<uint8_t *>(mats), sizeof(mats));
+
+  // submit command buffer
+  VkCommandBuffer cmd_buf = frame_data_[frame_index].cmd_buffer->getHandle();
+  VkSemaphore render_semaphore =
+      render_output_syncs_[frame_index].render_semaphore->getHandle();
+  VkSemaphore present_semaphore =
+      render_output_syncs_[frame_index].present_semaphore->getHandle();
+  VkPipelineStageFlags wait_stage{
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  VkSubmitInfo info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  info.commandBufferCount = 1;
+  info.pCommandBuffers = &cmd_buf;
+  info.waitSemaphoreCount = 1;
+  info.pWaitSemaphores = &render_semaphore;
+  info.pWaitDstStageMask = &wait_stage;
+  info.signalSemaphoreCount = 1;
+  info.pSignalSemaphores = &present_semaphore;
+
+  // Submit command buffer to graphics queue
+  auto result = vkQueueSubmit(
+      driver_->getGraphicsQueue(), 1, &info,
+      render_output_syncs_[frame_index].render_fence->getHandle());
+  VK_THROW_IF_ERROR(result, "failed to submit draw command buffer!");
 }
 
 void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
                        const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   driver_ = driver;
   frames_inflight_ = rts.size();
-  if(resource_cache_->getPipelineCache() == nullptr)
-  {
-     auto pcw = std::make_unique<VkPipelineCacheWraper>(driver_->getDevice());
-     resource_cache_->setPipelineCache(std::move(pcw));
+  if (resource_cache_->getPipelineCache() == nullptr) {
+    auto pcw = std::make_unique<VkPipelineCacheWraper>(driver_->getDevice());
+    resource_cache_->setPipelineCache(std::move(pcw));
   }
 
   setupScene();
@@ -34,7 +63,7 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
   setupRender(rts[0]->getColorFormat(0), rts[0]->getDSFormat());
 
   setupFramebuffers(rts);
-  
+
   render_output_syncs_.resize(frames_inflight_);
   for (auto &sync : render_output_syncs_) {
     sync.render_fence = std::make_shared<Fence>(driver_);
@@ -63,8 +92,7 @@ void TriangleApp::setupScene() {
 
   frame_data_.resize(frames_inflight_);
   // uniform buffer
-  for(auto &fd : frame_data_)
-  {
+  for (auto &fd : frame_data_) {
     fd.uniform_buffer = std::make_unique<Buffer>(
         driver_, 0, sizeof(float) * 32, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_ALLOCATION_CREATE_MAPPED_BIT |
@@ -73,11 +101,11 @@ void TriangleApp::setupScene() {
   }
 }
 
-void TriangleApp::setupFramebuffers(const std::vector<std::shared_ptr<RenderTarget>> &rts)
-{
-  for (uint32_t i = 0; i < frames_inflight_; ++i) {    
-    frame_data_[i].frame_buffer = std::make_unique<FrameBuffer>(
-        driver_, render_pass_, rts[i]);
+void TriangleApp::setupFramebuffers(
+    const std::vector<std::shared_ptr<RenderTarget>> &rts) {
+  for (uint32_t i = 0; i < frames_inflight_; ++i) {
+    frame_data_[i].frame_buffer =
+        std::make_unique<FrameBuffer>(driver_, render_pass_, rts[i]);
   }
 }
 
@@ -112,13 +140,12 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       {true, true, VK_COMPARE_OP_LESS, false, false, {}, {}, 0, 1});
 
   pipeline_state->setColorBlendState(ColorBlendState{
-    .attachments = {
-      {
-        .blendEnable = VK_FALSE,
-        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-      }
-    }
-  });
+      .attachments = {{
+          .blendEnable = VK_FALSE,
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                            VK_COLOR_COMPONENT_G_BIT |
+                            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      }}});
   pipeline_state->setSubpassIndex(0);
 
   std::vector<Attachment> attachments{
@@ -141,54 +168,57 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       driver_, resource_cache_, render_pass_, std::move(pipeline_state));
 
   std::vector<VkDescriptorPoolSize> pool_size = {
-        {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1*frames_inflight_},
+      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 * frames_inflight_},
   };
-  descriptor_pool_ = std::make_shared<DescriptorPool>(driver_, pool_size, frames_inflight_);
-  const auto &ds_layout = pipeline_->getPipelineLayout()->getDescriptorSetLayout(0);
-  
-  for(auto &frame_data : frame_data_)
-  {
-    frame_data.descriptor_set = descriptor_pool_->requestDescriptorSet(ds_layout);
+  descriptor_pool_ =
+      std::make_shared<DescriptorPool>(driver_, pool_size, frames_inflight_);
+  const auto &ds_layout =
+      pipeline_->getPipelineLayout()->getDescriptorSetLayout(0);
+
+  for (auto &frame_data : frame_data_) {
+    frame_data.descriptor_set =
+        descriptor_pool_->requestDescriptorSet(ds_layout);
     VkDescriptorBufferInfo desc_buffer_info{
-      .buffer = frame_data.uniform_buffer->getHandle(),
-      .offset = 0,
-      .range = sizeof(float) * 32,
+        .buffer = frame_data.uniform_buffer->getHandle(),
+        .offset = 0,
+        .range = sizeof(float) * 32,
     };
-    frame_data.descriptor_set->update({
-      {
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = frame_data.descriptor_set->getHandle(),
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = &desc_buffer_info
-      }
-    });
+    frame_data.descriptor_set->update(
+        {{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = frame_data.descriptor_set->getHandle(),
+          .dstBinding = 0,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+          .pBufferInfo = &desc_buffer_info}});
   }
 }
 
 void TriangleApp::buildCommandBuffers() {
   // init command pool
-  command_pool_ = std::make_unique<CommandPool>(
-      driver_, driver_->getGraphicsQueueFamilyIndex(), CommandPool::CmbResetMode::ResetPool);
+  if (command_pool_ == nullptr) {
+    command_pool_ = std::make_unique<CommandPool>(
+        driver_, driver_->getGraphicsQueueFamilyIndex(),
+        CommandPool::CmbResetMode::ResetPool);
+  } else {
+    command_pool_->reset(false);
+  }
   // build command buffers
   for (uint32_t i = 0; i < frames_inflight_; ++i) {
     auto &frame_data = frame_data_[i];
-    auto &sync = render_output_syncs_[i];    
-    frame_data.cmd_buffer = command_pool_->requestCommandBuffer(
-        VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    auto &sync = render_output_syncs_[i];
+    frame_data.cmd_buffer =
+        command_pool_->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     auto cmd_buf = frame_data.cmd_buffer;
     cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-    cmd_buf->beginRenderPass(
-      sync.render_fence,
-      sync.render_semaphore,
-      render_pass_, frame_data.frame_buffer);
-    cmd_buf->bindPipelineWithDescriptorSets(
-        pipeline_, {frame_data.descriptor_set}, {}, 0);    
+    cmd_buf->beginRenderPass(sync.render_fence, sync.render_semaphore,
+                             render_pass_, frame_data.frame_buffer);
+    cmd_buf->bindPipelineWithDescriptorSets(pipeline_,
+                                            {frame_data.descriptor_set}, {}, 0);
     cmd_buf->bindVertexBuffer({vertex_buffer_}, {0}, 0);
     uint32_t width = frame_data_[0].frame_buffer->getWidth();
     uint32_t height = frame_data_[0].frame_buffer->getHeight();
-    cmd_buf->setViewPort({VkViewport{0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.f, 1.f}});
+    cmd_buf->setViewPort({VkViewport{0.0f, 0.0f, static_cast<float>(width),
+                                     static_cast<float>(height), 0.f, 1.f}});
     cmd_buf->setScissor({VkRect2D{{0, 0}, {width, height}}});
     cmd_buf->draw(3, 1, 0, 0);
     cmd_buf->endRenderPass();
