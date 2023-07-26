@@ -18,7 +18,7 @@ public:
 
   void init(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
-  void tick(const float seconds, const uint32_t render_target_index, const uint32_t frame_index) override;
+  void tick(const float seconds, const uint32_t rt_index, const uint32_t frame_index) override;
 
 private:
 

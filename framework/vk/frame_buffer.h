@@ -81,6 +81,10 @@ public:
 
   uint32_t getLayers() const { return render_target_->getLayers(); }
 
+  std::shared_ptr<RenderTarget> getRenderTarget() const {
+    return render_target_;
+  }
+
 private:
   std::shared_ptr<VkDriver> driver_;
   std::shared_ptr<RenderPass> render_pass_;

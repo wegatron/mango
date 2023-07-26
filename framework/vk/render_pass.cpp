@@ -73,8 +73,8 @@ void fill_output_attachment_refs(
   for (size_t i = 0; i < attachment_inds.size(); ++i) {
     attachment_refs[ref_ind].attachment = attachment_inds[i];
     attachment_refs[ref_ind].layout =
-        attachment_descriptions[attachment_inds[i]].initialLayout ==
-                VK_IMAGE_LAYOUT_UNDEFINED
+        (attachment_descriptions[attachment_inds[i]].initialLayout ==
+                VK_IMAGE_LAYOUT_UNDEFINED)
             ? VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
             : attachment_descriptions[attachment_inds[i]].initialLayout;
     ++ref_ind;
@@ -104,7 +104,6 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
         is_depth_stencil_format(attachments[i].format)
             ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
             : VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    ;
   }
 
   size_t attachment_num = 0;
@@ -148,8 +147,6 @@ RenderPass::RenderPass(const std::shared_ptr<VkDriver> &driver,
 
     subpass_descriptions[i].pDepthStencilAttachment = nullptr;
     if (subpasses[i].depth_stencil_attachment != 0xFFFFFFFF) {
-      subpass_descriptions[i].pDepthStencilAttachment =
-          attachment_refs.data() + ref_ind;
       attachment_refs[ref_ind].attachment =
           subpasses[i].depth_stencil_attachment;
       attachment_refs[ref_ind].layout =

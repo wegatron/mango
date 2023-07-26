@@ -52,6 +52,12 @@ public:
 
   VkImageView getHandle() const { return image_view_; }
 
+  VkImage getVkImage() const { return image_; }
+
+  VkImageSubresourceRange getSubresourceRange() const { 
+    return subresource_range_;
+  }
+
   ~ImageView();
 
 private:
@@ -60,6 +66,7 @@ private:
   VkFormat format_;
   VkImageSubresourceRange subresource_range_;
 #endif
+  VkImage image_{VK_NULL_HANDLE};
   VkImageView image_view_{VK_NULL_HANDLE};
 
   std::shared_ptr<VkDriver> driver_;

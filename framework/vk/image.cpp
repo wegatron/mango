@@ -49,7 +49,7 @@ ImageView::ImageView(const std::shared_ptr<Image> &image,
                      VkImageViewType view_type, VkFormat format,
                      VkImageAspectFlags aspect_flags,
                      uint32_t base_mip_level, uint32_t base_array_layer,
-                     uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(image->getDriver())
+                     uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(image->getDriver()), image_(image->getHandle())
 {
   VkImageViewCreateInfo view_info = {};
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -83,7 +83,7 @@ ImageView::ImageView(const std::shared_ptr<Image> &image,
 ImageView::ImageView(const std::shared_ptr<VkDriver> &driver, VkImage image, VkImageViewType view_type, VkFormat format,
           VkImageAspectFlags aspect_flags,
           uint32_t base_mip_level, uint32_t base_array_layer,
-          uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(driver) 
+          uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(driver), image_(image)
 {
 VkImageViewCreateInfo view_info = {};
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

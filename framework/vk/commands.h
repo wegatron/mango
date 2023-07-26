@@ -1,5 +1,6 @@
 #pragma once
 
+#include <framework/vk/barriers.h>
 #include <framework/vk/vk_driver.h>
 #include <memory>
 
@@ -12,6 +13,7 @@ class Semaphore;
 class Pipeline;
 class Buffer;
 class DescriptorSet;
+class ImageView;
 
 class CommandPool final {
 public:
@@ -62,40 +64,43 @@ public:
 
   void begin(VkCommandBufferUsageFlags flags);
 
+  void end();
+
   void beginRenderPass(const std::shared_ptr<Fence> &render_fence,
                        const std::shared_ptr<Semaphore> &render_semaphore,
                        const std::shared_ptr<RenderPass> &render_pass,
                        const std::unique_ptr<FrameBuffer> &frame_buffer);
+
+  void endRenderPass();
 
   void setViewPort(const std::initializer_list<VkViewport> &viewports);
 
   void setScissor(const std::initializer_list<VkRect2D> &scissors);
 
   void bindPipelineWithDescriptorSets(
-    const std::shared_ptr<Pipeline> &pipeline,
-    const std::initializer_list<std::shared_ptr<DescriptorSet>> &descriptor_sets,
-    const std::initializer_list<uint32_t> &dynamic_offsets,
-    const uint32_t first_set);
+      const std::shared_ptr<Pipeline> &pipeline,
+      const std::initializer_list<std::shared_ptr<DescriptorSet>>
+          &descriptor_sets,
+      const std::initializer_list<uint32_t> &dynamic_offsets,
+      const uint32_t first_set);
 
-  void bindVertexBuffer(
-    const std::initializer_list<std::shared_ptr<Buffer>> &buffer,
-    const std::initializer_list<VkDeviceSize> &offsets,
-    const uint32_t first_binding);
+  void
+  bindVertexBuffer(const std::initializer_list<std::shared_ptr<Buffer>> &buffer,
+                   const std::initializer_list<VkDeviceSize> &offsets,
+                   const uint32_t first_binding);
 
   void bindIndexBuffer(const std::shared_ptr<Buffer> &buffer,
-                       const VkDeviceSize offset,
-                       const VkIndexType index_type);
-    
+                       const VkDeviceSize offset, const VkIndexType index_type);
+
   void draw(const uint32_t vertex_count, const uint32_t instance_count,
             const uint32_t first_vertex, const uint32_t first_instance);
 
   void drawIndexed(const uint32_t index_count, const uint32_t instance_count,
                    const uint32_t first_index, const int32_t vertex_offset,
                    const uint32_t first_instance);
-  
-  void endRenderPass();
 
-  void end();
+  void imageMemoryBarrier(const ImageMemoryBarrier &image_memory_barrier,
+                          const std::shared_ptr<ImageView> &image_view);
 
 private:
   CommandBuffer(const std::shared_ptr<VkDriver> &driver,

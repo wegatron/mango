@@ -32,7 +32,7 @@ public:
   AppBase(const AppBase &) = delete;
   AppBase &operator=(const AppBase &) = delete;
 
-  virtual void tick(const float seconds, const uint32_t render_target_index, const uint32_t frame_index) = 0;
+  virtual void tick(const float seconds, const uint32_t rt_index, const uint32_t frame_index) = 0;
 
   virtual void init(const std::shared_ptr<VkDriver> &driver,
     const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;

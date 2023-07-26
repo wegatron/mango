@@ -7,12 +7,15 @@
 #include <framework/vk/swapchain.h>
 #include <framework/vk/syncs.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/barriers.h>
 #include <memory>
 
 namespace vk_engine {
-void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
-                       const uint32_t frame_index) {
+void TriangleApp::tick(const float seconds, const uint32_t rt_index,
+                       const uint32_t frame_index) 
+{
   render_output_syncs_[frame_index].render_fence->wait();
+  render_output_syncs_[frame_index].render_fence->reset();
   // update command buffer if needed, reset pool and rebuild command buffer
   // TODO update uniform buffer data
   Eigen::Matrix4f mats[2];
@@ -20,11 +23,11 @@ void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
   Eigen::Matrix4f &projection = mats[1];
   model_view.setIdentity();
   projection.setIdentity();
-  frame_data_[frame_index].uniform_buffer->update(
+  frame_data_[rt_index].uniform_buffer->update(
       reinterpret_cast<uint8_t *>(mats), sizeof(mats));
 
   // submit command buffer
-  VkCommandBuffer cmd_buf = frame_data_[frame_index].cmd_buffer->getHandle();
+  VkCommandBuffer cmd_buf = frame_data_[rt_index].cmd_buffer->getHandle();
   VkSemaphore render_semaphore =
       render_output_syncs_[frame_index].render_semaphore->getHandle();
   VkSemaphore present_semaphore =
@@ -35,10 +38,10 @@ void TriangleApp::tick(const float seconds, const uint32_t render_target_index,
   info.commandBufferCount = 1;
   info.pCommandBuffers = &cmd_buf;
   info.waitSemaphoreCount = 1;
-  info.pWaitSemaphores = &render_semaphore;
+  info.pWaitSemaphores = &present_semaphore;
   info.pWaitDstStageMask = &wait_stage;
   info.signalSemaphoreCount = 1;
-  info.pSignalSemaphores = &present_semaphore;
+  info.pSignalSemaphores = &render_semaphore;
 
   // Submit command buffer to graphics queue
   auto result = vkQueueSubmit(
@@ -66,7 +69,7 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
 
   render_output_syncs_.resize(frames_inflight_);
   for (auto &sync : render_output_syncs_) {
-    sync.render_fence = std::make_shared<Fence>(driver_);
+    sync.render_fence = std::make_shared<Fence>(driver_, true);
     sync.render_semaphore = std::make_shared<Semaphore>(driver_);
     sync.present_semaphore = std::make_shared<Semaphore>(driver_);
   }
@@ -222,6 +225,19 @@ void TriangleApp::buildCommandBuffers() {
     cmd_buf->setScissor({VkRect2D{{0, 0}, {width, height}}});
     cmd_buf->draw(3, 1, 0, 0);
     cmd_buf->endRenderPass();
+
+    // add a barrier to transition the swapchain image from color attachment to present
+    ImageMemoryBarrier barrier{
+        .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .new_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dst_access_mask = 0,
+        .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dst_stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        .src_queue_family_index = VK_QUEUE_FAMILY_IGNORED,
+        .dst_queue_family_index = VK_QUEUE_FAMILY_IGNORED
+    };
+    cmd_buf->imageMemoryBarrier(barrier, frame_data_[i].frame_buffer->getRenderTarget()->getImageViews()[0]);
     cmd_buf->end();
   }
 }
