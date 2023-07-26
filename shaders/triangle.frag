@@ -8,5 +8,5 @@ layout(location=0) out vec4 frag_color; // layout location ==> attachment index,
 
 void main(void)
 {
-    frag_color = vec4(normal, 1.0);
+    frag_color = vec4(1.0, 1.0, 1.0, 1.0);
 }

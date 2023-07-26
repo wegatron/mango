@@ -36,8 +36,8 @@ struct ViewPortState {
 struct MultisampleState {
   VkSampleCountFlagBits rasterization_samples{VK_SAMPLE_COUNT_1_BIT};
   VkBool32 sample_shading_enable{VK_FALSE};
-  float min_sample_shading{1.0f};
-  VkSampleMask sample_mask{0};
+  float min_sample_shading{0.0f};
+  VkSampleMask sample_mask{0xFFFFFFFF};
   VkBool32 alpha_to_coverage_enable{VK_FALSE};
   VkBool32 alpha_to_one_enable{VK_FALSE};
 

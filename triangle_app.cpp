@@ -79,9 +79,9 @@ void TriangleApp::init(const std::shared_ptr<VkDriver> &driver,
 
 void TriangleApp::setupScene() {
   /// vertex data
-  std::vector<float> vertex_data = {-0.5, -0.5, 0, 0, 0, 1, 0,   0,
-                                    0.5,  -0.5, 0, 0, 0, 1, 1,   0,
-                                    0.5,  0.5,  0, 0, 0, 1, 0.5, 0.5};
+  std::vector<float> vertex_data = {-0.5, -0.5, 0.1, 0, 0, -1, 0,   0,
+                                    0.5,  -0.5, 0.1, 0, 0, -1, 1,   0,
+                                    0.5,  0.5,  0.1, 0, 0, -1, 0.5, 0.5};
 
   // use device local, and transfer by staging buffer is better
   vertex_buffer_ = std::make_shared<Buffer>(
@@ -138,7 +138,7 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       VK_FRONT_FACE_CLOCKWISE, false});
   pipeline_state->setViewportState({1, 1});
   pipeline_state->setMultisampleState(
-      {VK_SAMPLE_COUNT_1_BIT, false, 1.0f, 0, false, false});
+      {VK_SAMPLE_COUNT_1_BIT, false, 0.0f, 0xFFFFFFFF, false, false});
   pipeline_state->setDepthStencilState(
       {true, true, VK_COMPARE_OP_LESS, false, false, {}, {}, 0, 1});
 
