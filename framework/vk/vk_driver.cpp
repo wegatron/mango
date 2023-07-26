@@ -270,6 +270,16 @@ void VkDriver::initAllocator() {
 }
 
 VkDriver::~VkDriver() {
+
+  if(allocator_)
+  {
+		//VmaTotalStatistics stats;
+		//vmaCalculateStatistics(allocator_, &stats);
+		//LOGI("Total device memory leaked: {} bytes.", stats.total.);
+		vmaDestroyAllocator(allocator_);
+  }
+
+
   vkDestroyDevice(device_, nullptr);
   vkDestroySurfaceKHR(instance_, surface_, nullptr);
   vkDestroyInstance(instance_, nullptr);

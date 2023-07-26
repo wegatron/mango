@@ -4,15 +4,18 @@
 namespace vk_engine {
 
 DescriptorPool::DescriptorPool(const std::shared_ptr<VkDriver> &driver,
-                               std::vector<VkDescriptorPoolSize> &pool_sizes,
+                               const VkDescriptorPoolCreateFlags flags,
+                               const std::vector<VkDescriptorPoolSize> &pool_sizes,
                                uint32_t max_sets)
-: driver_(driver)
+: driver_(driver), flags_(flags)
 {
-    VkDescriptorPoolCreateInfo pool_info = {};
-    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    pool_info.poolSizeCount = pool_sizes.size();
-    pool_info.pPoolSizes = pool_sizes.data();
-    pool_info.maxSets = max_sets;
+    VkDescriptorPoolCreateInfo pool_info = {
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .flags = flags,
+        .maxSets = max_sets,
+        .poolSizeCount = pool_sizes.size(),
+        .pPoolSizes = pool_sizes.data()
+    };
 
     auto result = vkCreateDescriptorPool(driver_->getDevice(), &pool_info, nullptr, &descriptor_pool_);
     if (result != VK_SUCCESS) {
@@ -28,7 +31,7 @@ DescriptorPool::~DescriptorPool()
             throw VulkanUseException("descriptor pool reseting with descriptor set is still in use!");
         }
     }
-
+    descriptor_sets_.clear();
     // all descriptor sets allocated from the pool are implicitly freed and become invalid.
     vkDestroyDescriptorPool(driver_->getDevice(), descriptor_pool_, nullptr);
 }
@@ -56,9 +59,9 @@ std::shared_ptr<DescriptorSet> DescriptorPool::requestDescriptorSet(const Descri
 
 DescriptorSet::DescriptorSet(const std::shared_ptr<VkDriver> &driver,
                 DescriptorPool &pool,
-                const DescriptorSetLayout &layout)
-{
-    driver_ = driver;
+                const DescriptorSetLayout &layout) : driver_(driver)
+{    
+    free_able_ = (pool.getFlags() & VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
     descriptor_pool_ = pool.getHandle();
     auto layout_handle = layout.getHandle();
 
@@ -77,7 +80,8 @@ DescriptorSet::DescriptorSet(const std::shared_ptr<VkDriver> &driver,
 
 DescriptorSet::~DescriptorSet()
 {
-    vkFreeDescriptorSets(driver_->getDevice(), descriptor_pool_, 1, &descriptor_set_);
+    if(free_able_)
+        vkFreeDescriptorSets(driver_->getDevice(), descriptor_pool_, 1, &descriptor_set_);
 }
 
 void DescriptorSet::update(const std::vector<VkWriteDescriptorSet> &descriptor_writes)

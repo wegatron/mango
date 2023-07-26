@@ -19,7 +19,7 @@ Buffer::Buffer(const std::shared_ptr<VkDriver> &driver,
       flags_,                               // VkBufferCreateFlags    flags;
       size_,                                // VkDeviceSize           size;
       buffer_usage_,                        // VkBufferUsageFlags     usage;
-      VK_SHARING_MODE_EXCLUSIVE, // VkSharingMode          sharingMode;
+      VK_SHARING_MODE_EXCLUSIVE,            // VkSharingMode          sharingMode;
       0,      // uint32_t               queueFamilyIndexCount;
       nullptr // const uint32_t*        pQueueFamilyIndices;
   };
@@ -44,6 +44,7 @@ Buffer::Buffer(const std::shared_ptr<VkDriver> &driver,
 }
 
 Buffer::~Buffer() {
+  unmap();
   vmaDestroyBuffer(driver_->getAllocator(), buffer_, allocation_);
 }
 
@@ -60,6 +61,8 @@ void Buffer::update(uint8_t *data, size_t size, size_t offset) {
 }
 
 void Buffer::flush() {
+  // called after writing to a mapped memory for memory types that are not HOST_COHERENT
+  // Unmap operation doesn't do that automatically.
   vmaFlushAllocation(driver_->getAllocator(), allocation_, 0, size_);
 }
 
@@ -75,7 +78,7 @@ void Buffer::map() {
 }
 
 void Buffer::unmap() {
-  if (mapped_) {
+  if (mapped_ && !persistent_) {
     vmaUnmapMemory(driver_->getAllocator(), allocation_);
     mapped_ = false;
   }

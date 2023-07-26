@@ -1,57 +1,58 @@
 #pragma once
 
-#include <memory>
-#include <framework/vk/vk_driver.h>
 #include <framework/vk/descriptor_set_layout.h>
+#include <framework/vk/vk_driver.h>
+#include <memory>
 
-namespace vk_engine
-{
-    class DescriptorSet;
-    class DescriptorPool final
-    {
-    public:
-        DescriptorPool(
-            const std::shared_ptr<VkDriver> &driver,
-            std::vector<VkDescriptorPoolSize> &pool_sizes,
-            uint32_t max_sets);
+namespace vk_engine {
+class DescriptorSet;
+class DescriptorPool final {
+public:
+  DescriptorPool(const std::shared_ptr<VkDriver> &driver,
+                 const VkDescriptorPoolCreateFlags flags,
+                 const std::vector<VkDescriptorPoolSize> &pool_sizes,
+                 uint32_t max_sets);
 
-        DescriptorPool(const DescriptorPool &) = delete;
-        DescriptorPool &operator=(const DescriptorPool &) = delete;
+  DescriptorPool(const DescriptorPool &) = delete;
+  DescriptorPool &operator=(const DescriptorPool &) = delete;
 
-        ~DescriptorPool();
+  ~DescriptorPool();
 
-        VkDescriptorPool getHandle() const { return descriptor_pool_; }
+  VkDescriptorPool getHandle() const { return descriptor_pool_; }
 
-        void reset();
+  void reset();
 
-        std::shared_ptr<DescriptorSet> requestDescriptorSet(const DescriptorSetLayout &layout);
+  std::shared_ptr<DescriptorSet>
+  requestDescriptorSet(const DescriptorSetLayout &layout);
 
-    private:
-        std::shared_ptr<VkDriver> driver_;
-        VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
-        std::vector<std::shared_ptr<DescriptorSet>> descriptor_sets_;
-    };
+  VkDescriptorPoolCreateFlags getFlags() const { return flags_; }
 
-    class DescriptorSet
-    {
-    public:
-        DescriptorSet(const DescriptorSet &) = delete;
-        DescriptorSet &operator=(const DescriptorSet &) = delete;
+private:
+  std::shared_ptr<VkDriver> driver_;
+  VkDescriptorPoolCreateFlags flags_;
+  VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
+  std::vector<std::shared_ptr<DescriptorSet>> descriptor_sets_;
+};
 
-        ~DescriptorSet();
+class DescriptorSet {
+public:
+  DescriptorSet(const DescriptorSet &) = delete;
+  DescriptorSet &operator=(const DescriptorSet &) = delete;
 
-        VkDescriptorSet getHandle() const { return descriptor_set_; }
+  ~DescriptorSet();
 
-        void update(const std::vector<VkWriteDescriptorSet> &descriptor_writes);
-        
-    private:
-        DescriptorSet(const std::shared_ptr<VkDriver> &driver,
-                      DescriptorPool &pool,
-                      const DescriptorSetLayout &layout);        
-        std::shared_ptr<VkDriver> driver_;
-        VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
-        VkDescriptorSet descriptor_set_{VK_NULL_HANDLE};
+  VkDescriptorSet getHandle() const { return descriptor_set_; }
 
-        friend class DescriptorPool;
-    };
-}
+  void update(const std::vector<VkWriteDescriptorSet> &descriptor_writes);
+
+private:
+  DescriptorSet(const std::shared_ptr<VkDriver> &driver, DescriptorPool &pool,
+                const DescriptorSetLayout &layout);
+  std::shared_ptr<VkDriver> driver_;
+  bool free_able_{false};
+  VkDescriptorPool descriptor_pool_{VK_NULL_HANDLE};
+  VkDescriptorSet descriptor_set_{VK_NULL_HANDLE};
+
+  friend class DescriptorPool;
+};
+} // namespace vk_engine

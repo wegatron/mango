@@ -34,6 +34,7 @@ CommandPool::~CommandPool() {
           "command pool destroy with command buffer is still in use!");
     }
   }
+  command_buffers_.clear();
   vkDestroyCommandPool(driver_->getDevice(), command_pool_, nullptr);
 }
 

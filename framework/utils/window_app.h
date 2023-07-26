@@ -23,7 +23,7 @@ public:
   WindowApp &operator=(const WindowApp &) = delete;
 
   bool init();
-  void setApp(const std::shared_ptr<AppBase> &app);
+  void setApp(std::shared_ptr<AppBase> &&app);
   void run();
 
 private:

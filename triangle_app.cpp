@@ -174,7 +174,7 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
       {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1 * frames_inflight_},
   };
   descriptor_pool_ =
-      std::make_shared<DescriptorPool>(driver_, pool_size, frames_inflight_);
+      std::make_shared<DescriptorPool>(driver_, 0, pool_size, frames_inflight_);
   const auto &ds_layout =
       pipeline_->getPipelineLayout()->getDescriptorSetLayout(0);
 
@@ -240,6 +240,15 @@ void TriangleApp::buildCommandBuffers() {
     cmd_buf->imageMemoryBarrier(barrier, frame_data_[i].frame_buffer->getRenderTarget()->getImageViews()[0]);
     cmd_buf->end();
   }
+}
+
+TriangleApp::~TriangleApp()
+{
+    frame_data_.clear();
+    render_pass_.reset();
+    pipeline_.reset();
+    command_pool_.reset();
+    descriptor_pool_.reset();
 }
 
 } // namespace vk_engine

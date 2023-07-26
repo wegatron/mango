@@ -90,4 +90,9 @@ GraphicsPipeline::GraphicsPipeline(
 
   cleanDirtyFlag();
 }
+
+GraphicsPipeline::~GraphicsPipeline()
+{
+    vkDestroyPipeline(driver_->getDevice(), pipeline_, nullptr);
+}
 } // namespace vk_engine

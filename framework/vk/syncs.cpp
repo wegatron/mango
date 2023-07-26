@@ -37,7 +37,7 @@ namespace vk_engine
         return vkGetFenceStatus(driver_->getDevice(), handle_);
     }
 
-    Semaphore::Semaphore(const std::shared_ptr<VkDriver> &driver)
+    Semaphore::Semaphore(const std::shared_ptr<VkDriver> &driver) : driver_(driver)
     {
         VkSemaphoreCreateInfo semaphoreCreateInfo{};
         semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;

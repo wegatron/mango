@@ -16,6 +16,8 @@ public:
   TriangleApp(const std::string &name, const std::shared_ptr<ResourceCache> &resource_cache) 
     : AppBase(name, resource_cache) {}
 
+  ~TriangleApp() override;
+
   void init(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
   void tick(const float seconds, const uint32_t rt_index, const uint32_t frame_index) override;

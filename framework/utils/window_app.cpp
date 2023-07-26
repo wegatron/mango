@@ -6,6 +6,9 @@
 
 namespace vk_engine {
 WindowApp::~WindowApp() {
+
+  driver_->waitIdle();
+
   app_.reset();
   // destroy render targets(ImageView) before swapchain and depth images
   for(auto &rt : render_targets_) {
@@ -61,8 +64,8 @@ bool WindowApp::init() {
   return true;
 }
 
-void WindowApp::setApp(const std::shared_ptr<AppBase> &app) {
-  app_ = app;
+void WindowApp::setApp(std::shared_ptr<AppBase> &&app) {
+  app_ = std::move(app);
   // TODO connect resize or mouse action
 }
 

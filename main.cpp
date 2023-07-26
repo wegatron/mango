@@ -16,7 +16,7 @@ int main(int argc, char const *argv[]) {
   auto window_app =
       std::make_shared<vk_engine::WindowApp>("triangle", 800, 600);
 
-  window_app->setApp(app);
+  window_app->setApp(std::move(app));
   if (!window_app->init()) {
     LOGE("Failed to init window app");
     return -1;

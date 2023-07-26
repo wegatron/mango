@@ -51,7 +51,7 @@ namespace vk_engine
             return *pipeline_state_;
         }
         
-        ~GraphicsPipeline() override = default;
+        ~GraphicsPipeline() override;
 
         void cleanDirtyFlag() { pipeline_state_->dirty_ = false; }
 

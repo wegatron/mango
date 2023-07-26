@@ -38,6 +38,8 @@ public:
 
   VkQueue getGraphicsQueue() const { return graphics_queue_; }
 
+  VkResult waitIdle() const { return vkDeviceWaitIdle(device_); }
+
 private:
   void initInstance();
 
