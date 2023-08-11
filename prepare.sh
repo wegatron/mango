@@ -40,3 +40,7 @@ git clone https://github.com/assimp/assimp.git thirdparty/assimp
 cmake thirdparty/assimp -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/assimp/build -DCMAKE_BUILD_TYPE=Debug
 cmake --build thirdparty/assimp/build
 cmake --install thirdparty/assimp/build --config Debug
+
+git clone https://github.com/vblanco20-1/decs.git thirdparty/decs
+
+git clone https://github.com/skypjack/entt.git thirdparty/entt
