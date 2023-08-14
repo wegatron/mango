@@ -2,31 +2,10 @@
 
 #include <atomic>
 #include <cassert>
+#include <framework/utils/compiler.h>
 #include <memory_resource>
 
 namespace utils {
-class LinearAllocator {
-public:
-  LinearAllocator(const std::size_t size);
-
-  template <typename T>
-  T *allocate(std::size_t n, std::size_t alignment = alignof(T)) {
-            return static_cast<T *>(resource.allocate(n * sizeof(T), alignment);
-  }
-
-  /**
-   * \brief release all allocated memory. (allocate memory from the beginning
-   * again)
-   */
-  void release() { resource_.release(); }
-
-  ~LinearAllocator() { delete[] buffer_; }
-
-private:
-  std::pmr::monotonic_buffer_resource resource_;
-  std::byte *buffer_;
-  std::size_t size_;
-};
 
 // copy from filament
 // ------------------------------------------------------------------------------------------------
@@ -51,6 +30,121 @@ static inline P *align(P *p, size_t alignment, size_t offset) noexcept {
 
 } // namespace pointermath
 
+/* ------------------------------------------------------------------------------------------------
+ * LinearAllocator
+ *
+ * + Allocates blocks linearly
+ * + Cannot free individual blocks
+ * + Can free top of memory back up to a specified point
+ * + Doesn't call destructors
+ * ------------------------------------------------------------------------------------------------
+ */
+
+class LinearAllocator {
+public:
+  // use memory area provided
+  LinearAllocator(void *begin, void *end) noexcept;
+
+  template <typename AREA>
+  explicit LinearAllocator(const AREA &area)
+      : LinearAllocator(area.begin(), area.end()) {}
+
+  // Allocators can't be copied
+  LinearAllocator(const LinearAllocator &rhs) = delete;
+  LinearAllocator &operator=(const LinearAllocator &rhs) = delete;
+
+  // Allocators can be moved
+  LinearAllocator(LinearAllocator &&rhs) noexcept;
+  LinearAllocator &operator=(LinearAllocator &&rhs) noexcept;
+
+  ~LinearAllocator() noexcept = default;
+
+  // our allocator concept
+  void *alloc(size_t size, size_t alignment = alignof(std::max_align_t),
+              size_t extra = 0) UTILS_RESTRICT {
+    // branch-less allocation
+    void *const p = pointermath::align(current(), alignment, extra);
+    void *const c = pointermath::add(p, size);
+    bool success = c <= end();
+    set_current(success ? c : current());
+    return success ? p : nullptr;
+  }
+
+  // API specific to this allocator
+
+  void *getCurrent() UTILS_RESTRICT noexcept { return current(); }
+
+  // free memory back to the specified point
+  void rewind(void *p) UTILS_RESTRICT noexcept {
+    assert(p >= mBegin && p < end());
+    set_current(p);
+  }
+
+  // frees all allocated blocks
+  void reset() UTILS_RESTRICT noexcept { rewind(mBegin); }
+
+  size_t allocated() const UTILS_RESTRICT noexcept { return mSize; }
+
+  size_t available() const UTILS_RESTRICT noexcept { return mSize - mCur; }
+
+  void swap(LinearAllocator &rhs) noexcept;
+
+  void *base() noexcept { return mBegin; }
+
+  void free(void *, size_t) UTILS_RESTRICT noexcept {}
+
+private:
+  void *end() UTILS_RESTRICT noexcept {
+    return pointermath::add(mBegin, mSize);
+  }
+  void *current() UTILS_RESTRICT noexcept {
+    return pointermath::add(mBegin, mCur);
+  }
+  void set_current(void *p) UTILS_RESTRICT noexcept {
+    mCur = uint32_t(uintptr_t(p) - uintptr_t(mBegin));
+  }
+
+  void *mBegin = nullptr;
+  uint32_t mSize = 0;
+  uint32_t mCur = 0;
+};
+
+/* ------------------------------------------------------------------------------------------------
+ * HeapAllocator
+ *
+ * + uses malloc() for all allocations
+ * + frees blocks with free()
+ * ------------------------------------------------------------------------------------------------
+ */
+class HeapAllocator {
+public:
+  HeapAllocator() noexcept = default;
+
+  template <typename AREA> explicit HeapAllocator(const AREA &) {}
+
+  // our allocator concept
+  void *alloc(size_t size, size_t alignment = alignof(std::max_align_t),
+              size_t extra = 0) {
+    // this allocator doesn't support 'extra'
+    assert(extra == 0);
+    return aligned_alloc(size, alignment);
+  }
+
+  void free(void *p) noexcept {
+#if defined(WIN32)
+    ::_aligned_free(p);
+#else
+    ::free(p);
+#endif
+  }
+
+  void free(void *p, size_t) noexcept { this->free(p); }
+
+  ~HeapAllocator() noexcept = default;
+
+  void swap(HeapAllocator &) noexcept {}
+};
+
 class FreeList {
 public:
   FreeList() noexcept = default;
@@ -62,28 +156,28 @@ public:
   FreeList &operator=(FreeList &&rhs) noexcept = default;
 
   void *pop() noexcept {
-            Node *const head = mHead;
-            mHead = head ? head->next : nullptr;
-            // this could indicate a use after free
-            assert(!mHead || mHead >= mBegin && mHead < mEnd);
-            return head;
+    Node *const head = mHead;
+    mHead = head ? head->next : nullptr;
+    // this could indicate a use after free
+    assert(!mHead || mHead >= mBegin && mHead < mEnd);
+    return head;
   }
 
   void push(void *p) noexcept {
-            assert(p);
-            assert(p >= mBegin && p < mEnd);
-            // TODO: assert this is one of our pointer (i.e.: it's address match
-            // one of ours)
-            Node *const head = static_cast<Node *>(p);
-            head->next = mHead;
-            mHead = head;
+    assert(p);
+    assert(p >= mBegin && p < mEnd);
+    // TODO: assert this is one of our pointer (i.e.: it's address match
+    // one of ours)
+    Node *const head = static_cast<Node *>(p);
+    head->next = mHead;
+    mHead = head;
   }
 
   void *getFirst() noexcept { return mHead; }
 
 private:
   struct Node {
-            Node *next;
+    Node *next;
   };
 
   static Node *init(void *begin, void *end, size_t elementSize,
@@ -107,87 +201,86 @@ public:
   AtomicFreeList &operator=(const FreeList &rhs) = delete;
 
   void *pop() noexcept {
-            Node *const storage = mStorage;
+    Node *const storage = mStorage;
 
-            HeadPtr currentHead = mHead.load();
-            while (currentHead.offset >= 0) {
-              // The value of "next" we load here might already contain
-              // application data if another thread raced ahead of us. But in
-              // that case, the computed "newHead" will be discarded since
-              // compare_exchange_weak fails. Then this thread will loop with
-              // the updated value of currentHead, and try again.
-              Node *const next = storage[currentHead.offset].next.load(
-                  std::memory_order_relaxed);
-              const HeadPtr newHead{next ? int32_t(next - storage) : -1,
-                                    currentHead.tag + 1};
-              // In the rare case that the other thread that raced ahead of us
-              // already returned the same mHead we just loaded, but it now has
-              // a different "next" value, the tag field will not match, and
-              // compare_exchange_weak will fail and prevent that particular
-              // race condition.
-              if (mHead.compare_exchange_weak(currentHead, newHead)) {
-                // This assert needs to occur after we have validated that there
-                // was no race condition Otherwise, next might already contain
-                // application data, if another thread raced ahead of us after
-                // we loaded mHead, but before we loaded mHead->next.
-                assert(!next || next >= storage);
-                break;
-              }
-            }
-            void *p = (currentHead.offset >= 0) ? (storage + currentHead.offset)
-                                                : nullptr;
-            assert(!p || p >= storage);
-            return p;
+    HeadPtr currentHead = mHead.load();
+    while (currentHead.offset >= 0) {
+      // The value of "next" we load here might already contain
+      // application data if another thread raced ahead of us. But in
+      // that case, the computed "newHead" will be discarded since
+      // compare_exchange_weak fails. Then this thread will loop with
+      // the updated value of currentHead, and try again.
+      Node *const next =
+          storage[currentHead.offset].next.load(std::memory_order_relaxed);
+      const HeadPtr newHead{next ? int32_t(next - storage) : -1,
+                            currentHead.tag + 1};
+      // In the rare case that the other thread that raced ahead of us
+      // already returned the same mHead we just loaded, but it now has
+      // a different "next" value, the tag field will not match, and
+      // compare_exchange_weak will fail and prevent that particular
+      // race condition.
+      if (mHead.compare_exchange_weak(currentHead, newHead)) {
+        // This assert needs to occur after we have validated that there
+        // was no race condition Otherwise, next might already contain
+        // application data, if another thread raced ahead of us after
+        // we loaded mHead, but before we loaded mHead->next.
+        assert(!next || next >= storage);
+        break;
+      }
+    }
+    void *p =
+        (currentHead.offset >= 0) ? (storage + currentHead.offset) : nullptr;
+    assert(!p || p >= storage);
+    return p;
   }
 
   void push(void *p) noexcept {
-            Node *const storage = mStorage;
-            assert(p && p >= storage);
-            Node *const node = static_cast<Node *>(p);
-            HeadPtr currentHead = mHead.load();
-            HeadPtr newHead = {int32_t(node - storage), currentHead.tag + 1};
-            do {
-              newHead.tag = currentHead.tag + 1;
-              Node *const n = (currentHead.offset >= 0)
-                                  ? (storage + currentHead.offset)
-                                  : nullptr;
-              node->next.store(n, std::memory_order_relaxed);
-            } while (!mHead.compare_exchange_weak(currentHead, newHead));
+    Node *const storage = mStorage;
+    assert(p && p >= storage);
+    Node *const node = static_cast<Node *>(p);
+    HeadPtr currentHead = mHead.load();
+    HeadPtr newHead = {int32_t(node - storage), currentHead.tag + 1};
+    do {
+      newHead.tag = currentHead.tag + 1;
+      Node *const n =
+          (currentHead.offset >= 0) ? (storage + currentHead.offset) : nullptr;
+      node->next.store(n, std::memory_order_relaxed);
+    } while (!mHead.compare_exchange_weak(currentHead, newHead));
   }
 
   void *getFirst() noexcept {
-            return mStorage + mHead.load(std::memory_order_relaxed).offset;
+    return mStorage + mHead.load(std::memory_order_relaxed).offset;
   }
 
 private:
   struct Node {
-            // This should be a regular (non-atomic) pointer, but this causes
-            // TSAN to complain about a data-race that exists but is benin. We
-            // always use this atomic<> in relaxed mode. The data race TSAN
-            // complains about is when a pop() is interrupted by a pop() +
-            // push() just after mHead->next is read -- it appears as though it
-            // is written without synchronization (by the push), however in that
-            // case, the pop's CAS will fail and things will auto-correct.
-            //
-            //    Pop()                       |
-            //     |                          |
-            //   read head->next              |
-            //     |                        pop()
-            //     |                          |
-            //     |                        read head->next
-            //     |                         CAS, tag++
-            //     |                          |
-            //     |                        push()
-            //     |                          |
-            // [TSAN: data-race here]       write head->next
-            //     |                         CAS, tag++
-            //    CAS fails
-            //     |
-            //   read head->next
-            //     |
-            //    CAS, tag++
-            //
-            std::atomic<Node *> next;
+    // This should be a regular (non-atomic) pointer, but this causes
+    // TSAN to complain about a data-race that exists but is benin. We
+    // always use this atomic<> in relaxed mode. The data race TSAN
+    // complains about is when a pop() is interrupted by a pop() +
+    // push() just after mHead->next is read -- it appears as though it
+    // is written without synchronization (by the push), however in that
+    // case, the pop's CAS will fail and things will auto-correct.
+    //
+    //    Pop()                       |
+    //     |                          |
+    //   read head->next              |
+    //     |                        pop()
+    //     |                          |
+    //     |                        read head->next
+    //     |                         CAS, tag++
+    //     |                          |
+    //     |                        push()
+    //     |                          |
+    // [TSAN: data-race here]       write head->next
+    //     |                         CAS, tag++
+    //    CAS fails
+    //     |
+    //   read head->next
+    //     |
+    //    CAS, tag++
+    //
+    std::atomic<Node *> next;
   };
 
   // This struct is using a 32-bit offset into the arena rather than
@@ -195,8 +288,8 @@ private:
   // fit into 8 bytes. If it was any larger, it would not be possible to
   // access it atomically.
   struct alignas(8) HeadPtr {
-            int32_t offset;
-            uint32_t tag;
+    int32_t offset;
+    uint32_t tag;
   };
 
   std::atomic<HeadPtr> mHead{};
@@ -216,10 +309,10 @@ public:
   // our allocator concept
   void *alloc(size_t size = ELEMENT_SIZE, size_t alignment = ALIGNMENT,
               size_t offset = OFFSET) noexcept {
-            assert(size <= ELEMENT_SIZE);
-            assert(alignment <= ALIGNMENT);
-            assert(offset == OFFSET);
-            return mFreeList.pop();
+    assert(size <= ELEMENT_SIZE);
+    assert(alignment <= ALIGNMENT);
+    assert(offset == OFFSET);
+    return mFreeList.pop();
   }
 
   void free(void *p, size_t = ELEMENT_SIZE) noexcept { mFreeList.push(p); }
@@ -288,9 +381,9 @@ public:
   size_t size() const noexcept { return uintptr_t(mEnd) - uintptr_t(mBegin); }
 
   friend void swap(StaticArea &lhs, StaticArea &rhs) noexcept {
-            using std::swap;
-            swap(lhs.mBegin, rhs.mBegin);
-            swap(lhs.mEnd, rhs.mEnd);
+    using std::swap;
+    swap(lhs.mBegin, rhs.mBegin);
+    swap(lhs.mEnd, rhs.mEnd);
   }
 
 private:
@@ -303,16 +396,16 @@ public:
   HeapArea() noexcept = default;
 
   explicit HeapArea(size_t size) {
-            if (size) {
-              // TODO: policy committing memory
-              mBegin = malloc(size);
-              mEnd = pointermath::add(mBegin, size);
-            }
+    if (size) {
+      // TODO: policy committing memory
+      mBegin = malloc(size);
+      mEnd = pointermath::add(mBegin, size);
+    }
   }
 
   ~HeapArea() noexcept {
-            // TODO: policy for returning memory to system
-            free(mBegin);
+    // TODO: policy for returning memory to system
+    free(mBegin);
   }
 
   HeapArea(const HeapArea &rhs) = delete;
@@ -326,9 +419,9 @@ public:
   size_t size() const noexcept { return uintptr_t(mEnd) - uintptr_t(mBegin); }
 
   friend void swap(HeapArea &lhs, HeapArea &rhs) noexcept {
-            using std::swap;
-            swap(lhs.mBegin, rhs.mBegin);
-            swap(lhs.mEnd, rhs.mEnd);
+    using std::swap;
+    swap(lhs.mBegin, rhs.mBegin);
+    swap(lhs.mEnd, rhs.mEnd);
   }
 
 private:
@@ -355,6 +448,8 @@ struct NoLock {
   void unlock() noexcept {}
 };
 
+using Mutex = std::mutex;
+
 } // namespace LockingPolicy
 
 namespace TrackingPolicy {
@@ -363,10 +458,10 @@ namespace TrackingPolicy {
 struct Untracked {
   Untracked() noexcept = default;
   Untracked(const char *name, void *base, size_t size) noexcept {
-            (void)name, void(base), (void)size;
+    (void)name, void(base), (void)size;
   }
   void onAlloc(void *p, size_t size, size_t alignment, size_t extra) noexcept {
-            (void)p, (void)size, (void)alignment, (void)extra;
+    (void)p, (void)size, (void)alignment, (void)extra;
   }
   void onFree(void *p, size_t = 0) noexcept { (void)p; }
   void onReset() noexcept {}
@@ -415,20 +510,20 @@ struct DebugAndHighWatermark : protected HighWatermark, protected Debug {
   DebugAndHighWatermark(const char *name, void *base, size_t size) noexcept
       : HighWatermark(name, base, size), Debug(name, base, size) {}
   void onAlloc(void *p, size_t size, size_t alignment, size_t extra) noexcept {
-            HighWatermark::onAlloc(p, size, alignment, extra);
-            Debug::onAlloc(p, size, alignment, extra);
+    HighWatermark::onAlloc(p, size, alignment, extra);
+    Debug::onAlloc(p, size, alignment, extra);
   }
   void onFree(void *p, size_t size) noexcept {
-            HighWatermark::onFree(p, size);
-            Debug::onFree(p, size);
+    HighWatermark::onFree(p, size);
+    Debug::onFree(p, size);
   }
   void onReset() noexcept {
-            HighWatermark::onReset();
-            Debug::onReset();
+    HighWatermark::onReset();
+    Debug::onReset();
   }
   void onRewind(void *addr) noexcept {
-            HighWatermark::onRewind(addr);
-            Debug::onRewind(addr);
+    HighWatermark::onRewind(addr);
+    Debug::onRewind(addr);
   }
 };
 
@@ -462,10 +557,10 @@ public:
   // (acceptable size/alignment may depend on the allocator provided)
   void *alloc(size_t size, size_t alignment = alignof(std::max_align_t),
               size_t extra = 0) noexcept {
-            std::lock_guard<LockingPolicy> guard(mLock);
-            void *p = mAllocator.alloc(size, alignment, extra);
-            mListener.onAlloc(p, size, alignment, extra);
-            return p;
+    std::lock_guard<LockingPolicy> guard(mLock);
+    void *p = mAllocator.alloc(size, alignment, extra);
+    mListener.onAlloc(p, size, alignment, extra);
+    return p;
   }
 
   // Allocate an array of trivially destructible objects
@@ -476,58 +571,58 @@ public:
                             std::is_trivially_destructible<T>::value>::type>
   T *alloc(size_t count, size_t alignment = alignof(T),
            size_t extra = 0) noexcept {
-            return (T *)alloc(count * sizeof(T), alignment, extra);
+    return (T *)alloc(count * sizeof(T), alignment, extra);
   }
 
   // return memory pointed by p to the arena
   // (actual behaviour may depend on allocator provided)
   void free(void *p) noexcept {
-            if (p) {
-              std::lock_guard<LockingPolicy> guard(mLock);
-              mListener.onFree(p);
-              mAllocator.free(p);
-            }
+    if (p) {
+      std::lock_guard<LockingPolicy> guard(mLock);
+      mListener.onFree(p);
+      mAllocator.free(p);
+    }
   }
 
   // some allocators require the size of the allocation for free
   void free(void *p, size_t size) noexcept {
-            if (p) {
-              std::lock_guard<LockingPolicy> guard(mLock);
-              mListener.onFree(p, size);
-              mAllocator.free(p, size);
-            }
+    if (p) {
+      std::lock_guard<LockingPolicy> guard(mLock);
+      mListener.onFree(p, size);
+      mAllocator.free(p, size);
+    }
   }
 
   // some allocators don't have a free() call, but a single reset() or rewind()
   // instead
   void reset() noexcept {
-            std::lock_guard<LockingPolicy> guard(mLock);
-            mListener.onReset();
-            mAllocator.reset();
+    std::lock_guard<LockingPolicy> guard(mLock);
+    mListener.onReset();
+    mAllocator.reset();
   }
 
   void *getCurrent() noexcept { return mAllocator.getCurrent(); }
 
   void rewind(void *addr) noexcept {
-            std::lock_guard<LockingPolicy> guard(mLock);
-            mListener.onRewind(addr);
-            mAllocator.rewind(addr);
+    std::lock_guard<LockingPolicy> guard(mLock);
+    mListener.onRewind(addr);
+    mAllocator.rewind(addr);
   }
 
   // Allocate and construct an object
   template <typename T, size_t ALIGN = alignof(T), typename... ARGS>
   T *make(ARGS &&...args) noexcept {
-            void *const p = this->alloc(sizeof(T), ALIGN);
-            return p ? new (p) T(std::forward<ARGS>(args)...) : nullptr;
+    void *const p = this->alloc(sizeof(T), ALIGN);
+    return p ? new (p) T(std::forward<ARGS>(args)...) : nullptr;
   }
 
   // destroys an object created with make<T>() above, and frees associated
   // memory
   template <typename T> void destroy(T *p) noexcept {
-            if (p) {
-              p->~T();
-              this->free((void *)p, sizeof(T));
-            }
+    if (p) {
+      p->~T();
+      this->free((void *)p, sizeof(T));
+    }
   }
 
   char const *getName() const noexcept { return mArenaName; }
@@ -542,12 +637,12 @@ public:
   AreaPolicy const &getArea() const noexcept { return mArea; }
 
   void setListener(TrackingPolicy listener) noexcept {
-            std::swap(mListener, listener);
+    std::swap(mListener, listener);
   }
 
   template <typename... ARGS> void emplaceListener(ARGS &&...args) noexcept {
-            mListener.~TrackingPolicy();
-            new (&mListener) TrackingPolicy(std::forward<ARGS>(args)...);
+    mListener.~TrackingPolicy();
+    new (&mListener) TrackingPolicy(std::forward<ARGS>(args)...);
   }
 
   // An arena can't be copied
@@ -555,12 +650,12 @@ public:
   Arena &operator=(Arena const &rhs) noexcept = delete;
 
   friend void swap(Arena &lhs, Arena &rhs) noexcept {
-            using std::swap;
-            swap(lhs.mArea, rhs.mArea);
-            swap(lhs.mAllocator, rhs.mAllocator);
-            swap(lhs.mLock, rhs.mLock);
-            swap(lhs.mListener, rhs.mListener);
-            swap(lhs.mArenaName, rhs.mArenaName);
+    using std::swap;
+    swap(lhs.mArea, rhs.mArea);
+    swap(lhs.mAllocator, rhs.mAllocator);
+    swap(lhs.mLock, rhs.mLock);
+    swap(lhs.mListener, rhs.mListener);
+    swap(lhs.mArenaName, rhs.mArenaName);
   }
 
 private:
@@ -584,12 +679,12 @@ using HeapArena = Arena<HeapAllocator, LockingPolicy::NoLock, TrackingPolicy>;
 template <typename ARENA> class ArenaScope {
 
   struct Finalizer {
-            void (*finalizer)(void *p) = nullptr;
-            Finalizer *next = nullptr;
+    void (*finalizer)(void *p) = nullptr;
+    Finalizer *next = nullptr;
   };
 
   template <typename T> static void destruct(void *p) noexcept {
-            static_cast<T *>(p)->~T();
+    static_cast<T *>(p)->~T();
   }
 
 public:
@@ -601,47 +696,47 @@ public:
   ArenaScope &operator=(ArenaScope &&rhs) noexcept = delete;
 
   ~ArenaScope() {
-            // run the finalizer chain
-            Finalizer *head = mFinalizerHead;
-            while (head) {
-              void *p = pointermath::add(head, sizeof(Finalizer));
-              head->finalizer(p);
-              head = head->next;
-            }
-            // ArenaScope works only with Arena that implements rewind()
-            mArena.rewind(mRewind);
+    // run the finalizer chain
+    Finalizer *head = mFinalizerHead;
+    while (head) {
+      void *p = pointermath::add(head, sizeof(Finalizer));
+      head->finalizer(p);
+      head = head->next;
+    }
+    // ArenaScope works only with Arena that implements rewind()
+    mArena.rewind(mRewind);
   }
 
   template <typename T, size_t ALIGN = alignof(T), typename... ARGS>
   T *make(ARGS &&...args) noexcept {
-            T *o = nullptr;
-            if (std::is_trivially_destructible<T>::value) {
-              o = mArena.template make<T, ALIGN>(std::forward<ARGS>(args)...);
-            } else {
-              void *const p = (Finalizer *)mArena.alloc(sizeof(T), ALIGN,
-                                                        sizeof(Finalizer));
-              if (p != nullptr) {
-                Finalizer *const f = static_cast<Finalizer *>(p) - 1;
-                // constructor must be called before adding the dtor to the list
-                // so that the ctor can allocate objects in a nested scope and
-                // have the finalizers called in reverse order.
-                o = new (p) T(std::forward<ARGS>(args)...);
-                f->finalizer = &destruct<T>;
-                f->next = mFinalizerHead;
-                mFinalizerHead = f;
-              }
-            }
-            return o;
+    T *o = nullptr;
+    if (std::is_trivially_destructible<T>::value) {
+      o = mArena.template make<T, ALIGN>(std::forward<ARGS>(args)...);
+    } else {
+      void *const p =
+          (Finalizer *)mArena.alloc(sizeof(T), ALIGN, sizeof(Finalizer));
+      if (p != nullptr) {
+        Finalizer *const f = static_cast<Finalizer *>(p) - 1;
+        // constructor must be called before adding the dtor to the list
+        // so that the ctor can allocate objects in a nested scope and
+        // have the finalizers called in reverse order.
+        o = new (p) T(std::forward<ARGS>(args)...);
+        f->finalizer = &destruct<T>;
+        f->next = mFinalizerHead;
+        mFinalizerHead = f;
+      }
+    }
+    return o;
   }
 
   void *allocate(size_t size, size_t alignment = 1) noexcept {
-            return mArena.template alloc<uint8_t>(size, alignment, 0);
+    return mArena.template alloc<uint8_t>(size, alignment, 0);
   }
 
   template <typename T>
   T *allocate(size_t size, size_t alignment = alignof(T),
               size_t extra = 0) noexcept {
-            return mArena.template alloc<T>(size, alignment, extra);
+    return mArena.template alloc<T>(size, alignment, extra);
   }
 
   // use with caution
@@ -666,7 +761,7 @@ public:
   using is_always_equal = std::true_type;
 
   template <typename OTHER> struct rebind {
-            using other = STLAllocator<OTHER, ARENA>;
+    using other = STLAllocator<OTHER, ARENA>;
   };
 
 public:
@@ -680,10 +775,9 @@ public:
       : mArena(rhs.mArena) {}
 
   TYPE *allocate(std::size_t n) {
-            auto p = static_cast<TYPE *>(
-                mArena.alloc(n * sizeof(TYPE), alignof(TYPE)));
-            assert_invariant(p);
-            return p;
+    auto p = static_cast<TYPE *>(mArena.alloc(n * sizeof(TYPE), alignof(TYPE)));
+    assert_invariant(p);
+    return p;
   }
 
   void deallocate(TYPE *p, std::size_t n) { mArena.free(p, n * sizeof(TYPE)); }
@@ -693,12 +787,12 @@ public:
   // STLAllocator<> is instantiated.
   template <typename U, typename A>
   bool operator==(const STLAllocator<U, A> &rhs) const noexcept {
-            return std::addressof(mArena) == std::addressof(rhs.mArena);
+    return std::addressof(mArena) == std::addressof(rhs.mArena);
   }
 
   template <typename U, typename A>
   bool operator!=(const STLAllocator<U, A> &rhs) const noexcept {
-            return !operator==(rhs);
+    return !operator==(rhs);
   }
 
 private:
@@ -706,5 +800,34 @@ private:
 
   ARENA &mArena;
 };
+
+#ifndef NDEBUG
+
+// on Debug builds, HeapAllocatorArena needs LockingPolicy::Mutex because it
+// uses a TrackingPolicy, which needs to be synchronized.
+using HeapAllocatorArena =
+    utils::Arena<utils::HeapAllocator, utils::LockingPolicy::Mutex,
+                 utils::TrackingPolicy::DebugAndHighWatermark,
+                 utils::AreaPolicy::NullArea>;
+
+using LinearAllocatorArena =
+    utils::Arena<utils::LinearAllocator, utils::LockingPolicy::NoLock,
+                 utils::TrackingPolicy::DebugAndHighWatermark>;
+
+#else
+
+// on Release builds, HeapAllocatorArena doesn't need a LockingPolicy because
+// HeapAllocator is intrinsically synchronized as it relies on heap allocations
+// (i.e.: malloc/free)
+using HeapAllocatorArena =
+    utils::Arena<utils::HeapAllocator, utils::LockingPolicy::NoLock,
+                 utils::TrackingPolicy::Untracked, utils::AreaPolicy::NullArea>;
+
+using LinearAllocatorArena =
+    utils::Arena<utils::LinearAllocator, utils::LockingPolicy::NoLock>;
+
+#endif
+
+//using ArenaScope = utils::ArenaScope<LinearAllocatorArena>;
 
 } // namespace utils
