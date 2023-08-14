@@ -54,26 +54,10 @@ elseif()
 endif()
 add_subdirectory(thirdparty/volk)
 
-file(GLOB src *.cpp framework/vk/*.cpp framework/utils/*.cpp)
-file(GLOB headers *.h framework/vk/*.h framework/utils/*.h)
-add_executable(vk_triangle
-    ${src}
-    ${headers})
-
 if (NOT WIN32)
 set(THREAD "-lpthread")
 endif()
 
-target_link_libraries(vk_triangle 
-    PRIVATE 
-    volk
-    ${GLFW_LIBRARY}
-    ${THREAD} 
-    glslang::glslang    
-    glslang::glslang-default-resource-limits
-    glslang::SPIRV
-    VulkanMemoryAllocator::VulkanMemoryAllocator
-    spirv-cross-reflect
-    spirv-cross-core
-    spirv-cross-glsl
-)
+add_subdirectory(samples/triangle)
+
+add_subdirectory(test)
