@@ -37,10 +37,20 @@
 # cmake --install thirdparty/spirv-cross/build --config Debug
 
 git clone https://github.com/assimp/assimp.git thirdparty/assimp
+cd thirdparty/assimp
+git apply -p1 < ../../assimp_patch.patch
+cd ../../
 cmake thirdparty/assimp -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/assimp/build -DCMAKE_BUILD_TYPE=Debug
 cmake --build thirdparty/assimp/build
 cmake --install thirdparty/assimp/build --config Debug
+mkdir -p install/include/contrib/utf8cpp
+cp -r thirdparty/assimp/contrib/utf8cpp install/include/contrib
 
-git clone https://github.com/vblanco20-1/decs.git thirdparty/decs
+#git clone https://github.com/vblanco20-1/decs.git thirdparty/decs
 
 git clone https://github.com/skypjack/entt.git thirdparty/entt
+cmake thirdparty/entt -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/entt/build -DCMAKE_BUILD_TYPE=Debug
+cmake --build thirdparty/entt/build
+cmake --install thirdparty/entt/build --config Debug
+
+#download data from https://sketchfab.com/3d-models/buster-drone-294e79652f494130ad2ab00a13fdbafd#download

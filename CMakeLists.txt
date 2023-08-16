@@ -21,6 +21,7 @@ list(APPEND CMAKE_PREFIX_PATH
     ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_reflect/cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_core/cmake
     ${CMAKE_CURRENT_SOURCE_DIR}/install/share/spirv_cross_glsl/cmake
+    ${CMAKE_CURRENT_SOURCE_DIR}/install/lib/cmake/assimp-5.2
 )
 
 find_package(glslang REQUIRED)
@@ -32,6 +33,8 @@ find_package(spirv_cross_reflect REQUIRED)
 find_package(spirv_cross_core REQUIRED)
 
 find_package(spirv_cross_glsl REQUIRED)
+
+find_package(assimp REQUIRED)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -58,6 +61,6 @@ if (NOT WIN32)
 set(THREAD "-lpthread")
 endif()
 
-add_subdirectory(samples/triangle)
+#add_subdirectory(samples/triangle)
 
 add_subdirectory(test)
