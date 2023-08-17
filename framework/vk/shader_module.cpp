@@ -2,30 +2,30 @@
 #include <cassert>
 #include <fstream>
 #include <functional>
-#include <glslang/SPIRV/GLSL.std.450.h>
-#include <glslang/SPIRV/GlslangToSpv.h>
+#include <glm/gtx/hash.hpp>
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
-#include <glm/gtx/hash.hpp>
+#include <glslang/SPIRV/GLSL.std.450.h>
+#include <glslang/SPIRV/GlslangToSpv.h>
 
-#include <volk.h>
 #include <framework/utils/logging.h>
 #include <framework/utils/spirv_reflection.h>
+#include <volk.h>
 
 namespace vk_engine {
 
-size_t ShaderResource::hash(const ShaderResource &resource) noexcept
-{
+size_t ShaderResource::hash(const ShaderResource &resource) noexcept {
   size_t hash_code = 0;
-  if(resource.type == ShaderResourceType::Input ||
-    resource.type == ShaderResourceType::Output ||
-    resource.type == ShaderResourceType::PushConstant ||
-    resource.type == ShaderResourceType::SpecializationConstant) {
-      return 0;
+  if (resource.type == ShaderResourceType::Input ||
+      resource.type == ShaderResourceType::Output ||
+      resource.type == ShaderResourceType::PushConstant ||
+      resource.type == ShaderResourceType::SpecializationConstant) {
+    return 0;
   }
 
   std::hash<int> hasher;
-  // hash resource part for descriptor binding, no location, location is used for shader input output
+  // hash resource part for descriptor binding, no location, location is used
+  // for shader input output
   hash_code = hasher(resource.set);
   glm::detail::hash_combine(hash_code, hasher(resource.binding));
   glm::detail::hash_combine(hash_code, hasher(static_cast<int>(resource.type)));
@@ -60,10 +60,9 @@ void ShaderModule::setGlsl(const std::string &glsl_code,
 
 EShLanguage findShaderLanguage(VkShaderStageFlagBits stage);
 
-void ShaderModule::compile2spirv(
-  const std::string &glsl_code,
-  VkShaderStageFlagBits stage,
-  std::vector<uint32_t> &spirv_code) {
+void ShaderModule::compile2spirv(const std::string &glsl_code,
+                                 VkShaderStageFlagBits stage,
+                                 std::vector<uint32_t> &spirv_code) {
   // Initialize glslang library.
   glslang::InitializeProcess();
 
@@ -95,7 +94,7 @@ void ShaderModule::compile2spirv(
   }
 
   auto shader_log = shader.getInfoLog();
-  if (strlen(shader_log)>0)
+  if (strlen(shader_log) > 0)
     LOGI(shader_log);
   auto program_log = program.getInfoLog();
   if (strlen(program_log))
@@ -109,31 +108,27 @@ void ShaderModule::compile2spirv(
   spv::SpvBuildLogger logger;
   glslang::GlslangToSpv(*intermediate, spirv_code, &logger);
   auto log_str = logger.getAllMessages();
-  if(log_str.length() > 0)
+  if (log_str.length() > 0)
     LOGI(logger.getAllMessages());
   glslang::FinalizeProcess();
 }
 
-
-void ShaderModule::readGlsl(const std::string &file_path, VkShaderStageFlagBits &stage, std::string &glsl_code)
-{
+void ShaderModule::readGlsl(const std::string &file_path,
+                            VkShaderStageFlagBits &stage,
+                            std::string &glsl_code) {
   auto len = file_path.length();
-  if(len <= 4)
+  if (len <= 4)
     throw std::runtime_error("invalid shader file path");
-  
-  if(file_path.compare(len-5, 5, ".vert") == 0)
-  {
+
+  if (file_path.compare(len - 5, 5, ".vert") == 0) {
     stage = VK_SHADER_STAGE_VERTEX_BIT;
-  }
-  else if(file_path.compare(len-5, 5, ".frag") == 0)
-  {
+  } else if (file_path.compare(len - 5, 5, ".frag") == 0) {
     stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-  }
-  else if(file_path.compare(len-5, 5, ".comp") == 0)
-  {
+  } else if (file_path.compare(len - 5, 5, ".comp") == 0) {
     stage = VK_SHADER_STAGE_COMPUTE_BIT;
   } else {
-    throw std::runtime_error("invalid shader file path post fix, only support .vert, .frag, .comp");
+    throw std::runtime_error(
+        "invalid shader file path post fix, only support .vert, .frag, .comp");
   }
 
   // read glsl code
@@ -145,36 +140,34 @@ void ShaderModule::readGlsl(const std::string &file_path, VkShaderStageFlagBits 
   ifs.seekg(0, std::ios::beg);
   glsl_code.resize(size);
   ifs.read(reinterpret_cast<char *>(glsl_code.data()), size);
-  ifs.close();  
+  ifs.close();
 }
 
 size_t ShaderModule::hash(const std::string &glsl_code,
-                    VkShaderStageFlagBits stage) noexcept
-{
+                          VkShaderStageFlagBits stage) noexcept {
   auto hash_code = std::hash<VkShaderStageFlagBits>{}(stage);
   auto value = std::hash<std::string>{}(glsl_code);
   glm::detail::hash_combine(hash_code, value);
   return hash_code;
 }
 
-
-Shader::Shader(const std::shared_ptr<VkDriver> &driver, const std::shared_ptr<ShaderModule> &shader_module)
-{
+Shader::Shader(const std::shared_ptr<VkDriver> &driver,
+               const std::shared_ptr<ShaderModule> &shader_module) {
   assert(shader_module != nullptr);
-  
+
   driver_ = driver;
   VkShaderModuleCreateInfo create_info = {};
   create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
   create_info.codeSize = shader_module->getSpirv().size() * sizeof(uint32_t);
   create_info.pCode = shader_module->getSpirv().data();
 
-  if (vkCreateShaderModule(driver_->getDevice(), &create_info, nullptr, &handle_) != VK_SUCCESS) {
+  if (vkCreateShaderModule(driver_->getDevice(), &create_info, nullptr,
+                           &handle_) != VK_SUCCESS) {
     throw std::runtime_error("failed to create shader module!");
   }
 }
 
-Shader::~Shader()
-{
+Shader::~Shader() {
   vkDestroyShaderModule(driver_->getDevice(), handle_, nullptr);
 }
 
@@ -220,5 +213,32 @@ EShLanguage findShaderLanguage(VkShaderStageFlagBits stage) {
   default:
     return EShLangVertex;
   }
+}
+
+std::vector<ShaderResource> parseShaderResources(
+    const std::vector<std::shared_ptr<ShaderModule>> &shaders) {
+  std::vector<ShaderResource> resources;
+  for (const auto shader_module : shader_modules) {
+    for (const auto &resource : shader_module->getResources()) {
+      std::string key = resource.name;
+      // input output may have same name
+      if (resource.type == ShaderResourceType::Input ||
+          resource.type == ShaderResourceType::Output) {
+        key = std::to_string(resource.stages) + "_" + key;
+      }
+
+      auto itr = resources.find(key);
+      if (itr != resources.end())
+        itr->second.stages |= resource.stages;
+      else
+        resources.emplace(key, resource);
+    }
+  }
+  std::sort(resources.begin(), resources.end(),
+            [](const ShaderResource &a, const ShaderResource &b) {
+              if(a.set == b.set) return &a < &b;
+              return a.set < b.set;
+   });
+  return resources;
 }
 } // namespace vk_engine

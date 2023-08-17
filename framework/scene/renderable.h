@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <entt/entt.hpp>
+#include <framework/scene/component/mesh.h>
 
 namespace vk_engine {
 struct RenderableBuilderInfo;
@@ -10,13 +11,10 @@ public:
   ~RenderableBuilder();
 
   // add geometry component to renderable
-  RenderableBuilder &geometry(size_t index, PrimitiveType type,
-                              VertexBuffer *vertices, IndexBuffer *indices,
-                              size_t offset, size_t minIndex, size_t maxIndex,
-                              size_t count) noexcept;
+  RenderableBuilder &mesh(const Mesh &m) noexcept;
  
   // add material component to renderable
-  RenderableBuilder &material(size_t index, MaterialInstance const* materialInstance) noexcept;
+  RenderableBuilder &material(size_t index, Material &mat) noexcept;
 
   RenderableBuilder& boundingBox(const Box& axisAlignedBoundingBox) noexcept;
   

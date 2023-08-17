@@ -130,4 +130,9 @@ private:
   std::shared_ptr<VkDriver> driver_;
   VkShaderModule handle_;
 };
+
+/*
+ * @brief parse shader resources, return a vector of ShaderResource, sorted by set index
+ */
+std::vector<ShaderResource> parseShaderResources(const std::vector<std::shared_ptr<ShaderModule>> &shaders);
 } // namespace vk_engine
