@@ -1,5 +1,5 @@
-file(GLOB src *.cpp framework/vk/*.cpp framework/utils/*.cpp)
-file(GLOB headers *.h framework/vk/*.h framework/utils/*.h)
+file(GLOB src *.cpp)
+file(GLOB headers *.h)
 add_executable(vk_triangle
     ${src}
     ${headers})

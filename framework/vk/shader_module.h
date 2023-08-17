@@ -134,5 +134,5 @@ private:
 /*
  * @brief parse shader resources, return a vector of ShaderResource, sorted by set index
  */
-std::vector<ShaderResource> parseShaderResources(const std::vector<std::shared_ptr<ShaderModule>> &shaders);
+std::vector<ShaderResource> parseShaderResources(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 } // namespace vk_engine

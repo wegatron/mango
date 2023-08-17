@@ -2,6 +2,7 @@
 #include <cassert>
 #include <fstream>
 #include <functional>
+#include <map>
 #include <glm/gtx/hash.hpp>
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/Public/ShaderLang.h>
@@ -216,8 +217,8 @@ EShLanguage findShaderLanguage(VkShaderStageFlagBits stage) {
 }
 
 std::vector<ShaderResource> parseShaderResources(
-    const std::vector<std::shared_ptr<ShaderModule>> &shaders) {
-  std::vector<ShaderResource> resources;
+    const std::vector<std::shared_ptr<ShaderModule>> &shader_modules) {
+  std::map<std::string, ShaderResource> resources;
   for (const auto shader_module : shader_modules) {
     for (const auto &resource : shader_module->getResources()) {
       std::string key = resource.name;
@@ -234,11 +235,11 @@ std::vector<ShaderResource> parseShaderResources(
         resources.emplace(key, resource);
     }
   }
-  std::sort(resources.begin(), resources.end(),
-            [](const ShaderResource &a, const ShaderResource &b) {
-              if(a.set == b.set) return &a < &b;
-              return a.set < b.set;
-   });
-  return resources;
+
+  std::vector<ShaderResource> result;
+  result.reserve(resources.size());
+  for(auto &resource : resources)
+    result.push_back(resource.second);
+  return result;
 }
 } // namespace vk_engine
