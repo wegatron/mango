@@ -1,5 +1,5 @@
-file(GLOB headers scene/*.h utils/*.h vk/*.h)
-file(GLOB srcs scene/*.cpp utils/*.cpp vk/*.cpp)
+file(GLOB headers scene/*.h  scene/component/*.h utils/*.h vk/*.h)
+file(GLOB srcs scene/*.cpp scene/component/*.cpp utils/*.cpp vk/*.cpp)
 
 add_library(vk_engine ${headers} ${srcs})
 target_link_libraries(vk_engine PRIVATE 

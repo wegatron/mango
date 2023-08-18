@@ -12,13 +12,23 @@ struct MaterialUboParam
     std::string name;
 };
 
+struct MaterialUbo
+{
+    uint32_t set;
+    uint32_t binding;
+    bool dirty{false};
+    std::byte *data;
+    std::vector<MaterialUboParam> params;
+};
+
 struct MaterialTextureParam
 {
+    uint32_t set;
     uint32_t binding;
     uint32_t index; // for array texture
     std::string name;
     std::string img_file_path;
-    bool dirty{false};
+    bool dirty;
 };
 
 /**
@@ -36,13 +46,15 @@ public:
     template<typename T>
     void setUboParamValue(const std::string &name, const T value)
     {
-        auto itr = std::find_if(ubo_params_.begin(), ubo_params_.end(), [&name](const MaterialUboParam &param) {
-            return param.name == name;
-        });
-        if(itr == ubo_params_.end()  || itr->type_info != typeid(T))
-            throw std::runtime_error("invalid ubo param name or type");
-        memcpy(ubo_data_.data() + itr->ub_offset, &value, sizeof(T));
-        ubo_dirty_ = true;
+        // TODO
+
+        // auto itr = std::find_if(ubos_.begin(), ubos_.end(), [&name](const MaterialUbo &ubo) {
+        //     return param.name == name;
+        // });
+        // if(itr == ubo_params_.end()  || itr->type_info != typeid(T))
+        //     throw std::runtime_error("invalid ubo param name or type");
+        // memcpy(ubo_data_.data() + itr->ub_offset, &value, sizeof(T));
+        // ubo_dirty_ = true;
     }
 
     void setTextureParamValue(const std::string &name, const std::string &img_file_path)
@@ -67,10 +79,8 @@ private:
     std::shared_ptr<ShaderModule> vs_;
     std::shared_ptr<ShaderModule> fs_;
     
-    uint32_t ubo_binding_;
-    bool ubo_dirty_{false};
-    std::vector<MaterialUboParam> ubo_params_;
-    std::vector<std::byte> ubo_data_;    
+    std::vector<MaterialUbo> ubos_;
+    std::vector<std::byte> ubo_data_;
     
     std::vector<MaterialTextureParam> texture_params_;
 };
