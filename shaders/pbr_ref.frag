@@ -29,9 +29,10 @@
 
 precision highp float;
 
-#define MAX_FORWARD_LIGHT_COUNT 4
+#define MAX_FORWARD_LIGHT_COUNT 8
 #define DIRECTIONAL_LIGHT 0.0
 #define POINT_LIGHT 1.0
+#define HAS_BASE_COLOR_TEXTURE
 
 #ifdef HAS_BASE_COLOR_TEXTURE
 layout(set = 0, binding = 0) uniform sampler2D base_color_texture;
@@ -51,12 +52,13 @@ layout(location = 2) in vec3 in_normal;
 
 layout(location = 0) out vec4 o_color;
 
-layout(set = 0, binding = 0) uniform GlobalMVP
+layout(set = 0, binding = 1) uniform GlobalUniform
 {
 	mat4 model;
 	mat4 view_proj;
 	vec3 camera_position;
-} mvp;
+}
+global_uniform;
 
 struct Light
 {
@@ -66,18 +68,20 @@ struct Light
 	vec2 info;             // (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
 };
 
-layout(set = 0, binding = 1, std430) uniform LightsInfo
+layout(set = 0, binding = 4) uniform LightsInfo
 {
 	uint  count; // 4 bytes
 	Light lights[MAX_FORWARD_LIGHT_COUNT]; //
-} lights;
+}
+lights;
 
-layout(set = 2, binding=0, std430) uniform PBRMaterial
+layout(push_constant, std430) uniform PBRMaterialUniform
 {
-	vec4  base_color;
-	float metallic;
-	float roughness;
-} pbr_mat;
+	vec4  base_color_factor;
+	float metallic_factor;
+	float roughness_factor;
+}
+pbr_material_uniform;
 
 const float PI = 3.14159265359;
 
