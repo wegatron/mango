@@ -56,7 +56,7 @@ void VkDriver::initDevice() {
       physical_devices[physical_device_index].getGraphicsQueueFamilyIndex();
 
 // for print out memory infos
-#if !defined(NDEBUG)
+#ifndef NDEBUG
   VkPhysicalDeviceMemoryProperties memory_properties;
   vkGetPhysicalDeviceMemoryProperties(physical_device_, &memory_properties);
   const char * flag_names [] = {"NONE",

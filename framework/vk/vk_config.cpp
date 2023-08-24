@@ -56,7 +56,7 @@ uint32_t Vk11Config::checkSelectAndUpdate(
       continue;
 
     const auto &device_extensions = pd.getExtensionProperties();
-#if !defined(NDEBUG)
+#ifndef NDEBUG
     LOGD("device name: {}", pd.getProperties().deviceName);
     for (const auto &ext : device_extensions)
       LOGD("device extension: {}", ext.extensionName);

@@ -40,6 +40,11 @@ public:
 
   VkResult waitIdle() const { return vkDeviceWaitIdle(device_); }
 
+  void update(const std::vector<VkWriteDescriptorSet> &descriptor_writes)
+  {
+    vkUpdateDescriptorSets(device_, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);    
+  }
+
 private:
   void initInstance();
 

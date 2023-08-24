@@ -43,8 +43,6 @@ public:
 
   VkDescriptorSet getHandle() const { return descriptor_set_; }
 
-  void update(const std::vector<VkWriteDescriptorSet> &descriptor_writes);
-
 private:
   DescriptorSet(const std::shared_ptr<VkDriver> &driver, DescriptorPool &pool,
                 const DescriptorSetLayout &layout);

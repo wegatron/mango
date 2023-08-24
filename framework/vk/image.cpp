@@ -67,7 +67,7 @@ ImageView::ImageView(const std::shared_ptr<Image> &image,
   view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
   view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-#if !NDEBUG
+#ifndef NDEBUG
   view_type_ = view_type;
   format_ = format;
   subresource_range_ = view_info.subresourceRange;
@@ -101,7 +101,7 @@ VkImageViewCreateInfo view_info = {};
   view_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
   view_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
 
-#if !NDEBUG
+#ifndef NDEBUG
   view_type_ = view_type;
   format_ = format;
   subresource_range_ = view_info.subresourceRange;

@@ -108,7 +108,7 @@ private:
   std::shared_ptr<VkDriver> driver_;
   VkCommandPool command_pool_;
   VkCommandBuffer command_buffer_{VK_NULL_HANDLE};
-#if !defined(NDEBUG)
+#ifndef NDEBUG
   bool resetable_;
 #endif
 

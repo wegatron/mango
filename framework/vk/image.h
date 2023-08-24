@@ -61,7 +61,7 @@ public:
   ~ImageView();
 
 private:
-#if !NDEBUG
+#ifndef NDEBUG
   VkImageViewType view_type_;
   VkFormat format_;
   VkImageSubresourceRange subresource_range_;

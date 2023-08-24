@@ -58,6 +58,12 @@ layout(set = 0, binding = 0) uniform GlobalMVP
 	vec3 camera_position;
 } mvp;
 
+struct PointLight {
+	vec3 position;
+	vec3 intensity;
+	vec3 lightColor;
+};
+
 struct Light
 {
 	vec4 position;         // position.w represents type of light
@@ -66,17 +72,16 @@ struct Light
 	vec2 info;             // (only used for spot lights) info.x represents light inner cone angle, info.y represents light outer cone angle
 };
 
-layout(set = 0, binding = 1, std430) uniform LightsInfo
+layout(set = 0, binding = 1) uniform LightsInfo
 {
 	uint  count; // 4 bytes
 	Light lights[MAX_FORWARD_LIGHT_COUNT]; //
 } lights;
 
-layout(set = 2, binding=0, std430) uniform PBRMaterial
+layout(set = 2, binding=0) uniform PBRMaterial
 {
 	vec4  base_color;
-	float metallic;
-	float roughness;
+	vec2 metallic_roughness;
 } pbr_mat;
 
 const float PI = 3.14159265359;
@@ -214,19 +219,19 @@ void main(void)
 #ifdef HAS_BASE_COLOR_TEXTURE
 	base_color = texture(base_color_texture, in_uv);
 #else
-	base_color      = pbr_material_uniform.base_color_factor;
+	base_color      = pbr_mat.base_color;
 #endif
 
 #ifdef HAS_METALLIC_ROUGHNESS_TEXTURE
 	float roughness = saturate(texture(metallic_roughness_texture, in_uv).g);
 	float metallic  = saturate(texture(metallic_roughness_texture, in_uv).b);
 #else
-	float roughness = pbr_material_uniform.roughness_factor;
-	float metallic  = pbr_material_uniform.metallic_factor;
+	float roughness = pbr_mat.metallic_roughness[0];
+	float metallic  = pbr_mat.metallic_roughness[1];
 #endif
 
 	vec3  N     = normal();
-	vec3  V     = normalize(global_uniform.camera_position - in_pos);
+	vec3  V     = normalize(mvp.camera_position - in_pos);
 	float NdotV = saturate(dot(N, V));
 
 	vec3 LightContribution = vec3(0.0);

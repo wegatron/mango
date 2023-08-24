@@ -83,10 +83,4 @@ DescriptorSet::~DescriptorSet()
     if(free_able_)
         vkFreeDescriptorSets(driver_->getDevice(), descriptor_pool_, 1, &descriptor_set_);
 }
-
-void DescriptorSet::update(const std::vector<VkWriteDescriptorSet> &descriptor_writes)
-{
-    vkUpdateDescriptorSets(driver_->getDevice(), descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);
-}
-
 } // namespace vk_engine

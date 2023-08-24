@@ -55,7 +55,7 @@ CommandBuffer::CommandBuffer(const std::shared_ptr<VkDriver> &driver,
                              CommandPool &command_pool,
                              VkCommandBufferLevel level)
     : driver_(driver), command_pool_(command_pool.getHandle()) {
-#if !defined(NDEBUG)
+#ifndef NDEBUG
   resetable_ =
       (command_pool.getResetMode() != CommandPool::CmbResetMode::ResetPool);
 #endif
@@ -81,7 +81,7 @@ CommandBuffer::~CommandBuffer() {
 }
 
 void CommandBuffer::reset(bool memory2pool) {
-#if !defined(NDEBUG)
+#ifndef NDEBUG
   if (!resetable_) {
     throw VulkanException(VK_RESULT_MAX_ENUM,
                           "command buffer is not resetable!");
