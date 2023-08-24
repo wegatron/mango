@@ -1,7 +1,13 @@
 #pragma once
+#include <vulkan/vulkan.h>
+#include <glm/glm.hpp>
+
 #include <framework/vk/pipeline_state.h>
 #include <framework/vk/shader_module.h>
-#include <glm/glm.hpp>
+#include <framework/vk/descriptor_set.h>
+#include <framework/vk/buffer.h>
+#include <framework/vk/vk_driver.h>
+
 
 namespace vk_engine {
 
@@ -40,7 +46,8 @@ struct MaterialTextureParam {
  */
 class Material {
 public:
-  Material() = default;
+  Material(const std::shared_ptr<VkDriver> &driver) : driver_(driver) {}
+  
   virtual ~Material() = default;
 
   template <typename T>
@@ -50,7 +57,7 @@ public:
       for (auto &param : ubo.params) {
         if (param.name == name) {
           // do the job
-          uint_32_t param_offset = index * param.stride + param.ub_offset;
+          uint32_t param_offset = index * param.stride + param.ub_offset;
           if ((index != 0 && param.stride == 0) ||
               param_offset + sizeof(T) >= ubo.size)
             throw std::runtime_error("invalid ubo param index");
@@ -78,10 +85,9 @@ public:
   /**
    * \brief update the information(vs,fs,shader resources) to pipeline state
    */
-  virtual void update2PipelineState(PipelineState &pipeline_state);
+  virtual void update2PipelineState(PipelineState &pipeline_state) = 0;
 
-  virtual void
-  updateParam2DescriptorSet(std::vector<VkWriteDescriptorSet> &write_desc_sets);
+  void updateDescriptorSets(uint32_t set_index, VkDescriptorSet descriptor_set);
 
 protected:
   std::shared_ptr<ShaderModule> vs_;
@@ -89,28 +95,27 @@ protected:
 
   std::vector<ShaderResource> shader_resources_;
 
+  std::vector<std::unique_ptr<Buffer>> uniform_buffers_;
   std::vector<MaterialUbo> ubos_;
   std::vector<std::byte> ubo_data_;
   
   std::vector<MaterialTextureParam> texture_params_;
+  std::shared_ptr<VkDriver> driver_;
 };
 
 class PbrMaterial : public Material {
 public:
-  PbrMaterial();
+  PbrMaterial(const std::shared_ptr<VkDriver> &driver);
 
   ~PbrMaterial() override = default;
 
   void update2PipelineState(PipelineState &pipeline_state) override;
-
-  void updateParam2DescriptorSet(
-      std::vector<VkWriteDescriptorSet> &write_desc_sets) override;
 };
 
 /**
  * set-0 for engine-global resource,
  * set-1 for per pass resource,
- * set-2 for material resource,
+ * set-2 for material resource, for material only store this set
  * set-3 for per-object resource.
  */
 

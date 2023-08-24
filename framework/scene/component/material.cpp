@@ -5,7 +5,8 @@ namespace vk_engine {
 
 #define MAX_FORWARD_LIGHT_COUNT 4
 
-PbrMaterial::PbrMaterial() {
+PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
+    : Material(driver) {
   vs_ = std::make_shared<ShaderModule>();
   vs_->load("shaders/pbr.vert");
 
@@ -31,15 +32,31 @@ PbrMaterial::PbrMaterial() {
           {64, typeid(glm::vec2), 16 + sizeof(glm::vec4) * 3, "lights.info"}}});
 
   // pbr material
-  ubos_.emplace_back(MaterialUbo{
-      .set = 2,
-      .binding = 0,
-      .size = 32,
-      .params{
-          {0, typeid(glm::vec4), 0, "pbr_mat.base_color"},
-          {0, typeid(float), sizeof(glm::vec4), "pbr_mat.metallic"},
-          {0, typeid(float), sizeof(glm::vec4) + sizeof(float),
-           "pbr_mat.roughness"}}});
+  ubos_.emplace_back(
+      MaterialUbo{.set = 2,
+                  .binding = 0,
+                  .size = 32,
+                  .params{
+                      {0, typeid(glm::vec4), 0, "pbr_mat.base_color"},
+                      {0, typeid(glm::vec2), sizeof(glm::vec4),
+                       "pbr_mat.metallic_roughness"},
+                  }});
+
+  // check uniform buffer in resources is consistent with ubos_
+#ifndef NDEBUG
+  for (auto &resource : shader_resources_) {
+    if (resource.type == ShaderResourceType::BufferUniform) {
+      auto itr = std::find_if(
+          ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
+            return ubo.set == resource.set && ubo.binding == resource.binding;
+          });
+      if (itr == ubos_.end())
+        throw std::runtime_error("uniform buffer not found");
+      if (itr->size < resource.size)
+        throw std::runtime_error("uniform buffer size not match");
+    }
+  }
+#endif
 
   // update reference cpu data
   uint32_t ubo_data_size = 0;
@@ -48,13 +65,15 @@ PbrMaterial::PbrMaterial() {
   }
   ubo_data_.resize(ubo_data_size);
 
-  // check uniform buffer in resources is consistent with ubos_ 
+  // create uniform buffers
+  uniform_buffers_.reserve(ubos_.size());
+  for (auto &ubo : ubos_) {
+    uniform_buffers_.emplace_back(std::make_unique<Buffer>(
+        driver_, 0, ubo.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
+  }
 }
-
-void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {}
-
-void PbrMaterial::updateParam2DescriptorSet(
-    std::vector<VkWriteDescriptorSet> &write_desc_sets) {}
 
 MaterialUbo globalMVPUbo() {
   static_assert(sizeof(glm::mat4) * 2 + sizeof(glm::vec4) == 64 * 2 + 16,
@@ -63,11 +82,48 @@ MaterialUbo globalMVPUbo() {
       .set = 0,
       .binding = 0,
       .size = 64 * 2 + 16,
-      .params{
-          {0, typeid(glm::mat4), 0, "mvp.model"},
-          {0, typeid(glm::mat4), sizeof(glm::mat4), "mvp.view_proj"},
-          {0, typeid(glm::vec3), sizeof(glm::mat4) * 2, "mvp.camera_position"}}};
+      .params{{0, typeid(glm::mat4), 0, "mvp.model"},
+              {0, typeid(glm::mat4), sizeof(glm::mat4), "mvp.view_proj"},
+              {0, typeid(glm::vec3), sizeof(glm::mat4) * 2,
+               "mvp.camera_position"}}};
   return ubo;
+}
+
+void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {
+  pipeline_state.setShaders({vs_, fs_});
+  pipeline_state.setMultisampleState(
+      {VK_SAMPLE_COUNT_1_BIT, false, 0.0f, 0xFFFFFFFF, false, false});
+  pipeline_state.setSubpassIndex(0);
+}
+
+void Material::updateDescriptorSets(uint32_t set_index,
+                                    VkDescriptorSet descriptor_set) {
+  std::vector<VkWriteDescriptorSet> wds;
+  wds.reserve(ubos_.size());
+  std::vector<VkDescriptorBufferInfo> desc_buffer_infos;
+  desc_buffer_infos.reserve(ubos_.size());
+  for (auto i = 0; i < ubos_.size(); ++i) {
+    if (ubos_[i].set != set_index)
+      continue;
+    desc_buffer_infos.emplace_back(VkDescriptorBufferInfo{
+        .buffer = uniform_buffers_[i]->getHandle(),
+        .offset = 0,
+        .range = ubos_[i].size,
+    });
+    wds.emplace_back(VkWriteDescriptorSet{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .dstSet = descriptor_set,
+        .dstBinding = ubos_[i].binding,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+        .pBufferInfo = &desc_buffer_infos.back(),
+    });
+  }
+
+  if (wds.empty())
+    throw std::runtime_error("no ubo to update");
+
+  driver_->update(wds);
 }
 
 } // namespace vk_engine
