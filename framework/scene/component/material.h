@@ -8,6 +8,17 @@
 #include <framework/vk/buffer.h>
 #include <framework/vk/vk_driver.h>
 
+/**
+ * set-0 for engine-global resource,
+ * set-1 for per pass resource,
+ * set-2 for material resource, for material only store this set
+ * set-3 for per-object resource.
+ */
+constexpr uint32_t GLOBAL_SET_INDEX = 0;
+constexpr uint32_t PER_PASS_SET_INDEX = 1;
+constexpr uint32_t MATERIAL_SET_INDEX = 2;
+constexpr uint32_t PER_OBJECT_SET_INDEX = 3;
+
 
 namespace vk_engine {
 
@@ -83,11 +94,15 @@ public:
   }
 
   /**
-   * \brief update the information(vs,fs,shader resources) to pipeline state
+   * \brief update the information(vs,fs, multisample, subpass index) to pipeline state
    */
   virtual void update2PipelineState(PipelineState &pipeline_state) = 0;
 
-  void updateDescriptorSets(uint32_t set_index, VkDescriptorSet descriptor_set);
+
+  /**
+   * \brief update the material descriptor sets which index is MATERIAL_SET_INDEX
+  */
+  void updateDescriptorSets(VkDescriptorSet descriptor_set);
 
 protected:
   std::shared_ptr<ShaderModule> vs_;
@@ -111,13 +126,6 @@ public:
 
   void update2PipelineState(PipelineState &pipeline_state) override;
 };
-
-/**
- * set-0 for engine-global resource,
- * set-1 for per pass resource,
- * set-2 for material resource, for material only store this set
- * set-3 for per-object resource.
- */
 
 struct GlobalMVP {
   glm::mat4 model;

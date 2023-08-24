@@ -15,25 +15,25 @@ PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
 
   shader_resources_ = parseShaderResources({vs_, fs_});
 
-  // uniform buffer information
-  ubos_.emplace_back(globalMVPUbo());
+  // // uniform buffer information
+  // ubos_.emplace_back(globalMVPUbo());
 
-  // lights
-  ubos_.emplace_back(MaterialUbo{
-      .set = 0,
-      .binding = 1,
-      .size = 64 * MAX_FORWARD_LIGHT_COUNT + 16,
-      .params{
-          {0, typeid(uint32_t), 0, "lights.count"},
-          {64, typeid(glm::vec4), 16, "lights.position"},
-          {64, typeid(glm::vec4), 16 + sizeof(glm::vec4), "lights.color"},
-          {64, typeid(glm::vec4), 16 + sizeof(glm::vec4) * 2,
-           "lights.direction"},
-          {64, typeid(glm::vec2), 16 + sizeof(glm::vec4) * 3, "lights.info"}}});
+  // // lights
+  // ubos_.emplace_back(MaterialUbo{
+  //     .set = 0,
+  //     .binding = 1,
+  //     .size = 64 * MAX_FORWARD_LIGHT_COUNT + 16,
+  //     .params{
+  //         {0, typeid(uint32_t), 0, "lights.count"},
+  //         {64, typeid(glm::vec4), 16, "lights.position"},
+  //         {64, typeid(glm::vec4), 16 + sizeof(glm::vec4), "lights.color"},
+  //         {64, typeid(glm::vec4), 16 + sizeof(glm::vec4) * 2,
+  //          "lights.direction"},
+  //         {64, typeid(glm::vec2), 16 + sizeof(glm::vec4) * 3, "lights.info"}}});
 
   // pbr material
   ubos_.emplace_back(
-      MaterialUbo{.set = 2,
+      MaterialUbo{.set = MATERIAL_SET_INDEX,
                   .binding = 0,
                   .size = 32,
                   .params{
@@ -46,6 +46,7 @@ PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
 #ifndef NDEBUG
   for (auto &resource : shader_resources_) {
     if (resource.type == ShaderResourceType::BufferUniform) {
+      if(resource.set != MATERIAL_SET_INDEX) continue; // only for material ubo
       auto itr = std::find_if(
           ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
             return ubo.set == resource.set && ubo.binding == resource.binding;
@@ -96,15 +97,12 @@ void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {
   pipeline_state.setSubpassIndex(0);
 }
 
-void Material::updateDescriptorSets(uint32_t set_index,
-                                    VkDescriptorSet descriptor_set) {
+void Material::updateDescriptorSets(VkDescriptorSet descriptor_set) {
   std::vector<VkWriteDescriptorSet> wds;
   wds.reserve(ubos_.size());
   std::vector<VkDescriptorBufferInfo> desc_buffer_infos;
   desc_buffer_infos.reserve(ubos_.size());
   for (auto i = 0; i < ubos_.size(); ++i) {
-    if (ubos_[i].set != set_index)
-      continue;
     desc_buffer_infos.emplace_back(VkDescriptorBufferInfo{
         .buffer = uniform_buffers_[i]->getHandle(),
         .offset = 0,
