@@ -65,15 +65,20 @@ PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
     ubo_data_size += ubo.size;
   }
   ubo_data_.resize(ubo_data_size);
+}
 
+std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers()
+{
   // create uniform buffers
-  uniform_buffers_.reserve(ubos_.size());
+  std::vector<std::shared_ptr<Buffer>> uniform_buffers;
+  uniform_buffers.reserve(ubos_.size());
   for (auto &ubo : ubos_) {
-    uniform_buffers_.emplace_back(std::make_unique<Buffer>(
+    uniform_buffers.emplace_back(std::make_unique<Buffer>(
         driver_, 0, ubo.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
         VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
   }
+  return uniform_buffers;
 }
 
 MaterialUbo globalMVPUbo() {
@@ -97,14 +102,14 @@ void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {
   pipeline_state.setSubpassIndex(0);
 }
 
-void Material::updateDescriptorSets(VkDescriptorSet descriptor_set) {
+void Material::updateDescriptorSets(VkDescriptorSet descriptor_set, std::vector<std::shared_ptr<Buffer>> &material_ubos) {
   std::vector<VkWriteDescriptorSet> wds;
   wds.reserve(ubos_.size());
   std::vector<VkDescriptorBufferInfo> desc_buffer_infos;
   desc_buffer_infos.reserve(ubos_.size());
   for (auto i = 0; i < ubos_.size(); ++i) {
     desc_buffer_infos.emplace_back(VkDescriptorBufferInfo{
-        .buffer = uniform_buffers_[i]->getHandle(),
+        .buffer = material_ubos[i]->getHandle(),
         .offset = 0,
         .range = ubos_[i].size,
     });

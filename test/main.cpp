@@ -20,13 +20,8 @@ int main(int argc, char const *argv[])
     // }
 
     // entt::registry registry;
-
-    auto vs = std::make_shared<vk_engine::ShaderModule>();
-    vs->load("shaders/pbr.vert");
-    auto fs = std::make_shared<vk_engine::ShaderModule>();
-    fs->load("shaders/pbr.frag");
-    
-    vk_engine::Material material(vs, fs);
+   
+    //vk_engine::PbrMaterial material;
 
     std::cout << "done" << std::endl;
     return 0;

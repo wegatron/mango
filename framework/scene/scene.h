@@ -4,8 +4,8 @@
 namespace vk_engine {
 class Scene final {
 public:
-  Scene();
-  ~Scene();
+  Scene() = default;
+  ~Scene() = default;
 
   void prepare();
 
@@ -24,4 +24,7 @@ private:
   entt::registry light_manager_;
   entt::registry renderable_manager_;
 };
+
+void loadScene(const std::string &path, Scene &scene);
+
 } // namespace sg

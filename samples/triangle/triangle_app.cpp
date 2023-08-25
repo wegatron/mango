@@ -186,13 +186,12 @@ void TriangleApp::setupRender(VkFormat color_format, VkFormat ds_format) {
         .offset = 0,
         .range = sizeof(float) * 32,
     };
-    frame_data.descriptor_set->update(
-        {{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    driver_->update({VkWriteDescriptorSet{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
           .dstSet = frame_data.descriptor_set->getHandle(),
           .dstBinding = 0,
           .descriptorCount = 1,
           .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-          .pBufferInfo = &desc_buffer_info}});
+          .pBufferInfo = &desc_buffer_info}});    
   }
 }
 

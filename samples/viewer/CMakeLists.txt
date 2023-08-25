@@ -1,10 +1,6 @@
-file(GLOB src *.cpp)
-file(GLOB headers *.h)
-add_executable(vk_triangle
-    ${src}
-    ${headers})
+add_executable(viewer main.cpp viewer_app.cpp viewer_app.h)
 
-target_link_libraries(vk_triangle 
+target_link_libraries(viewer 
     PRIVATE 
     vk_engine
     volk
@@ -17,4 +13,5 @@ target_link_libraries(vk_triangle
     spirv-cross-reflect
     spirv-cross-core
     spirv-cross-glsl
+    assimp
 )

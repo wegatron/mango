@@ -93,6 +93,9 @@ public:
     itr->dirty = true;
   }
 
+  //////// helper functions
+  std::vector<std::shared_ptr<Buffer>> createMaterialUniformBuffers();
+
   /**
    * \brief update the information(vs,fs, multisample, subpass index) to pipeline state
    */
@@ -102,7 +105,7 @@ public:
   /**
    * \brief update the material descriptor sets which index is MATERIAL_SET_INDEX
   */
-  void updateDescriptorSets(VkDescriptorSet descriptor_set);
+  void updateDescriptorSets(VkDescriptorSet descriptor_set, std::vector<std::shared_ptr<Buffer>> &material_ubos);
 
 protected:
   std::shared_ptr<ShaderModule> vs_;
@@ -110,7 +113,6 @@ protected:
 
   std::vector<ShaderResource> shader_resources_;
 
-  std::vector<std::unique_ptr<Buffer>> uniform_buffers_;
   std::vector<MaterialUbo> ubos_;
   std::vector<std::byte> ubo_data_;
   
