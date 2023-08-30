@@ -13,7 +13,7 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
 
 void ViewerApp::setScene(const std::string &path)
 {
-  loadScene(path, *scene_);
+  //loadScene(path, *scene_);
 }
 
 void ViewerApp::tick(const float seconds, const uint32_t rt_index, const uint32_t frame_index)
