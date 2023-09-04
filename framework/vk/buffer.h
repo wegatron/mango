@@ -6,6 +6,8 @@
 
 namespace vk_engine {
 class VkDriver;
+class CommandBuffer;
+class StagePool;
 class Buffer final {
 public:
   Buffer(const std::shared_ptr<VkDriver> &driver, VkBufferCreateFlags flags,
@@ -20,10 +22,13 @@ public:
 
   VkBuffer getHandle() const { return buffer_; }
 
-  void update(uint8_t *data, size_t size, size_t offset=0);
+  void update(void *data, size_t size, size_t offset = 0);
+
+  void updateByStaging(void *data, size_t size, size_t offset,
+                       const std::shared_ptr<StagePool> &stage_pool,
+                       const std::shared_ptr<CommandBuffer> &cmd_buf);
 
 private:
-
   void flush();
 
   void map();
@@ -36,7 +41,7 @@ private:
   VmaAllocation allocation_{VK_NULL_HANDLE};
 
   bool mapped_{false};
-  uint8_t *mapped_data_{nullptr};
+  std::byte *mapped_data_{nullptr};
 
   bool persistent_;
   VkBufferCreateFlags flags_;
@@ -44,6 +49,6 @@ private:
   VkBufferUsageFlags buffer_usage_;
 
   VmaAllocationCreateFlags allocation_flags_;
-  VmaMemoryUsage memory_usage_;  
+  VmaMemoryUsage memory_usage_;
 };
 } // namespace vk_engine

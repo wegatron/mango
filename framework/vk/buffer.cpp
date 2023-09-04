@@ -2,6 +2,8 @@
 #include <framework/utils/error.h>
 #include <framework/vk/buffer.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/commands.h>
+#include <framework/vk/stage_pool.h>
 
 namespace vk_engine {
 Buffer::Buffer(const std::shared_ptr<VkDriver> &driver,
@@ -38,7 +40,7 @@ Buffer::Buffer(const std::shared_ptr<VkDriver> &driver,
   }
 
   if (persistent_) {
-    mapped_data_ = static_cast<uint8_t *>(allocation_info.pMappedData);
+    mapped_data_ = static_cast<std::byte *>(allocation_info.pMappedData);
     mapped_ = true;
   }
 }
@@ -48,17 +50,41 @@ Buffer::~Buffer() {
   vmaDestroyBuffer(driver_->getAllocator(), buffer_, allocation_);
 }
 
-void Buffer::update(uint8_t *data, size_t size, size_t offset) {
+void Buffer::update(void *data, size_t size, size_t offset) {
   if (persistent_) {
-    std::copy(data, data + size, mapped_data_ + offset);
+    memcpy(mapped_data_ + offset, data, size);
+    //std::copy(data, data + size, mapped_data_ + offset);
     flush();
   } else {
     map();
-    std::copy(data, data + size, mapped_data_ + offset);
+    memcpy(mapped_data_ + offset, data, size);
+    //std::copy(data, data + size, mapped_data_ + offset);
     flush();
     unmap();
   }
 }
+
+void Buffer::updateByStaging(void *data, size_t size, size_t offset,
+                      const std::shared_ptr<StagePool> &stage_pool,
+                      const std::shared_ptr<CommandBuffer> &cmd_buf)
+{
+  auto stage = stage_pool->acquireStage(size);
+  // cpu data to stage
+  void* mapped;
+  vmaMapMemory(driver_->getAllocator(), stage->memory, &mapped);
+  memcpy(mapped, data, size);
+  vmaUnmapMemory(driver_->getAllocator(), stage->memory);
+  vmaFlushAllocation(driver_->getAllocator(), stage->memory, 0, size);
+
+  // stage buffer to gpu buffer
+  VkBufferCopy region{
+    .srcOffset = 0,
+    .dstOffset = offset,    
+    .size = size
+  };
+
+  vkCmdCopyBuffer(cmd_buf->getHandle(), stage->buffer, buffer_, 1, &region);
+}                       
 
 void Buffer::flush() {
   // called after writing to a mapped memory for memory types that are not HOST_COHERENT

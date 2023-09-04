@@ -4,6 +4,7 @@
 #include <queue>
 
 #include <framework/utils/logging.h>
+#include <framework/vk/commands.h>
 
 namespace vk_engine {
 
@@ -27,9 +28,10 @@ AssimpLoader::processNode(const std::shared_ptr<TransformRelationship> &parent,
         a_mesh->mName.C_Str(), cur_tr, materials[a_mesh->mMaterialIndex],
         meshes[node->mMeshes[i]]);
   }
+  return cur_tr;
 }
 
-void AssimpLoader::loadScene(const std::string &path, Scene &scene) {
+void AssimpLoader::loadScene(const std::string &path, Scene &scene, const std::shared_ptr<CommandBuffer> &cmd_buf, const std::shared_ptr<StagePool> &stage_pool) {
   Assimp::Importer importer;
   const aiScene *a_scene =
       importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality);
@@ -41,11 +43,11 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene) {
 
   // add materials and meshes to scene
   std::vector<std::shared_ptr<StaticMesh>> meshes =
-      processMeshs(a_scene, scene);
+      processMeshs(a_scene, scene, cmd_buf, stage_pool);
   std::vector<std::shared_ptr<Material>> materials =
       processMaterials(a_scene, scene);
 
-  // for mesh
+  // process root node's mesh
   processNode(nullptr, a_scene->mRootNode, a_scene, scene, meshes, materials);
 
   std::queue<std::pair<std::shared_ptr<TransformRelationship>, aiNode *>>
@@ -55,15 +57,16 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene) {
     auto e = process_queue.front();
     process_queue.pop();
 
-    auto parent = e.first;
+    auto parent_tr = e.first;
     auto pnode = e.second;
     std::shared_ptr<TransformRelationship> pre_tr_re = nullptr;
     for (auto i = 0; i < pnode->mNumChildren; ++i) {
-      auto cur_tr_re = processNode(parent, pnode->mChildren[i], a_scene, scene,
+      // process children's mesh
+      auto cur_tr_re = processNode(parent_tr, pnode->mChildren[i], a_scene, scene,
                                    meshes, materials);
 
       if (i == 0)
-        parent->child = cur_tr_re;
+        parent_tr->child = cur_tr_re;
       else if (i != 0)
         pre_tr_re->sibling = cur_tr_re;
 
@@ -77,7 +80,9 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene) {
 }
 
 std::vector<std::shared_ptr<StaticMesh>>
-AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene) {
+AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
+               const std::shared_ptr<CommandBuffer> &cmd_buf,
+               const std::shared_ptr<StagePool> &stage_pool) {
   auto a_meshes = a_scene->mMeshes;
   std::vector<std::shared_ptr<StaticMesh>> ret_meshes(a_scene->mNumMeshes);
   for (auto i = 0; i < a_scene->mNumMeshes; ++i) {
@@ -102,7 +107,8 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene) {
     memcpy(data.data() + 2 * nv_data_size, &tmp_a_mesh->mTextureCoords,
            uv_data_size); // uv
 
-    // TODO upload to gpu
+    // upload to gpu
+    vb->updateByStaging(data.data(), data.size(), 0, stage_pool, cmd_buf);
     const auto stride = sizeof(float) * 8;
     ret_meshes[i]->vertices = {vb, 0, stride, nv, VK_FORMAT_R32G32B32_SFLOAT};
     ret_meshes[i]->normals = {vb, sizeof(float) * 3, stride, nv,
@@ -125,10 +131,27 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene) {
     auto ib = std::make_shared<Buffer>(driver_, 0, tri_faces.size()*sizeof(uint32_t),
                                  VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 0,
                                  VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
-    // TODO upload data to buffer
+    // upload data to buffer
+    ib->updateByStaging(tri_faces.data(), tri_faces.size() * sizeof(uint32_t), 0, stage_pool, cmd_buf);
     ret_meshes[i]->faces = {
       ib, 0, static_cast<uint32_t>(tri_faces.size()), VK_INDEX_TYPE_UINT32, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
     };
+    
+    // 插入一个内存栅栏以确保数据传输完成并且对绘制操作可见
+    VkMemoryBarrier memoryBarrier = {};
+    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+    memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;  // 在数据传输阶段完成写操作
+    memoryBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT; // 在顶点和索引读取阶段开始读操作
+
+    vkCmdPipelineBarrier(
+      cmd_buf->getHandle(),
+      VK_PIPELINE_STAGE_TRANSFER_BIT, // 数据传输阶段
+      VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, // 顶点输入阶段
+      0,
+      1, &memoryBarrier, // 使用的内存栅栏
+      0, nullptr,
+      0, nullptr
+    ); 
   }
 
   return ret_meshes;
