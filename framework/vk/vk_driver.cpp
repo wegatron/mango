@@ -217,7 +217,9 @@ void VkDriver::initAllocator() {
   VmaVulkanFunctions vma_vulkan_func{};
   vma_vulkan_func.vkAllocateMemory = vkAllocateMemory;
   vma_vulkan_func.vkBindBufferMemory = vkBindBufferMemory;
+  vma_vulkan_func.vkBindBufferMemory2KHR = (vkBindBufferMemory2 != nullptr) ? vkBindBufferMemory2 : vkBindBufferMemory2KHR;
   vma_vulkan_func.vkBindImageMemory = vkBindImageMemory;
+  vma_vulkan_func.vkBindImageMemory2KHR = (vkBindImageMemory2 != nullptr) ? vkBindImageMemory2 : vkBindImageMemory2KHR;
   vma_vulkan_func.vkCreateBuffer = vkCreateBuffer;
   vma_vulkan_func.vkCreateImage = vkCreateImage;
   vma_vulkan_func.vkDestroyBuffer = vkDestroyBuffer;
@@ -231,6 +233,7 @@ void VkDriver::initAllocator() {
   vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties =
       vkGetPhysicalDeviceMemoryProperties;
   vma_vulkan_func.vkGetPhysicalDeviceProperties = vkGetPhysicalDeviceProperties;
+  vma_vulkan_func.vkGetPhysicalDeviceMemoryProperties2KHR = (vkGetPhysicalDeviceMemoryProperties2 != nullptr) ? vkGetPhysicalDeviceMemoryProperties2 : vkGetPhysicalDeviceMemoryProperties2KHR;
   vma_vulkan_func.vkInvalidateMappedMemoryRanges =
       vkInvalidateMappedMemoryRanges;
   vma_vulkan_func.vkMapMemory = vkMapMemory;
