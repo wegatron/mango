@@ -92,26 +92,17 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     // mesh data to static mesh data
     // vertices data: 3f_pos | 3f_normal | 2f_uv
     auto nv = tmp_a_mesh->mNumVertices;
-    auto nv_data_size = nv * 3 * sizeof(float);
-    auto uv_data_size = nv * 2 * sizeof(float);
     auto driver = getDefaultAppContext().driver;
     auto vb =
-        std::make_shared<Buffer>(driver, 0, nv_data_size * 2 + uv_data_size,
+        std::make_shared<Buffer>(driver, 0, nv*8*sizeof(float),
                                  VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
                                  VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
-    if(i==2)
-    {      
-      auto vb_tmp =
-          std::make_shared<Buffer>(driver, 0, nv_data_size * 2 + uv_data_size,
-                                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0,
-                                  VMA_MEMORY_USAGE_AUTO_PREFER_HOST);                                 
-    }
-    std::vector<float> data(nv * (3 + 3 + 2));
+    std::vector<float> data(nv * 8);
     static_assert(std::is_same<ai_real, float>::value, "Type should be same while using memory copy.");
     
-    memcpy(data.data(), &tmp_a_mesh->mVertices, nv_data_size); // vertices
-    memcpy(data.data() + nv_data_size, &tmp_a_mesh->mNormals,
-           nv_data_size); // normals    
+    memcpy(data.data(), &tmp_a_mesh->mVertices, nv*3*sizeof(float)); // vertices
+    memcpy(data.data() + nv*3, &tmp_a_mesh->mNormals,
+           nv*3*sizeof(float)); // normals
     for(auto vi=0; vi<nv; ++vi)
     {
       data[6*nv+vi*2] = tmp_a_mesh->mTextureCoords[0][vi].x;
@@ -130,24 +121,24 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
 
     // faces
     auto nf = tmp_a_mesh->mNumFaces;
-    std::vector<uint32_t> tri_faces;
-    tri_faces.reserve(nf * 3);
+    std::vector<uint32_t> tri_v_inds;
+    tri_v_inds.reserve(nf * 3);
     for (auto j = 0; j < nf; ++j) {
       assert(tmp_a_mesh->mFaces[j].mNumIndices == 3);
-      tri_faces.emplace_back(tmp_a_mesh->mFaces[j].mIndices[0]);
-      tri_faces.emplace_back(tmp_a_mesh->mFaces[j].mIndices[1]);
-      tri_faces.emplace_back(tmp_a_mesh->mFaces[j].mIndices[2]);
+      tri_v_inds.emplace_back(tmp_a_mesh->mFaces[j].mIndices[0]);
+      tri_v_inds.emplace_back(tmp_a_mesh->mFaces[j].mIndices[1]);
+      tri_v_inds.emplace_back(tmp_a_mesh->mFaces[j].mIndices[2]);
     }
 
     // buffer: indices data triangle faces
     auto ib = std::make_shared<Buffer>(driver, 0,
-                                       tri_faces.size() * sizeof(uint32_t),
+                                       tri_v_inds.size() * sizeof(uint32_t),
                                        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
                                        VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     // upload data to buffer
-    ib->updateByStaging(tri_faces.data(), tri_faces.size() * sizeof(uint32_t),
+    ib->updateByStaging(tri_v_inds.data(), tri_v_inds.size() * sizeof(uint32_t),
                         0, stage_pool, cmd_buf);
-    ret_meshes[i]->faces = {ib, 0, static_cast<uint32_t>(tri_faces.size()),
+    ret_meshes[i]->faces = {ib, 0, static_cast<uint32_t>(tri_v_inds.size()),
                             VK_INDEX_TYPE_UINT32,
                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
   }

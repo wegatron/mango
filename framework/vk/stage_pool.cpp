@@ -33,45 +33,18 @@ namespace vk_engine
 
         // Create the VkBuffer.
         used_stages_.insert(stage);
-        
-  VkBufferCreateInfo buffer_create_info = {
-      VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, // VkStructureType        sType;
-      nullptr,                              // const void*            pNext;
-      0,                               // VkBufferCreateFlags    flags;
-      numBytes,                                // VkDeviceSize           size;
-      VK_BUFFER_USAGE_TRANSFER_SRC_BIT,                        // VkBufferUsageFlags     usage;
-      VK_SHARING_MODE_EXCLUSIVE,            // VkSharingMode          sharingMode;
-      0,      // uint32_t               queueFamilyIndexCount;
-      nullptr // const uint32_t*        pQueueFamilyIndices;
-  };
-
-VmaAllocationCreateInfo alloc_create_info = {
-      0,        // VmaAllocationCreateFlags  flags;
-      VMA_MEMORY_USAGE_AUTO_PREFER_HOST, // VmaMemoryUsage            usage;
-  };
-
-  VmaAllocationInfo allocation_info{};
-  auto result = vmaCreateBuffer(driver_->getAllocator(), &buffer_create_info,
-                                &alloc_create_info, &(stage->buffer), &(stage->memory),
-                                &allocation_info);  
-
-        // VkBufferCreateInfo bufferInfo {
-        //     .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        //     .pNext = NULL,
-        //     .size = numBytes,
-        //     .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        //     .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        //     .queueFamilyIndexCount = 0,
-        //     .pQueueFamilyIndices = nullptr
-        // };
-        // VmaAllocationCreateInfo allocInfo { .usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST };
-        // VmaAllocationInfo allocation_info{};
-        // VkResult result = vmaCreateBuffer(driver_->getAllocator(), &bufferInfo,
-        //         &allocInfo, &stage->buffer, &stage->memory, &allocation_info);
+        VkBufferCreateInfo bufferInfo {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = numBytes,
+            .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        };
+        VmaAllocationCreateInfo allocInfo { .usage = VMA_MEMORY_USAGE_CPU_ONLY };
+        UTILS_UNUSED_IN_RELEASE VkResult result = vmaCreateBuffer(driver_->getAllocator(), &bufferInfo,
+                &allocInfo, &stage->buffer, &stage->memory, nullptr);
 
         VK_THROW_IF_ERROR(result, "Create Staging buffer failed!");
 
-        return stage;        
+        return stage;
     }
 
 
