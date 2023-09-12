@@ -1,11 +1,11 @@
 #pragma once
-#include <vulkan/vulkan.h>
 #include <glm/glm.hpp>
+#include <vulkan/vulkan.h>
 
+#include <framework/vk/buffer.h>
+#include <framework/vk/descriptor_set.h>
 #include <framework/vk/pipeline_state.h>
 #include <framework/vk/shader_module.h>
-#include <framework/vk/descriptor_set.h>
-#include <framework/vk/buffer.h>
 #include <framework/vk/vk_driver.h>
 
 /**
@@ -19,8 +19,9 @@ constexpr uint32_t PER_PASS_SET_INDEX = 1;
 constexpr uint32_t MATERIAL_SET_INDEX = 2;
 constexpr uint32_t PER_OBJECT_SET_INDEX = 3;
 
-
 namespace vk_engine {
+
+class GPUAssetManager;
 
 struct MaterialUboParam {
   uint32_t stride{0}; // for array element in uniform buffer
@@ -57,8 +58,10 @@ struct MaterialTextureParam {
  */
 class Material {
 public:
-  Material(const std::shared_ptr<VkDriver> &driver) : driver_(driver) {}
-  
+  Material(const std::shared_ptr<VkDriver> &driver,
+           const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
+      : driver_(driver), gpu_asset_manager_(gpu_asset_manager) {}
+
   virtual ~Material() = default;
 
   template <typename T>
@@ -97,15 +100,18 @@ public:
   std::vector<std::shared_ptr<Buffer>> createMaterialUniformBuffers();
 
   /**
-   * \brief update the information(vs,fs, multisample, subpass index) to pipeline state
+   * \brief update the information(vs,fs, multisample, subpass index) to
+   * pipeline state
    */
   virtual void update2PipelineState(PipelineState &pipeline_state) = 0;
 
-
   /**
-   * \brief update the material descriptor sets which index is MATERIAL_SET_INDEX
-  */
-  void updateDescriptorSets(VkDescriptorSet descriptor_set, std::vector<std::shared_ptr<Buffer>> &material_ubos);
+   * \brief update the material descriptor sets which index is
+   * MATERIAL_SET_INDEX
+   */
+  void
+  updateDescriptorSets(VkDescriptorSet descriptor_set,
+                       std::vector<std::shared_ptr<Buffer>> &material_ubos);
 
 protected:
   std::shared_ptr<ShaderModule> vs_;
@@ -115,14 +121,16 @@ protected:
 
   std::vector<MaterialUbo> ubos_;
   std::vector<std::byte> ubo_data_;
-  
+
   std::vector<MaterialTextureParam> texture_params_;
   std::shared_ptr<VkDriver> driver_;
+  std::shared_ptr<GPUAssetManager> gpu_asset_manager_;
 };
 
 class PbrMaterial : public Material {
 public:
-  PbrMaterial(const std::shared_ptr<VkDriver> &driver);
+  PbrMaterial(const std::shared_ptr<VkDriver> &driver,
+              const std::shared_ptr<GPUAssetManager> &gpu_asset_manager);
 
   ~PbrMaterial() override = default;
 

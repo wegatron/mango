@@ -62,6 +62,6 @@ set(THREAD "-lpthread")
 endif()
 
 add_subdirectory(framework)
-add_subdirectory(samples/triangle)
+#add_subdirectory(samples/triangle)
 add_subdirectory(samples/viewer)
 #add_subdirectory(test)

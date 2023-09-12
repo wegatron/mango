@@ -31,7 +31,8 @@ AssimpLoader::processNode(const std::shared_ptr<TransformRelationship> &parent,
   return cur_tr;
 }
 
-void AssimpLoader::loadScene(const std::string &path, Scene &scene, const std::shared_ptr<CommandBuffer> &cmd_buf, const std::shared_ptr<StagePool> &stage_pool) {
+void AssimpLoader::loadScene(const std::string &path, Scene &scene,
+                             const std::shared_ptr<CommandBuffer> &cmd_buf) {
   Assimp::Importer importer;
   const aiScene *a_scene =
       importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality);
@@ -43,7 +44,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene, const std::s
 
   // add materials and meshes to scene
   std::vector<std::shared_ptr<StaticMesh>> meshes =
-      processMeshs(a_scene, scene, cmd_buf, stage_pool);
+      processMeshs(a_scene, scene, cmd_buf);
   std::vector<std::shared_ptr<Material>> materials =
       processMaterials(a_scene, scene);
 
@@ -62,8 +63,8 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene, const std::s
     std::shared_ptr<TransformRelationship> pre_tr_re = nullptr;
     for (auto i = 0; i < pnode->mNumChildren; ++i) {
       // process children's mesh
-      auto cur_tr_re = processNode(parent_tr, pnode->mChildren[i], a_scene, scene,
-                                   meshes, materials);
+      auto cur_tr_re = processNode(parent_tr, pnode->mChildren[i], a_scene,
+                                   scene, meshes, materials);
 
       if (i == 0)
         parent_tr->child = cur_tr_re;
@@ -81,8 +82,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene, const std::s
 
 std::vector<std::shared_ptr<StaticMesh>>
 AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
-               const std::shared_ptr<CommandBuffer> &cmd_buf,
-               const std::shared_ptr<StagePool> &stage_pool) {
+                           const std::shared_ptr<CommandBuffer> &cmd_buf) {
   auto a_meshes = a_scene->mMeshes;
   std::vector<std::shared_ptr<StaticMesh>> ret_meshes(a_scene->mNumMeshes);
   for (auto i = 0; i < a_scene->mNumMeshes; ++i) {
@@ -94,21 +94,33 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     auto nv = tmp_a_mesh->mNumVertices;
     auto nv_data_size = nv * 3 * sizeof(float);
     auto uv_data_size = nv * 2 * sizeof(float);
-
+    auto driver = getDefaultAppContext().driver;
     auto vb =
-        std::make_shared<Buffer>(driver_, 0, nv_data_size * 2 + uv_data_size,
-                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 0,
+        std::make_shared<Buffer>(driver, 0, nv_data_size * 2 + uv_data_size,
+                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
                                  VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
-
-    std::vector<std::byte> data(nv * (3 + 3 + 2) * sizeof(float));
+    if(i==2)
+    {      
+      auto vb_tmp =
+          std::make_shared<Buffer>(driver, 0, nv_data_size * 2 + uv_data_size,
+                                  VK_BUFFER_USAGE_TRANSFER_SRC_BIT, 0,
+                                  VMA_MEMORY_USAGE_AUTO_PREFER_HOST);                                 
+    }
+    std::vector<float> data(nv * (3 + 3 + 2));
+    static_assert(std::is_same<ai_real, float>::value, "Type should be same while using memory copy.");
+    
     memcpy(data.data(), &tmp_a_mesh->mVertices, nv_data_size); // vertices
     memcpy(data.data() + nv_data_size, &tmp_a_mesh->mNormals,
-           nv_data_size); // normals
-    memcpy(data.data() + 2 * nv_data_size, &tmp_a_mesh->mTextureCoords,
-           uv_data_size); // uv
+           nv_data_size); // normals    
+    for(auto vi=0; vi<nv; ++vi)
+    {
+      data[6*nv+vi*2] = tmp_a_mesh->mTextureCoords[0][vi].x;
+      data[6*nv+vi*2+1] = tmp_a_mesh->mTextureCoords[0][vi].y;
+    }
 
+    auto stage_pool = getDefaultAppContext().stage_pool;
     // upload to gpu
-    vb->updateByStaging(data.data(), data.size(), 0, stage_pool, cmd_buf);
+    vb->updateByStaging(data.data(), data.size() * sizeof(float), 0, stage_pool, cmd_buf);
     const auto stride = sizeof(float) * 8;
     ret_meshes[i]->vertices = {vb, 0, stride, nv, VK_FORMAT_R32G32B32_SFLOAT};
     ret_meshes[i]->normals = {vb, sizeof(float) * 3, stride, nv,
@@ -128,38 +140,52 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     }
 
     // buffer: indices data triangle faces
-    auto ib = std::make_shared<Buffer>(driver_, 0, tri_faces.size()*sizeof(uint32_t),
-                                 VK_BUFFER_USAGE_INDEX_BUFFER_BIT, 0,
-                                 VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
+    auto ib = std::make_shared<Buffer>(driver, 0,
+                                       tri_faces.size() * sizeof(uint32_t),
+                                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
+                                       VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     // upload data to buffer
-    ib->updateByStaging(tri_faces.data(), tri_faces.size() * sizeof(uint32_t), 0, stage_pool, cmd_buf);
-    ret_meshes[i]->faces = {
-      ib, 0, static_cast<uint32_t>(tri_faces.size()), VK_INDEX_TYPE_UINT32, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
-    };
-    
-    // 插入一个内存栅栏以确保数据传输完成并且对绘制操作可见
-    VkMemoryBarrier memoryBarrier = {};
-    memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-    memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;  // 在数据传输阶段完成写操作
-    memoryBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT; // 在顶点和索引读取阶段开始读操作
-
-    vkCmdPipelineBarrier(
-      cmd_buf->getHandle(),
-      VK_PIPELINE_STAGE_TRANSFER_BIT, // 数据传输阶段
-      VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, // 顶点输入阶段
-      0,
-      1, &memoryBarrier, // 使用的内存栅栏
-      0, nullptr,
-      0, nullptr
-    ); 
+    ib->updateByStaging(tri_faces.data(), tri_faces.size() * sizeof(uint32_t),
+                        0, stage_pool, cmd_buf);
+    ret_meshes[i]->faces = {ib, 0, static_cast<uint32_t>(tri_faces.size()),
+                            VK_INDEX_TYPE_UINT32,
+                            VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
   }
+
+  // add barrier to make sure transfer is complete before rendering
+  VkMemoryBarrier memoryBarrier = {};
+  memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+  memoryBarrier.srcAccessMask =
+      VK_ACCESS_TRANSFER_WRITE_BIT;
+  memoryBarrier.dstAccessMask =
+      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
+      VK_ACCESS_INDEX_READ_BIT;
+
+  vkCmdPipelineBarrier(cmd_buf->getHandle(),
+                        VK_PIPELINE_STAGE_TRANSFER_BIT,
+                        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+                        0, 1, &memoryBarrier,
+                        0, nullptr, 0, nullptr);  
 
   return ret_meshes;
 }
 
 std::vector<std::shared_ptr<Material>>
 AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
-  return {};
+  auto num_materials = a_scene->mNumMaterials;
+  std::vector<std::shared_ptr<Material>> ret_mats(num_materials);
+
+  auto driver = getDefaultAppContext().driver;
+  auto gpu_asset_manager = getDefaultAppContext().gpu_asset_manager;
+
+  for(auto i=0; i<num_materials; ++i)
+  {
+    auto a_mat = a_scene->mMaterials[i];
+    auto cur_mat = std::make_shared<PbrMaterial>(driver, gpu_asset_manager);
+    ret_mats.emplace_back(cur_mat);
+    // material params
+  }
+  return ret_mats;
 }
 
 } // namespace vk_engine

@@ -14,8 +14,9 @@ int main(int argc, char const *argv[])
   spdlog::set_level(spdlog::level::debug);
   #endif
   
-  auto app = std::make_shared<vk_engine::ViewerApp>("viewer", nullptr);
+  auto app = std::make_shared<vk_engine::ViewerApp>("viewer");
   app->setScene("data/buster_drone/scene.gltf");
+  //app->setScene("data/test.obj");
 
   auto window_app =
       std::make_shared<vk_engine::WindowApp>("viewer", 800, 600);

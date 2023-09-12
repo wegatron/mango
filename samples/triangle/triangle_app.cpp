@@ -23,8 +23,7 @@ void TriangleApp::tick(const float seconds, const uint32_t rt_index,
   Eigen::Matrix4f &projection = mats[1];
   model_view.setIdentity();
   projection.setIdentity();
-  frame_data_[rt_index].uniform_buffer->update(
-      reinterpret_cast<uint8_t *>(mats), sizeof(mats));
+  frame_data_[rt_index].uniform_buffer->update(mats, sizeof(mats));
 
   // submit command buffer
   VkCommandBuffer cmd_buf = frame_data_[rt_index].cmd_buffer->getHandle();

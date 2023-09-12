@@ -5,8 +5,11 @@ namespace vk_engine {
 
 #define MAX_FORWARD_LIGHT_COUNT 4
 
-PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
-    : Material(driver) {
+PbrMaterial::PbrMaterial(
+    const std::shared_ptr<VkDriver> &driver,
+    const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
+    : Material(driver, gpu_asset_manager) 
+{
   vs_ = std::make_shared<ShaderModule>();
   vs_->load("shaders/pbr.vert");
 
@@ -29,7 +32,8 @@ PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
   //         {64, typeid(glm::vec4), 16 + sizeof(glm::vec4), "lights.color"},
   //         {64, typeid(glm::vec4), 16 + sizeof(glm::vec4) * 2,
   //          "lights.direction"},
-  //         {64, typeid(glm::vec2), 16 + sizeof(glm::vec4) * 3, "lights.info"}}});
+  //         {64, typeid(glm::vec2), 16 + sizeof(glm::vec4) * 3,
+  //         "lights.info"}}});
 
   // pbr material
   ubos_.emplace_back(
@@ -46,7 +50,8 @@ PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
 #ifndef NDEBUG
   for (auto &resource : shader_resources_) {
     if (resource.type == ShaderResourceType::BufferUniform) {
-      if(resource.set != MATERIAL_SET_INDEX) continue; // only for material ubo
+      if (resource.set != MATERIAL_SET_INDEX)
+        continue; // only for material ubo
       auto itr = std::find_if(
           ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
             return ubo.set == resource.set && ubo.binding == resource.binding;
@@ -67,15 +72,15 @@ PbrMaterial::PbrMaterial(const std::shared_ptr<VkDriver> &driver)
   ubo_data_.resize(ubo_data_size);
 }
 
-std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers()
-{
+std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers() {
   // create uniform buffers
   std::vector<std::shared_ptr<Buffer>> uniform_buffers;
   uniform_buffers.reserve(ubos_.size());
   for (auto &ubo : ubos_) {
     uniform_buffers.emplace_back(std::make_unique<Buffer>(
         driver_, 0, ubo.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        VMA_ALLOCATION_CREATE_MAPPED_BIT |
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
         VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
   }
   return uniform_buffers;
@@ -102,7 +107,9 @@ void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {
   pipeline_state.setSubpassIndex(0);
 }
 
-void Material::updateDescriptorSets(VkDescriptorSet descriptor_set, std::vector<std::shared_ptr<Buffer>> &material_ubos) {
+void Material::updateDescriptorSets(
+    VkDescriptorSet descriptor_set,
+    std::vector<std::shared_ptr<Buffer>> &material_ubos) {
   std::vector<VkWriteDescriptorSet> wds;
   wds.reserve(ubos_.size());
   std::vector<VkDescriptorBufferInfo> desc_buffer_infos;

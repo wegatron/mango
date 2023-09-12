@@ -4,8 +4,9 @@
 #include <vk_mem_alloc.h>
 #include <volk.h>
 
+#include <framework/vk/vk_driver.h>
+
 namespace vk_engine {
-class VkDriver;
 class CommandBuffer;
 class StagePool;
 class Buffer final {

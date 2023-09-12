@@ -13,8 +13,8 @@ namespace vk_engine {
 class CommandBuffer;
 class TriangleApp : public AppBase {
 public:
-  TriangleApp(const std::string &name, const std::shared_ptr<ResourceCache> &resource_cache) 
-    : AppBase(name, resource_cache) {}
+  TriangleApp(const std::string &name) 
+    : AppBase(name) {}
 
   ~TriangleApp() override;
 
