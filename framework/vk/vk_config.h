@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <cstdint>
 #include <vector>
@@ -7,6 +7,10 @@
 #include <volk.h>
 
 #include <framework/vk/physical_device.h>
+
+#ifdef OPTIONAL
+#undef OPTIONAL
+#endif
 
 namespace vk_engine {
 class VkConfig {

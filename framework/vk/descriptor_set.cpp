@@ -13,7 +13,7 @@ DescriptorPool::DescriptorPool(const std::shared_ptr<VkDriver> &driver,
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .flags = flags,
         .maxSets = max_sets,
-        .poolSizeCount = pool_sizes.size(),
+        .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
         .pPoolSizes = pool_sizes.data()
     };
 

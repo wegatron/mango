@@ -1,5 +1,7 @@
 #include <framework/vk/syncs.h>
 
+#include <stdexcept>
+
 namespace vk_engine
 {
     Fence::Fence(const std::shared_ptr<VkDriver> &driver, const bool signaled) : driver_(driver)

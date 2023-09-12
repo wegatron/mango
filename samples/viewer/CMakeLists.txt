@@ -13,5 +13,5 @@ target_link_libraries(viewer
     spirv-cross-reflect
     spirv-cross-core
     spirv-cross-glsl
-    assimp
+    assimp::assimp
 )

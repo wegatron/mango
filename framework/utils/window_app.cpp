@@ -50,8 +50,10 @@ bool WindowApp::init() {
                               VkConfig::EnableState::REQUIRED);
     driver_->init(window_title_, config, window_);
 #endif
-  } catch (const std::runtime_error &e) {
-    LOGE(e.what());
+  } catch (std::runtime_error &e) {
+     const char * str = e.what();
+     spdlog::error(str);
+    //LOGE(str);
     return false;
   }
 

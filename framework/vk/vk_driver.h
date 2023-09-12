@@ -42,7 +42,7 @@ public:
 
   void update(const std::vector<VkWriteDescriptorSet> &descriptor_writes)
   {
-    vkUpdateDescriptorSets(device_, descriptor_writes.size(), descriptor_writes.data(), 0, nullptr);    
+    vkUpdateDescriptorSets(device_, static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);    
   }
 
 private:
