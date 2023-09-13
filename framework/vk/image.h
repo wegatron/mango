@@ -5,6 +5,8 @@
 #include <vk_mem_alloc.h>
 
 namespace vk_engine {
+class StagePool;
+class CommandBuffer;
 class Image final {
 public:
   Image(const std::shared_ptr<VkDriver> &driver, VkImageCreateFlags flags,
@@ -19,6 +21,13 @@ public:
   ~Image();
 
   VkImage getHandle() const { return image_; }
+
+  /**
+   * update image from cpu to gpu, data should be compatiable with image format, and tightly packed.
+  */
+  void updateByStaging(void *data,
+                       const std::shared_ptr<StagePool> &stage_pool,
+                       const std::shared_ptr<CommandBuffer> &cmd_buf);
 
   std::shared_ptr<VkDriver> getDriver() const { return driver_; }
 
@@ -38,11 +47,13 @@ private:
 class ImageView final {
 public:
   ImageView(const std::shared_ptr<Image> &image, VkImageViewType view_type,
-            VkFormat format, VkImageAspectFlags aspect_flags, uint32_t base_mip_level, uint32_t base_array_layer,
+            VkFormat format, VkImageAspectFlags aspect_flags,
+            uint32_t base_mip_level, uint32_t base_array_layer,
             uint32_t n_mip_levels, uint32_t n_array_layers);
 
   ImageView(const std::shared_ptr<VkDriver> &driver, VkImage image,
-            VkImageViewType view_type, VkFormat format, VkImageAspectFlags aspect_flags, uint32_t base_mip_level,
+            VkImageViewType view_type, VkFormat format,
+            VkImageAspectFlags aspect_flags, uint32_t base_mip_level,
             uint32_t base_array_layer, uint32_t n_mip_levels,
             uint32_t n_array_layers);
 
@@ -54,7 +65,7 @@ public:
 
   VkImage getVkImage() const { return image_; }
 
-  VkImageSubresourceRange getSubresourceRange() const { 
+  VkImageSubresourceRange getSubresourceRange() const {
     return subresource_range_;
   }
 

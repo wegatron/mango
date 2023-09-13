@@ -42,6 +42,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/glm
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/Vulkan-Hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/eigen
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stbi
 )
 
 if (NOT APPLE AND ${CMAKE_CXX_COMPILER} MATCHES "(C|c?)lang")

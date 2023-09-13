@@ -2,6 +2,7 @@
 #include <framework/scene/loader.h>
 #include <framework/utils/app_context.h>
 #include <framework/vk/stage_pool.h>
+#include <framework/scene/asset_manager.hpp>
 
 namespace vk_engine {
 
@@ -38,6 +39,8 @@ void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }
 
 void ViewerApp::tick(const float seconds, const uint32_t rt_index,
                      const uint32_t frame_index) {
+  context_.stage_pool->gc();                      
+  context_.gpu_asset_manager->gc();
   scene_->prepare();
 
   // todo

@@ -53,4 +53,6 @@ cmake thirdparty/entt -DCMAKE_INSTALL_PREFIX="./install" -B thirdparty/entt/buil
 cmake --build thirdparty/entt/build
 cmake --install thirdparty/entt/build --config Debug
 
+git clone https://github.com/nothings/stb.git thirdparty/stbi
+
 #download data from https://sketchfab.com/3d-models/buster-drone-294e79652f494130ad2ab00a13fdbafd#download

@@ -69,21 +69,21 @@ void Buffer::updateByStaging(void *data, size_t size, size_t offset,
                       const std::shared_ptr<CommandBuffer> &cmd_buf)
 {
   auto stage = stage_pool->acquireStage(size);
-  // // cpu data to stage
-  // void* mapped;
-  // vmaMapMemory(driver_->getAllocator(), stage->memory, &mapped);
-  // memcpy(mapped, data, size);
-  // vmaUnmapMemory(driver_->getAllocator(), stage->memory);
-  // vmaFlushAllocation(driver_->getAllocator(), stage->memory, 0, size);
+  // cpu data to stage
+  void* mapped;
+  vmaMapMemory(driver_->getAllocator(), stage->memory, &mapped);
+  memcpy(mapped, data, size);
+  vmaUnmapMemory(driver_->getAllocator(), stage->memory);
+  vmaFlushAllocation(driver_->getAllocator(), stage->memory, 0, size);
 
-  // // stage buffer to gpu buffer
-  // VkBufferCopy region{
-  //   .srcOffset = 0,
-  //   .dstOffset = offset,    
-  //   .size = size
-  // };
+  // stage buffer to gpu buffer
+  VkBufferCopy region{
+    .srcOffset = 0,
+    .dstOffset = offset,    
+    .size = size
+  };
 
-  // vkCmdCopyBuffer(cmd_buf->getHandle(), stage->buffer, buffer_, 1, &region);
+  vkCmdCopyBuffer(cmd_buf->getHandle(), stage->buffer, buffer_, 1, &region);
 }
 
 void Buffer::flush() {

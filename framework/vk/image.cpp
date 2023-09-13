@@ -1,5 +1,7 @@
 #include <framework/utils/error.h>
 #include <framework/vk/image.h>
+#include <framework/vk/commands.h>
+#include <framework/vk/stage_pool.h>
 
 namespace vk_engine {
 
@@ -44,13 +46,20 @@ Image::~Image() {
   vmaDestroyImage(driver_->getAllocator(), image_, allocation_);
 }
 
+void Image::updateByStaging(void *data, uint32_t pixel_size, const std::shared_ptr<StagePool> &stage_pool,
+                            const std::shared_ptr<CommandBuffer> &cmd_buf)
+{  
+  auto data_size = extent_.width * extent_.height * pixel_size;
+  //auto stage = stage_pool->acquireStage();
+  // TODO
+}
 
 ImageView::ImageView(const std::shared_ptr<Image> &image,
                      VkImageViewType view_type, VkFormat format,
-                     VkImageAspectFlags aspect_flags,
-                     uint32_t base_mip_level, uint32_t base_array_layer,
-                     uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(image->getDriver()), image_(image->getHandle())
-{
+                     VkImageAspectFlags aspect_flags, uint32_t base_mip_level,
+                     uint32_t base_array_layer, uint32_t n_mip_levels,
+                     uint32_t n_array_layers)
+    : driver_(image->getDriver()), image_(image->getHandle()) {
   VkImageViewCreateInfo view_info = {};
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   view_info.image = image->getHandle();
@@ -80,12 +89,13 @@ ImageView::ImageView(const std::shared_ptr<Image> &image,
   }
 }
 
-ImageView::ImageView(const std::shared_ptr<VkDriver> &driver, VkImage image, VkImageViewType view_type, VkFormat format,
-          VkImageAspectFlags aspect_flags,
-          uint32_t base_mip_level, uint32_t base_array_layer,
-          uint32_t n_mip_levels, uint32_t n_array_layers) : driver_(driver), image_(image)
-{
-VkImageViewCreateInfo view_info = {};
+ImageView::ImageView(const std::shared_ptr<VkDriver> &driver, VkImage image,
+                     VkImageViewType view_type, VkFormat format,
+                     VkImageAspectFlags aspect_flags, uint32_t base_mip_level,
+                     uint32_t base_array_layer, uint32_t n_mip_levels,
+                     uint32_t n_array_layers)
+    : driver_(driver), image_(image) {
+  VkImageViewCreateInfo view_info = {};
   view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
   view_info.image = image;
   view_info.viewType = view_type;
@@ -107,11 +117,11 @@ VkImageViewCreateInfo view_info = {};
   subresource_range_ = view_info.subresourceRange;
 #endif
 
-  auto result = vkCreateImageView(driver->getDevice(), &view_info,
-                                  nullptr, &image_view_);
+  auto result =
+      vkCreateImageView(driver->getDevice(), &view_info, nullptr, &image_view_);
   if (result != VK_SUCCESS) {
     throw VulkanException(result, "failed to create image view!");
-  }  
+  }
 }
 
 ImageView::~ImageView() {
