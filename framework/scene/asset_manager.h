@@ -20,7 +20,10 @@ namespace vk_engine
         ~GPUAssetManager() = default;
 
         template<typename T>
-        std::shared_ptr<T> requestImage(const std::string &path);
+        std::shared_ptr<T> requestImage(const std::string &path)
+        {
+            return nullptr;
+        }
 
         void gc();
 

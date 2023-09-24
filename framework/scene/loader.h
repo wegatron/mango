@@ -34,5 +34,13 @@ private:
 
   std::vector<std::shared_ptr<Material>>
   processMaterials(const aiScene *a_scene, Scene &);
+
+  void loadAndSet(aiMaterial *a_mat, aiTextureType ttype, const char *pKey,
+                  unsigned int vtype, unsigned int idx,
+                  const char *shader_texture_name,
+                  const char *shader_color_name,
+                  std::shared_ptr<PbrMaterial> &mat);
+
+  std::string file_directory_;
 };
 } // namespace vk_engine

@@ -59,6 +59,12 @@ struct MaterialTextureParam {
  */
 class Material {
 public:
+  enum Variance
+  {
+    HAS_BASE_COLOR_TEXTURE = 0x1,
+    HAS_MEAHAS_METALLIC_ROUGHNESS_TEXTURE = 0x2,
+    HAS_NORMAL_TEXTURE = 0x4,
+  };
   Material(const std::shared_ptr<VkDriver> &driver,
            const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
       : driver_(driver), gpu_asset_manager_(gpu_asset_manager) {}
@@ -126,6 +132,8 @@ protected:
   std::vector<MaterialTextureParam> texture_params_;
   std::shared_ptr<VkDriver> driver_;
   std::shared_ptr<GPUAssetManager> gpu_asset_manager_;
+
+  //uint32_t variance_; // material variance bit flags, check by value
 };
 
 class PbrMaterial : public Material {
