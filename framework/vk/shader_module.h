@@ -70,9 +70,40 @@ struct ShaderResource {
   static size_t hash(const ShaderResource &resource) noexcept;
 };
 
+class ShaderVariant
+{
+  public:
+	ShaderVariant() = default;
+
+	ShaderVariant(std::string &&preamble);	
+
+	/**
+	 * @brief Add definitions to shader variant
+	 * @param definitions Vector of definitions to add to the variant
+	 */
+	void add_definitions(const std::vector<std::string> &definitions);
+
+	/**
+	 * @brief Adds a define macro to the shader
+	 * @param def String which should go to the right of a define directive
+	 */
+	void add_define(const std::string &def);
+
+	/**
+	 * @brief Adds an undef macro to the shader
+	 * @param undef String which should go to the right of an undef directive
+	 */
+	void add_undefine(const std::string &undef);
+  
+  const std::string &get_preamble() const;
+private:
+  std::string preamble_;  
+};
+
 class ShaderModule final {
 public:
-  ShaderModule() = default;
+  
+  ShaderModule(const ShaderVariant &variant) : variant_(variant) {}
 
   /**
    * @brief load shader file
@@ -115,6 +146,7 @@ private:
   std::string glsl_code_;
   std::vector<uint32_t> spirv_code_;
   std::vector<ShaderResource> resources_;
+  ShaderVariant variant_;
 };
 
 class Shader final

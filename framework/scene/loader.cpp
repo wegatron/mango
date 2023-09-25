@@ -3,7 +3,7 @@
 #include <Eigen/Dense>
 #include <queue>
 
-#include <framework/scene/asset_manager.h>
+#include <framework/scene/asset_manager.hpp>
 #include <framework/utils/logging.h>
 #include <framework/vk/commands.h>
 
@@ -197,10 +197,12 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
     // diffuse, base color
     loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,
                "base_color_texture", "pbr_mat.base_color", cur_mat);
-
-    loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
+/*     loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
               "specular_color_texture", "pbr_mat.specular_color", cur_mat);
-    
+    loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS, AI_MATKEY_ROUGHNESS_FACTOR,
+              "roughness_texture", "pbr_mat.roughness", cur_mat);
+    loadAndSet(a_mat, aiTextureType_METALNESS, AI_MATKEY_METALLIC_FACTOR,
+              "metallic_texture", "pbr_mat.metallic", cur_mat); */
   }
   return ret_mats;
 }

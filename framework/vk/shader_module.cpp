@@ -41,7 +41,8 @@ void ShaderModule::load(const std::string &file_path) {
 
 void ShaderModule::setGlsl(const std::string &glsl_code,
                            VkShaderStageFlagBits stage) {
-  glsl_code_ = glsl_code;
+
+  glsl_code_ = variant_.get_preamble() + glsl_code;
   stage_ = stage;
 
   compile2spirv(glsl_code_, stage_, spirv_code_);
