@@ -31,6 +31,10 @@ public:
 
   std::shared_ptr<VkDriver> getDriver() const { return driver_; }
 
+  void transitionLayout(VkCommandBuffer cmd_buf, const VkImageSubresourceRange &range, const VkImageLayout layout);
+
+  VkImageLayout getDefaultLayout() const;
+
 private:
   std::shared_ptr<VkDriver> driver_;
   VkImageCreateFlags flags_;
@@ -42,6 +46,7 @@ private:
 
   VmaAllocation allocation_{VK_NULL_HANDLE};
   VkImage image_{VK_NULL_HANDLE};
+  VkImageLayout layout_{VK_IMAGE_LAYOUT_UNDEFINED};
 };
 
 class ImageView final {

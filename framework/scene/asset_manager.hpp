@@ -1,23 +1,25 @@
 #pragma once
 
-#include <framework/utils/app_context.h>
-#include <framework/vk/image.h>
-#include <framework/vk/vk_driver.h>
 #include <stb_image.h>
 #include <stdexcept>
+#include <memory>
+#include <map>
 
 namespace vk_engine {
+
+class Image;
+class CommandBuffer;
 
 struct Asset {
   std::shared_ptr<void> data_ptr;
   mutable uint64_t last_accessed;
 };
 
-template <typename T> std::shared_ptr<T> load(const std::string &path) {
+template <typename T> std::shared_ptr<T> load(const std::string &path, const std::shared_ptr<CommandBuffer> &cmd_buf) {
   throw std::logic_error("load type unsupported!");
 }
 
-template <> std::shared_ptr<Image> load(const std::string &path);
+template <> std::shared_ptr<Image> load(const std::string &path, const std::shared_ptr<CommandBuffer> &cmd_buf);
 
 /**
  * \brief GPUAssertManager is used to manage the GPU assert.
@@ -29,14 +31,13 @@ public:
 
   ~GPUAssetManager() = default;
 
-  template <typename T> std::shared_ptr<T> request(const std::string &path) {
+  template <typename T> std::shared_ptr<T> request(const std::string &path, const std::shared_ptr<CommandBuffer> &cmd_buf) {
     auto itr = assets_.find(path);
     if (itr != assets_.end()) {
-
       return std::static_pointer_cast<T>(itr->second);
     }
 
-    auto ret = load<T>(path);
+    auto ret = load<T>(path, cmd_buf);
     assets_.emplace(path, ret);
     return ret;
   }

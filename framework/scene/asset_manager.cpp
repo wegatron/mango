@@ -1,11 +1,16 @@
 #include <framework/scene/asset_manager.hpp>
 
+#include <framework/utils/app_context.h>
+#include <framework/vk/image.h>
+#include <framework/vk/vk_driver.h>
+#include <cassert>
+
 namespace vk_engine
 {
     static constexpr uint32_t ASSET_TIME_BEFORE_EVICTION = 100;
     
     template <>
-    std::shared_ptr<Image> load(const std::string &path) {
+    std::shared_ptr<Image> load(const std::string &path, const std::shared_ptr<CommandBuffer> &cmd_buf) {
         int width = 0;
         int height = 0;
         int channel = 0;
@@ -16,10 +21,10 @@ namespace vk_engine
         auto image = std::make_shared<Image>(
             driver, 0, VK_FORMAT_R8G8B8_SRGB, extent, VK_SAMPLE_COUNT_1_BIT,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
-        image->updateByStaging(img_data, width * channel);
+        image->updateByStaging(img_data, getDefaultAppContext().stage_pool, cmd_buf);
         stbi_image_free(img_data);
         return image;
-    }    
+    }
 
     void GPUAssetManager::gc()
     {
