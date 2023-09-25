@@ -3,6 +3,7 @@
 #include <Eigen/Dense>
 #include <queue>
 
+#include <framework/scene/asset_manager.h>
 #include <framework/utils/logging.h>
 #include <framework/vk/commands.h>
 
@@ -41,7 +42,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     throw std::runtime_error("Assimp import error:" +
                              std::string(importer.GetErrorString()));
   }
-
+  file_directory_ = path.substr(0, path.find_last_of('/'));
   // add materials and meshes to scene
   std::vector<std::shared_ptr<StaticMesh>> meshes =
       processMeshs(a_scene, scene, cmd_buf);
@@ -93,25 +94,27 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     // vertices data: 3f_pos | 3f_normal | 2f_uv
     auto nv = tmp_a_mesh->mNumVertices;
     auto driver = getDefaultAppContext().driver;
-    auto vb =
-        std::make_shared<Buffer>(driver, 0, nv*8*sizeof(float),
-                                 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
-                                 VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
+    auto vb = std::make_shared<Buffer>(driver, 0, nv * 8 * sizeof(float),
+                                       VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
+                                           VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                                       0, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     std::vector<float> data(nv * 8);
-    static_assert(std::is_same<ai_real, float>::value, "Type should be same while using memory copy.");
-    
-    memcpy(data.data(), &tmp_a_mesh->mVertices, nv*3*sizeof(float)); // vertices
-    memcpy(data.data() + nv*3, &tmp_a_mesh->mNormals,
-           nv*3*sizeof(float)); // normals
-    for(auto vi=0; vi<nv; ++vi)
-    {
-      data[6*nv+vi*2] = tmp_a_mesh->mTextureCoords[0][vi].x;
-      data[6*nv+vi*2+1] = tmp_a_mesh->mTextureCoords[0][vi].y;
+    static_assert(std::is_same<ai_real, float>::value,
+                  "Type should be same while using memory copy.");
+
+    memcpy(data.data(), &tmp_a_mesh->mVertices,
+           nv * 3 * sizeof(float)); // vertices
+    memcpy(data.data() + nv * 3, &tmp_a_mesh->mNormals,
+           nv * 3 * sizeof(float)); // normals
+    for (auto vi = 0; vi < nv; ++vi) {
+      data[6 * nv + vi * 2] = tmp_a_mesh->mTextureCoords[0][vi].x;
+      data[6 * nv + vi * 2 + 1] = tmp_a_mesh->mTextureCoords[0][vi].y;
     }
 
     auto stage_pool = getDefaultAppContext().stage_pool;
     // upload to gpu
-    vb->updateByStaging(data.data(), data.size() * sizeof(float), 0, stage_pool, cmd_buf);
+    vb->updateByStaging(data.data(), data.size() * sizeof(float), 0, stage_pool,
+                        cmd_buf);
     const auto stride = sizeof(float) * 8;
     ret_meshes[i]->vertices = {vb, 0, stride, nv, VK_FORMAT_R32G32B32_SFLOAT};
     ret_meshes[i]->normals = {vb, sizeof(float) * 3, stride, nv,
@@ -131,10 +134,10 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     }
 
     // buffer: indices data triangle faces
-    auto ib = std::make_shared<Buffer>(driver, 0,
-                                       tri_v_inds.size() * sizeof(uint32_t),
-                                       VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
-                                       VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
+    auto ib = std::make_shared<Buffer>(
+        driver, 0, tri_v_inds.size() * sizeof(uint32_t),
+        VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT, 0,
+        VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
     // upload data to buffer
     ib->updateByStaging(tri_v_inds.data(), tri_v_inds.size() * sizeof(uint32_t),
                         0, stage_pool, cmd_buf);
@@ -146,19 +149,36 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
   // add barrier to make sure transfer is complete before rendering
   VkMemoryBarrier memoryBarrier = {};
   memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-  memoryBarrier.srcAccessMask =
-      VK_ACCESS_TRANSFER_WRITE_BIT;
+  memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
   memoryBarrier.dstAccessMask =
-      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT |
-      VK_ACCESS_INDEX_READ_BIT;
+      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
 
-  vkCmdPipelineBarrier(cmd_buf->getHandle(),
-                        VK_PIPELINE_STAGE_TRANSFER_BIT,
-                        VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-                        0, 1, &memoryBarrier,
-                        0, nullptr, 0, nullptr);  
+  vkCmdPipelineBarrier(cmd_buf->getHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+                       VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &memoryBarrier,
+                       0, nullptr, 0, nullptr);
 
   return ret_meshes;
+}
+
+void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,
+                              const char *pKey, unsigned int vtype,
+                              unsigned int idx, const char *shader_texture_name,
+                              const char *shader_color_name,
+                              std::shared_ptr<PbrMaterial> &mat) {
+  aiString texture_path;
+  if (AI_SUCCESS == a_mat->GetTexture(ttype, 0, &texture_path)) {
+    mat->setTextureParamValue(shader_texture_name,
+                              file_directory_ +
+                                  std::string(texture_path.C_Str()));
+    // getDefaultAppContext().gpu_asset_manager->requestImage<vk_engine::Image>(file_directory_
+    // + std::string(texture_path.C_Str()));
+  } else {
+    aiColor3D diffuse_color(0.0f, 0.0f, 0.0f);
+    a_mat->Get(pKey, vtype, idx, diffuse_color);
+    mat->setUboParamValue(
+        shader_color_name,
+        glm::vec4(diffuse_color.r, diffuse_color.g, diffuse_color.b, 1.0));
+  }
 }
 
 std::vector<std::shared_ptr<Material>>
@@ -169,12 +189,18 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
   auto driver = getDefaultAppContext().driver;
   auto gpu_asset_manager = getDefaultAppContext().gpu_asset_manager;
 
-  for(auto i=0; i<num_materials; ++i)
-  {
+  for (auto i = 0; i < num_materials; ++i) {
     auto a_mat = a_scene->mMaterials[i];
     auto cur_mat = std::make_shared<PbrMaterial>(driver, gpu_asset_manager);
     ret_mats.emplace_back(cur_mat);
-    // material params
+
+    // diffuse, base color
+    loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,
+               "base_color_texture", "pbr_mat.base_color", cur_mat);
+
+    loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
+              "specular_color_texture", "pbr_mat.specular_color", cur_mat);
+    
   }
   return ret_mats;
 }
