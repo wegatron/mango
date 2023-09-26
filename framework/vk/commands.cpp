@@ -7,8 +7,8 @@
 
 namespace vk_engine {
 CommandPool::CommandPool(const std::shared_ptr<VkDriver> &driver,
-                         uint32_t queue_family_index, CmbResetMode mode)
-    : driver_(driver), mode_(mode) {
+                         uint32_t queue_family_index, CmbResetMode reset_mode)
+    : driver_(driver), reset_mode_(reset_mode) {
   VkCommandPoolCreateFlags flags[] = {
       VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
       VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
@@ -17,7 +17,7 @@ CommandPool::CommandPool(const std::shared_ptr<VkDriver> &driver,
   VkCommandPoolCreateInfo pool_info = {};
   pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
   pool_info.queueFamilyIndex = queue_family_index;
-  pool_info.flags = flags[static_cast<int>(mode)];
+  pool_info.flags = flags[static_cast<int>(reset_mode)];
 
   auto result = vkCreateCommandPool(driver->getDevice(), &pool_info, nullptr,
                                     &command_pool_);
@@ -27,28 +27,89 @@ CommandPool::CommandPool(const std::shared_ptr<VkDriver> &driver,
 }
 
 CommandPool::~CommandPool() {
-  for (auto &command_buffer : command_buffers_) {
+  for (auto &command_buffer : primary_command_buffers_) {
     if (command_buffer.use_count() != 1) {
       throw VulkanException(
           VK_RESULT_MAX_ENUM,
           "command pool destroy with command buffer is still in use!");
     }
   }
-  command_buffers_.clear();
+
+  for (auto &command_buffer : secondary_command_buffers_) {
+    if (command_buffer.use_count() != 1) {
+      throw VulkanException(
+          VK_RESULT_MAX_ENUM,
+          "command pool destroy with command buffer is still in use!");
+    }
+  }
+
+  primary_command_buffers_.clear();
+  secondary_command_buffers_.clear();
+
   vkDestroyCommandPool(driver_->getDevice(), command_pool_, nullptr);
 }
 
-void CommandPool::reset(bool memory2system) {
-  VkCommandPoolResetFlags flag =
-      memory2system ? VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT : 0;
-  vkResetCommandPool(driver_->getDevice(), command_pool_, flag);
+void CommandPool::reset() {
+  
+  switch(reset_mode_)
+  {
+    case CmbResetMode::ResetPool: {
+       vkResetCommandPool(driver_->getDevice(), command_pool_, 0);
+       break;
+    }    
+    case CmbResetMode::ResetIndividually:
+    {
+      for(auto cmb : primary_command_buffers_)
+      {
+        cmb->reset();
+      }
+
+      for(auto cmb : secondary_command_buffers_)
+      {
+        cmb->reset();
+      }
+      break;
+    }
+    case CmbResetMode::AlwaysAllocate:
+    {
+      primary_command_buffers_.clear();
+      secondary_command_buffers_.clear();
+      break;
+    }
+    default:
+      break;
+  }
+
+  active_primary_command_buffer_count_ = 0;
+  active_secondary_command_buffer_count_ = 0;       
 }
 
 std::shared_ptr<CommandBuffer>
 CommandPool::requestCommandBuffer(VkCommandBufferLevel level) {
-  std::shared_ptr<CommandBuffer> cmdb(new CommandBuffer(driver_, *this, level));
-  command_buffers_.emplace_back(cmdb);
-  return cmdb;
+  if (level == VK_COMMAND_BUFFER_LEVEL_PRIMARY)
+  {
+    if (active_primary_command_buffer_count_ < primary_command_buffers_.size())
+    {
+      return primary_command_buffers_.at(active_primary_command_buffer_count_++);
+    }
+
+    primary_command_buffers_.emplace_back(std::make_unique<CommandBuffer>(*this, level));
+
+    active_primary_command_buffer_count_++;
+
+    return primary_command_buffers_.back();
+  }
+
+  if (active_secondary_command_buffer_count_ < secondary_command_buffers_.size())
+  {
+    return secondary_command_buffers_.at(active_secondary_command_buffer_count_++);
+  }
+
+  secondary_command_buffers_.emplace_back(std::make_unique<CommandBuffer>(*this, level));
+
+  active_secondary_command_buffer_count_++;
+
+  return secondary_command_buffers_.back();
 }
 
 CommandBuffer::CommandBuffer(const std::shared_ptr<VkDriver> &driver,
@@ -57,7 +118,7 @@ CommandBuffer::CommandBuffer(const std::shared_ptr<VkDriver> &driver,
     : driver_(driver), command_pool_(command_pool.getHandle()) {
 #ifndef NDEBUG
   resetable_ =
-      (command_pool.getResetMode() != CommandPool::CmbResetMode::ResetPool);
+      (command_pool.getResetMode() == CommandPool::CmbResetMode::ResetIndividually);
 #endif
 
   VkCommandBufferAllocateInfo alloc_info = {};
@@ -80,7 +141,7 @@ CommandBuffer::~CommandBuffer() {
   }
 }
 
-void CommandBuffer::reset(bool memory2pool) {
+void CommandBuffer::reset() {
 #ifndef NDEBUG
   if (!resetable_) {
     throw VulkanException(VK_RESULT_MAX_ENUM,
@@ -88,9 +149,7 @@ void CommandBuffer::reset(bool memory2pool) {
   }
 #endif
 
-  VkCommandBufferResetFlags flag =
-      memory2pool ? VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT : 0;
-  vkResetCommandBuffer(command_buffer_, flag);
+  vkResetCommandBuffer(command_buffer_, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
 }
 
 void CommandBuffer::begin(VkCommandBufferUsageFlags flags) {

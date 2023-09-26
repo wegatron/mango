@@ -26,7 +26,7 @@ public:
   };
 
   CommandPool(const std::shared_ptr<VkDriver> &driver,
-              uint32_t queue_family_index, CmbResetMode mode);
+              uint32_t queue_family_index, CmbResetMode reset_mode);
 
   CommandPool(const CommandPool &) = delete;
   CommandPool &operator=(const CommandPool &) = delete;
@@ -34,20 +34,24 @@ public:
 
   ~CommandPool();
 
-  void reset(bool memory2system);
+  void reset();
 
   std::shared_ptr<CommandBuffer>
   requestCommandBuffer(VkCommandBufferLevel level);
 
   VkCommandPool getHandle() const { return command_pool_; }
 
-  CmbResetMode getResetMode() const { return mode_; }
+  CmbResetMode getResetMode() const { return reset_mode_; }
 
 private:
   std::shared_ptr<VkDriver> driver_;
   VkCommandPool command_pool_{VK_NULL_HANDLE};
-  CmbResetMode mode_;
-  std::vector<std::shared_ptr<CommandBuffer>> command_buffers_;
+  CmbResetMode reset_mode_;
+  std::vector<std::shared_ptr<CommandBuffer>> primary_command_buffers_;
+  std::vector<std::shared_ptr<CommandBuffer>> secondary_command_buffers_;
+  
+  uint32_t active_primary_command_buffer_count_{0};
+  uint32_t active_secondary_command_buffer_count_{0};
 };
 
 class CommandBuffer final {
@@ -58,7 +62,7 @@ public:
 
   ~CommandBuffer(); // free command buffer
 
-  void reset(bool memory2pool);
+  void reset();
 
   VkCommandBuffer getHandle() const { return command_buffer_; }
 
