@@ -32,7 +32,20 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
   AssimpLoader loader;
   loader.loadScene(scene_path_, *scene_, cmd_buf);
   cmd_buf->end();
-  // TODO submit
+  
+  // submit
+  auto cmd_buf_handle = cmd_buf->getHandle();
+  VkSubmitInfo info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  info.commandBufferCount = 1;
+  info.pCommandBuffers = &cmd_buf_handle;
+  info.waitSemaphoreCount = 1;
+  info.pWaitSemaphores = NULL;
+  info.pWaitDstStageMask = NULL;
+  info.signalSemaphoreCount = 1;
+  info.pSignalSemaphores = NULL;
+  // Submit command buffer to graphics queue
+  auto result = vkQueueSubmit(
+      driver->getGraphicsQueue(), 1, &info, NULL);
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }

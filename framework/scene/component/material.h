@@ -59,12 +59,6 @@ struct MaterialTextureParam {
  */
 class Material {
 public:
-  enum Variance
-  {
-    HAS_BASE_COLOR_TEXTURE = 0x1,
-    HAS_MEAHAS_METALLIC_ROUGHNESS_TEXTURE = 0x2,
-    HAS_NORMAL_TEXTURE = 0x4,
-  };
   Material(const std::shared_ptr<VkDriver> &driver,
            const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
       : driver_(driver), gpu_asset_manager_(gpu_asset_manager) {}
@@ -120,6 +114,8 @@ public:
   updateDescriptorSets(VkDescriptorSet descriptor_set,
                        std::vector<std::shared_ptr<Buffer>> &material_ubos);
 
+  virtual void compile() = 0;
+
 protected:
   std::shared_ptr<ShaderModule> vs_;
   std::shared_ptr<ShaderModule> fs_;
@@ -144,6 +140,8 @@ public:
   ~PbrMaterial() override = default;
 
   void update2PipelineState(PipelineState &pipeline_state) override;
+
+  void compile() override;
 };
 
 struct GlobalMVP {

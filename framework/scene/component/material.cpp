@@ -5,19 +5,29 @@ namespace vk_engine {
 
 #define MAX_FORWARD_LIGHT_COUNT 4
 
+#define HAS_BASE_COLOR_TEXTURE "HAS_BASE_COLOR_TEXTURE"
+#define HAS_METALLIC_TEXTURE "HAS_METALLIC_TEXTURE"
+#define HAS_ROUGHNESS_TEXTURE "HAS_ROUGHNESS_TEXTURE"
+#define HAS_NORMAL_TEXTURE "HAS_NORMAL_TEXTURE"
+
+#define BASE_COLOR_TEXTURE_NAME "base_color_texture"
+#define METALLIC_TEXTURE_NAME "metallic_texture"
+#define NORMAL_TEXTURE_NAME "normal_texture"
+
+enum PbrTextureParamIndex
+{
+  BASE_COLOR_TEXTURE_INDEX = 0,
+  METALLIC_TEXTURE_INDEX = 1,
+  NORMAL_TEXTURE_INDEX = 2,
+  TEXTURE_NUM_COUNT
+};
+
+
 PbrMaterial::PbrMaterial(
     const std::shared_ptr<VkDriver> &driver,
     const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
     : Material(driver, gpu_asset_manager) 
 {
-  vs_ = std::make_shared<ShaderModule>();
-  vs_->load("shaders/pbr.vert");
-
-  fs_ = std::make_shared<ShaderModule>();
-  fs_->load("shaders/pbr.frag");
-
-  shader_resources_ = parseShaderResources({vs_, fs_});
-
   // // uniform buffer information
   // ubos_.emplace_back(globalMVPUbo());
 
@@ -45,24 +55,35 @@ PbrMaterial::PbrMaterial(
                       {0, typeid(glm::vec2), sizeof(glm::vec4),
                        "pbr_mat.metallic_roughness"},
                   }});
+  texture_params_.resize(TEXTURE_NUM_COUNT);
+  texture_params_[BASE_COLOR_TEXTURE_INDEX] = 
+    MaterialTextureParam{ // 0 for
+      .set = 2,
+      .binding = 0,
+      .index = 0,
+      .name = BASE_COLOR_TEXTURE_NAME,
+      .img_file_path = "",
+      .dirty = true
+    };
 
-  // check uniform buffer in resources is consistent with ubos_
-#ifndef NDEBUG
-  for (auto &resource : shader_resources_) {
-    if (resource.type == ShaderResourceType::BufferUniform) {
-      if (resource.set != MATERIAL_SET_INDEX)
-        continue; // only for material ubo
-      auto itr = std::find_if(
-          ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
-            return ubo.set == resource.set && ubo.binding == resource.binding;
-          });
-      if (itr == ubos_.end())
-        throw std::runtime_error("uniform buffer not found");
-      if (itr->size < resource.size)
-        throw std::runtime_error("uniform buffer size not match");
-    }
-  }
-#endif
+// unable to check because of variance
+//   // check uniform buffer in resources is consistent with ubos_
+// #ifndef NDEBUG
+//   for (auto &resource : shader_resources_) {
+//     if (resource.type == ShaderResourceType::BufferUniform) {
+//       if (resource.set != MATERIAL_SET_INDEX)
+//         continue; // only for material ubo
+//       auto itr = std::find_if(
+//           ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
+//             return ubo.set == resource.set && ubo.binding == resource.binding;
+//           });
+//       if (itr == ubos_.end())
+//         throw std::runtime_error("uniform buffer not found");
+//       if (itr->size < resource.size)
+//         throw std::runtime_error("uniform buffer size not match");
+//     }
+//   }
+// #endif
 
   // update reference cpu data
   uint32_t ubo_data_size = 0;
@@ -71,6 +92,26 @@ PbrMaterial::PbrMaterial(
   }
   ubo_data_.resize(ubo_data_size);
 }
+
+void PbrMaterial::compile()
+{
+  ShaderVariant variant;
+  
+  // shader variance
+  if(!texture_params_[BASE_COLOR_TEXTURE_INDEX].img_file_path.empty())
+  {
+    variant.add_define(HAS_BASE_COLOR_TEXTURE);
+  }
+  
+  vs_ = std::make_shared<ShaderModule>(variant);
+  vs_->load("shaders/pbr.vert");
+
+  fs_ = std::make_shared<ShaderModule>(variant);
+  fs_->load("shaders/pbr.frag");
+
+  shader_resources_ = parseShaderResources({vs_, fs_});
+}
+
 
 std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers() {
   // create uniform buffers

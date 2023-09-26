@@ -65,10 +65,10 @@ public:
 
   std::shared_ptr<ShaderModule>
   requestShaderModule(VkShaderStageFlagBits stage,
-                      const std::string &glsl_source);
+                      const std::string &glsl_source, const ShaderVariant& variant);
 
   std::shared_ptr<ShaderModule>
-  requestShaderModule(const std::string &file_path);
+  requestShaderModule(const std::string &file_path, const ShaderVariant& variant);
 
   std::shared_ptr<Shader>
   requestShader(const std::shared_ptr<VkDriver> &driver,

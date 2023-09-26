@@ -5,25 +5,25 @@ namespace vk_engine {
 
 std::shared_ptr<ShaderModule>
 ResourceCache::requestShaderModule(VkShaderStageFlagBits stage,
-                                   const std::string &glsl_source) {
+                                   const std::string &glsl_source, const ShaderVariant &variant) {
   std::unique_lock<std::mutex> lock(state_.shader_modules_mtx);                                    
   auto hash_code = ShaderModule::hash(glsl_source, stage);
   auto iter = state_.shader_modules.find(hash_code);
   if (iter != state_.shader_modules.end())
     return iter->second;
 
-  auto shader_module = std::make_shared<ShaderModule>();
+  auto shader_module = std::make_shared<ShaderModule>(variant);
   shader_module->setGlsl(glsl_source, stage);
   state_.shader_modules[hash_code] = shader_module;
   return shader_module;
 }
 
 std::shared_ptr<ShaderModule>
-ResourceCache::requestShaderModule(const std::string &file_path) {
+ResourceCache::requestShaderModule(const std::string &file_path, const ShaderVariant& variant) {
   VkShaderStageFlagBits stage{};
   std::string glsl_code;
   ShaderModule::readGlsl(file_path, stage, glsl_code);
-  return requestShaderModule(stage, glsl_code);
+  return requestShaderModule(stage, glsl_code, variant);
 }
 
 std::shared_ptr<Shader>
