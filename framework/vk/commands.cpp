@@ -93,8 +93,7 @@ CommandPool::requestCommandBuffer(VkCommandBufferLevel level) {
       return primary_command_buffers_.at(active_primary_command_buffer_count_++);
     }
 
-    primary_command_buffers_.emplace_back(std::make_unique<CommandBuffer>(*this, level));
-
+    primary_command_buffers_.emplace_back(new CommandBuffer(driver_, *this, level));
     active_primary_command_buffer_count_++;
 
     return primary_command_buffers_.back();
@@ -105,8 +104,7 @@ CommandPool::requestCommandBuffer(VkCommandBufferLevel level) {
     return secondary_command_buffers_.at(active_secondary_command_buffer_count_++);
   }
 
-  secondary_command_buffers_.emplace_back(std::make_unique<CommandBuffer>(*this, level));
-
+  secondary_command_buffers_.emplace_back(new CommandBuffer(driver_, *this, level));
   active_secondary_command_buffer_count_++;
 
   return secondary_command_buffers_.back();
