@@ -16,6 +16,8 @@ entt::entity Scene::createRenderableEntity(const std::string &name,
   return entity;
 }
 
-void Scene::prepare() {}
+void Scene::prepare() {
+  
+}
 
 } // namespace vk_engine

@@ -6,6 +6,7 @@
 #include <framework/scene/asset_manager.hpp>
 #include <framework/utils/logging.h>
 #include <framework/vk/commands.h>
+#include <iostream>
 
 namespace vk_engine {
 
@@ -167,9 +168,9 @@ void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,
                               std::shared_ptr<PbrMaterial> &mat) {
   aiString texture_path;
   if (AI_SUCCESS == a_mat->GetTexture(ttype, 0, &texture_path)) {
-    mat->setTextureParamValue(shader_texture_name,
-                              file_directory_ +
-                                  std::string(texture_path.C_Str()));
+    // mat->setTextureParamValue(shader_texture_name,
+    //                           file_directory_ +
+    //                               std::string(texture_path.C_Str()));
     // getDefaultAppContext().gpu_asset_manager->requestImage<vk_engine::Image>(file_directory_
     // + std::string(texture_path.C_Str()));
   } else {
@@ -191,8 +192,14 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
 
   for (auto i = 0; i < num_materials; ++i) {
     auto a_mat = a_scene->mMaterials[i];
-    auto cur_mat = std::make_shared<PbrMaterial>(driver, gpu_asset_manager);
+    auto cur_mat = std::make_shared<PbrMaterial>(driver);
     ret_mats.emplace_back(cur_mat);
+
+    aiString texturePath;
+    if (a_mat->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
+        std::cout << "Diffuse texture path: " << texturePath.C_Str() << std::endl;
+        // Now, you can load and use the texture with your graphics library (e.g., OpenGL or DirectX).
+    }    
 
     // diffuse, base color
     loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,

@@ -75,27 +75,30 @@ class ShaderVariant
   public:
 	ShaderVariant() = default;
 
-	ShaderVariant(std::string &&preamble);	
+	ShaderVariant(std::string &&preamble) : preamble_(std::move(preamble)) {}	
 
 	/**
 	 * @brief Add definitions to shader variant
 	 * @param definitions Vector of definitions to add to the variant
 	 */
-	void add_definitions(const std::vector<std::string> &definitions);
+	void addDefinitions(const std::vector<std::string> &definitions);
 
 	/**
 	 * @brief Adds a define macro to the shader
 	 * @param def String which should go to the right of a define directive
 	 */
-	void add_define(const std::string &def);
+	void addDefine(const std::string &def);
 
 	/**
 	 * @brief Adds an undef macro to the shader
 	 * @param undef String which should go to the right of an undef directive
 	 */
-	void add_undefine(const std::string &undef);
+	void addUndefine(const std::string &undef);
   
-  const std::string &get_preamble() const;
+  const std::string &getPreamble() const
+  {
+    return preamble_;
+  }
 private:
   std::string preamble_;  
 };

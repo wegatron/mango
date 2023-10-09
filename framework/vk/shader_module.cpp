@@ -34,6 +34,23 @@ size_t ShaderResource::hash(const ShaderResource &resource) noexcept {
   return hash_code;
 }
 
+
+void ShaderVariant::addDefinitions(const std::vector<std::string> &definitions)
+{
+  for(const auto &def : definitions)
+    addDefine(def);
+}
+
+void ShaderVariant::addDefine(const std::string &def)
+{
+  preamble_ += "#define " + def + "\n";
+}
+
+void ShaderVariant::addUndefine(const std::string &undef)
+{
+  preamble_ += "#undef " + undef + "\n";
+}
+
 void ShaderModule::load(const std::string &file_path) {
   readGlsl(file_path, stage_, glsl_code_);
   setGlsl(glsl_code_, stage_);
@@ -42,7 +59,7 @@ void ShaderModule::load(const std::string &file_path) {
 void ShaderModule::setGlsl(const std::string &glsl_code,
                            VkShaderStageFlagBits stage) {
 
-  glsl_code_ = variant_.get_preamble() + glsl_code;
+  glsl_code_ = variant_.getPreamble() + glsl_code;
   stage_ = stage;
 
   compile2spirv(glsl_code_, stage_, spirv_code_);

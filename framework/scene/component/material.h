@@ -22,11 +22,11 @@ constexpr uint32_t PER_OBJECT_SET_INDEX = 3;
 
 namespace vk_engine {
 
-class GPUAssetManager;
+class ImageView;
 
 struct MaterialUboParam {
   uint32_t stride{0}; // for array element in uniform buffer
-  const std::type_info &type_info;
+  const std::type_info &tinfo;
   const uint8_t ub_offset;
   std::string name;
 };
@@ -36,7 +36,7 @@ struct MaterialUbo {
   uint32_t binding;
   uint32_t size;
   bool dirty{false};
-  std::byte *data{nullptr};
+  std::vector<std::byte> data;
   std::vector<MaterialUboParam> params;
 };
 
@@ -45,7 +45,7 @@ struct MaterialTextureParam {
   uint32_t binding;
   uint32_t index; // for array texture
   std::string name;
-  std::string img_file_path;
+  std::shared_ptr<vk_engine::ImageView> img_view;
   bool dirty;
 };
 
@@ -59,25 +59,25 @@ struct MaterialTextureParam {
  */
 class Material {
 public:
-  Material(const std::shared_ptr<VkDriver> &driver,
-           const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
-      : driver_(driver), gpu_asset_manager_(gpu_asset_manager) {}
+  Material(const std::shared_ptr<VkDriver> &driver)
+      : driver_(driver) {}
 
   virtual ~Material() = default;
 
   template <typename T>
   void setUboParamValue(const std::string &name, const T value,
                         uint32_t index = 0) {
-    for (auto &ubo : ubos_) {
-      for (auto &param : ubo.params) {
+    for (auto &info : ubos_info_) {
+      for (auto &param : info.params) {
         if (param.name == name) {
           // do the job
+          assert(param.tinfo == typeid(T));
           uint32_t param_offset = index * param.stride + param.ub_offset;
           if ((index != 0 && param.stride == 0) ||
-              param_offset + sizeof(T) >= ubo.size)
+              param_offset + sizeof(T) >= info.size)
             throw std::runtime_error("invalid ubo param index");
-          memcpy(ubo.data + param_offset, &value, sizeof(T));
-          ubo.dirty = true;
+          memcpy(info.data.data() + param_offset, &value, sizeof(T));
+          info.dirty = true;
           return;
         }
       }
@@ -85,20 +85,22 @@ public:
     throw std::runtime_error("invalid ubo param name or type");
   }
 
-  void setTextureParamValue(const std::string &name,
-                            const std::string &img_file_path) {
-    auto itr = std::find_if(texture_params_.begin(), texture_params_.end(),
-                            [&name](const MaterialTextureParam &param) {
-                              return param.name == name;
-                            });
-    if (itr == texture_params_.end())
-      throw std::runtime_error("invalid texture param name");
-    itr->img_file_path = img_file_path;
-    itr->dirty = true;
-  }
+  // void setTextureParamValue(const std::string &name,
+  //                           const std::string &img_file_path) {
+  //   auto itr = std::find_if(texture_params_.begin(), texture_params_.end(),
+  //                           [&name](const MaterialTextureParam &param) {
+  //                             return param.name == name;
+  //                           });
+  //   if (itr == texture_params_.end())
+  //     throw std::runtime_error("invalid texture param name");
+  //   itr->img_file_path = img_file_path;
+  //   itr->dirty = true;
+  // }
 
   //////// helper functions
-  std::vector<std::shared_ptr<Buffer>> createMaterialUniformBuffers();
+  //const std::vector<std::shared_ptr<Buffer>> &getMaterialUniformBuffers();
+
+  bool updateParams();
 
   /**
    * \brief update the information(vs,fs, multisample, subpass index) to
@@ -111,8 +113,7 @@ public:
    * MATERIAL_SET_INDEX
    */
   void
-  updateDescriptorSets(VkDescriptorSet descriptor_set,
-                       std::vector<std::shared_ptr<Buffer>> &material_ubos);
+  writeDescriptorSets(VkDescriptorSet descriptor_set);
 
   virtual void compile() = 0;
 
@@ -120,22 +121,20 @@ protected:
   std::shared_ptr<ShaderModule> vs_;
   std::shared_ptr<ShaderModule> fs_;
 
-  std::vector<ShaderResource> shader_resources_;
+  // std::vector<ShaderResource> shader_resources_;
 
-  std::vector<MaterialUbo> ubos_;
-  std::vector<std::byte> ubo_data_;
+  std::vector<MaterialUbo> ubos_info_;
+  std::vector<std::shared_ptr<Buffer>> ubos_;
 
-  std::vector<MaterialTextureParam> texture_params_;
+  //std::vector<MaterialTextureParam> textures_info_;
   std::shared_ptr<VkDriver> driver_;
-  std::shared_ptr<GPUAssetManager> gpu_asset_manager_;
 
   //uint32_t variance_; // material variance bit flags, check by value
 };
 
 class PbrMaterial : public Material {
 public:
-  PbrMaterial(const std::shared_ptr<VkDriver> &driver,
-              const std::shared_ptr<GPUAssetManager> &gpu_asset_manager);
+  PbrMaterial(const std::shared_ptr<VkDriver> &driver);
 
   ~PbrMaterial() override = default;
 

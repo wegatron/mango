@@ -24,9 +24,8 @@ enum PbrTextureParamIndex
 
 
 PbrMaterial::PbrMaterial(
-    const std::shared_ptr<VkDriver> &driver,
-    const std::shared_ptr<GPUAssetManager> &gpu_asset_manager)
-    : Material(driver, gpu_asset_manager) 
+    const std::shared_ptr<VkDriver> &driver)
+    : Material(driver) 
 {
   // // uniform buffer information
   // ubos_.emplace_back(globalMVPUbo());
@@ -46,26 +45,29 @@ PbrMaterial::PbrMaterial(
   //         "lights.info"}}});
 
   // pbr material
-  ubos_.emplace_back(
+  ubos_info_.emplace_back(
       MaterialUbo{.set = MATERIAL_SET_INDEX,
                   .binding = 0,
                   .size = 32,
+                  .data = std::vector<std::byte>(32, std::byte{0}),
                   .params{
-                      {0, typeid(glm::vec4), 0, "pbr_mat.base_color"},
+                      { .stride=0, 
+                        .tinfo=typeid(glm::vec4), 
+                        .ub_offset=0,
+                        .name="pbr_mat.base_color"},
                       {0, typeid(glm::vec2), sizeof(glm::vec4),
                        "pbr_mat.metallic_roughness"},
                   }});
-  texture_params_.resize(TEXTURE_NUM_COUNT);
-  texture_params_[BASE_COLOR_TEXTURE_INDEX] = 
-    MaterialTextureParam{ // 0 for
-      .set = 2,
-      .binding = 0,
-      .index = 0,
-      .name = BASE_COLOR_TEXTURE_NAME,
-      .img_file_path = "",
-      .dirty = true
-    };
-
+  // texture_params_.resize(TEXTURE_NUM_COUNT);
+  // texture_params_[BASE_COLOR_TEXTURE_INDEX] = 
+  //   MaterialTextureParam{ // 0 for
+  //     .set = 2,
+  //     .binding = 0,
+  //     .index = 0,
+  //     .name = BASE_COLOR_TEXTURE_NAME,
+  //     .img_file_path = "",
+  //     .dirty = true
+  //   };
 // unable to check because of variance
 //   // check uniform buffer in resources is consistent with ubos_
 // #ifndef NDEBUG
@@ -84,47 +86,54 @@ PbrMaterial::PbrMaterial(
 //     }
 //   }
 // #endif
-
-  // update reference cpu data
-  uint32_t ubo_data_size = 0;
-  for (auto &ubo : ubos_) {
-    ubo_data_size += ubo.size;
-  }
-  ubo_data_.resize(ubo_data_size);
 }
 
 void PbrMaterial::compile()
 {
   ShaderVariant variant;
   
-  // shader variance
-  if(!texture_params_[BASE_COLOR_TEXTURE_INDEX].img_file_path.empty())
-  {
-    variant.add_define(HAS_BASE_COLOR_TEXTURE);
-  }
+  // // shader variance
+  // if(!texture_params_[BASE_COLOR_TEXTURE_INDEX].img_file_path.empty())
+  // {
+  //   variant.addDefine(HAS_BASE_COLOR_TEXTURE);
+  // }
   
   vs_ = std::make_shared<ShaderModule>(variant);
-  vs_->load("shaders/pbr.vert");
+  vs_->load("shaders/basic.vert");
 
   fs_ = std::make_shared<ShaderModule>(variant);
-  fs_->load("shaders/pbr.frag");
+  fs_->load("shaders/basic.frag");
 
-  shader_resources_ = parseShaderResources({vs_, fs_});
+  // create uniform buffers
+    
+
+  //shader_resources_ = parseShaderResources({vs_, fs_});
 }
 
 
-std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers() {
-  // create uniform buffers
-  std::vector<std::shared_ptr<Buffer>> uniform_buffers;
-  uniform_buffers.reserve(ubos_.size());
-  for (auto &ubo : ubos_) {
-    uniform_buffers.emplace_back(std::make_unique<Buffer>(
-        driver_, 0, ubo.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-        VMA_ALLOCATION_CREATE_MAPPED_BIT |
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-        VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
+// std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers() {
+//   // create uniform buffers
+//   std::vector<std::shared_ptr<Buffer>> uniform_buffers;
+//   uniform_buffers.reserve(ubos_.size());
+//   for (auto &ubo : ubos_) {
+//     uniform_buffers.emplace_back(std::make_unique<Buffer>(
+//         driver_, 0, ubo.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+//         VMA_ALLOCATION_CREATE_MAPPED_BIT |
+//             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+//         VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
+//   }
+//   return uniform_buffers;
+// }
+
+bool Material::updateParams()
+{
+  for (auto i = 0; i < ubos_info_.size(); ++i) {
+    if (ubos_info_[i].dirty) {
+      ubos_[i]->update(ubos_info_[i].data.data(), ubos_info_[i].size, 0);
+      ubos_info_[i].dirty = false;
+    }
   }
-  return uniform_buffers;
+  return true;
 }
 
 MaterialUbo globalMVPUbo() {
@@ -148,23 +157,22 @@ void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {
   pipeline_state.setSubpassIndex(0);
 }
 
-void Material::updateDescriptorSets(
-    VkDescriptorSet descriptor_set,
-    std::vector<std::shared_ptr<Buffer>> &material_ubos) {
+void Material::writeDescriptorSets(
+    VkDescriptorSet descriptor_set) {
   std::vector<VkWriteDescriptorSet> wds;
   wds.reserve(ubos_.size());
   std::vector<VkDescriptorBufferInfo> desc_buffer_infos;
   desc_buffer_infos.reserve(ubos_.size());
   for (auto i = 0; i < ubos_.size(); ++i) {
     desc_buffer_infos.emplace_back(VkDescriptorBufferInfo{
-        .buffer = material_ubos[i]->getHandle(),
+        .buffer = ubos_[i]->getHandle(),
         .offset = 0,
-        .range = ubos_[i].size,
+        .range = ubos_info_[i].size,
     });
     wds.emplace_back(VkWriteDescriptorSet{
         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
         .dstSet = descriptor_set,
-        .dstBinding = ubos_[i].binding,
+        .dstBinding = ubos_info_[i].binding,
         .descriptorCount = 1,
         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
         .pBufferInfo = &desc_buffer_infos.back(),
