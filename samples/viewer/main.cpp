@@ -16,7 +16,7 @@ int main(int argc, char const *argv[])
   
   auto app = std::make_shared<vk_engine::ViewerApp>("viewer");
   //app->setScene("data/buster_drone/scene.gltf");
-  app->setScene("data/plane/plane.obj");
+  app->setScene("data/plane/plane0.obj");
 
   auto window_app =
       std::make_shared<vk_engine::WindowApp>("viewer", 800, 600);

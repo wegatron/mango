@@ -40,7 +40,5 @@ private:
                   const char *shader_texture_name,
                   const char *shader_color_name,
                   std::shared_ptr<PbrMaterial> &mat);
-
-  std::string file_directory_;
 };
 } // namespace vk_engine

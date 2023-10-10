@@ -43,7 +43,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     throw std::runtime_error("Assimp import error:" +
                              std::string(importer.GetErrorString()));
   }
-  file_directory_ = path.substr(0, path.find_last_of('/'));
+  //file_directory_ = path.substr(0, path.find_last_of('/'));
   // add materials and meshes to scene
   std::vector<std::shared_ptr<StaticMesh>> meshes =
       processMeshs(a_scene, scene, cmd_buf);
@@ -195,12 +195,6 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
     auto cur_mat = std::make_shared<PbrMaterial>(driver);
     ret_mats.emplace_back(cur_mat);
 
-    aiString texturePath;
-    if (a_mat->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath) == AI_SUCCESS) {
-        std::cout << "Diffuse texture path: " << texturePath.C_Str() << std::endl;
-        // Now, you can load and use the texture with your graphics library (e.g., OpenGL or DirectX).
-    }    
-
     // diffuse, base color
     loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,
                "base_color_texture", "pbr_mat.base_color", cur_mat);
@@ -209,7 +203,8 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
     loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS, AI_MATKEY_ROUGHNESS_FACTOR,
               "roughness_texture", "pbr_mat.roughness", cur_mat);
     loadAndSet(a_mat, aiTextureType_METALNESS, AI_MATKEY_METALLIC_FACTOR,
-              "metallic_texture", "pbr_mat.metallic", cur_mat); */
+              "metallic_texture", "pbr_mat.metallic", cur_mat); */    
+    cur_mat->compile();
   }
   return ret_mats;
 }
