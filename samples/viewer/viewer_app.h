@@ -1,9 +1,11 @@
 #pragma once
 
 #include <framework/scene/scene.h>
+#include <framework/scene/render.h>
 #include <framework/utils/app_base.h>
 #include <framework/vk/commands.h>
 #include <framework/vk/descriptor_set.h>
+
 
 namespace vk_engine {
 class CommandBuffer;
@@ -11,7 +13,7 @@ class StagePool;
 class ViewerApp : public AppBase {
 public:
   ViewerApp(const std::string &name)
-      : AppBase(name), scene_(std::make_unique<Scene>()) {}
+      : AppBase(name), scene_(std::make_unique<Scene>()), render_(render_output_syncs_) {}
 
   ~ViewerApp() override = default;
 
@@ -25,6 +27,7 @@ public:
 
 private:
   std::string scene_path_;
+  Render render_;
   std::vector<std::shared_ptr<RenderTarget>> rts_;
   std::unique_ptr<Scene> scene_;
 };

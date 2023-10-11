@@ -12,12 +12,6 @@ class VkDriver;
 class Fence;
 class Semaphore;
 
-struct RenderOutputSync {
-  std::shared_ptr<Fence> render_fence;
-  std::shared_ptr<Semaphore> render_semaphore;
-  std::shared_ptr<Semaphore> present_semaphore;
-};
-
 class AppBase {
 public:
   AppBase(const std::string &name) : name_(name) {}

@@ -55,4 +55,10 @@ namespace vk_engine
         VkSemaphore handle_{VK_NULL_HANDLE};
     };
     
+
+    struct RenderOutputSync {
+    std::shared_ptr<Fence> render_fence;
+    std::shared_ptr<Semaphore> render_semaphore;
+    std::shared_ptr<Semaphore> present_semaphore;
+    };    
 }

@@ -54,8 +54,8 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
                      const uint32_t frame_index) {
   context_.stage_pool->gc();                      
   context_.gpu_asset_manager->gc();
-  scene_->prepare();
-
-  // todo
+  render_.beginFrame();
+  render_.render(scene_.get());
+  render_.endFrame();
 }
 } // namespace vk_engine
