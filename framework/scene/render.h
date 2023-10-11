@@ -9,7 +9,7 @@ namespace vk_engine {
     public:
         Render(std::vector<RenderOutputSync> &render_output_syncs) : render_output_syncs_(render_output_syncs) {}
         
-        bool beginFrame();
+        void beginFrame();
 
         void render(Scene *scene);
 

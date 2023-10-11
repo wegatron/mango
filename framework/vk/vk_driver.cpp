@@ -13,6 +13,7 @@
 #include <framework/utils/error.h>
 #include <framework/vk/physical_device.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/queue.h>
 
 namespace vk_engine {
 constexpr uint32_t vulkan_version = VK_API_VERSION_1_1;
@@ -52,7 +53,7 @@ void VkDriver::initDevice() {
   }
 
   physical_device_ = physical_devices[physical_device_index].getHandle();
-  graphics_queue_family_index_ =
+  auto graphics_queue_family_index =
       physical_devices[physical_device_index].getGraphicsQueueFamilyIndex();
 
 // for print out memory infos
@@ -93,7 +94,7 @@ void VkDriver::initDevice() {
   VkDeviceQueueCreateInfo queue_info{};
   float queue_priority = 1.0f;
   queue_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-  queue_info.queueFamilyIndex = graphics_queue_family_index_;
+  queue_info.queueFamilyIndex = graphics_queue_family_index;
   queue_info.queueCount = 1;
   queue_info.pQueuePriorities = &queue_priority;
 
@@ -106,9 +107,8 @@ void VkDriver::initDevice() {
       vkCreateDevice(physical_device_, &device_info, nullptr, &device_),
       "failed to create vulkan device!");
 
+  graphics_cmd_queue_.reset(new CommandQueue(device_, graphics_queue_family_index, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, VK_TRUE, 0));
   volkLoadDevice(device_);
-
-  vkGetDeviceQueue(device_, graphics_queue_family_index_, 0, &graphics_queue_);
 }
 
 void VkDriver::init(const std::string &app_name,

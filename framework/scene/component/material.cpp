@@ -150,39 +150,39 @@ MaterialUbo globalMVPUbo() {
   return ubo;
 }
 
-void PbrMaterial::update2PipelineState(PipelineState &pipeline_state) {
+void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   pipeline_state.setShaders({vs_, fs_});
   pipeline_state.setMultisampleState(
       {VK_SAMPLE_COUNT_1_BIT, false, 0.0f, 0xFFFFFFFF, false, false});
   pipeline_state.setSubpassIndex(0);
 }
 
-void Material::writeDescriptorSets(
-    VkDescriptorSet descriptor_set) {
-  std::vector<VkWriteDescriptorSet> wds;
-  wds.reserve(ubos_.size());
-  std::vector<VkDescriptorBufferInfo> desc_buffer_infos;
-  desc_buffer_infos.reserve(ubos_.size());
-  for (auto i = 0; i < ubos_.size(); ++i) {
-    desc_buffer_infos.emplace_back(VkDescriptorBufferInfo{
-        .buffer = ubos_[i]->getHandle(),
-        .offset = 0,
-        .range = ubos_info_[i].size,
-    });
-    wds.emplace_back(VkWriteDescriptorSet{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .dstSet = descriptor_set,
-        .dstBinding = ubos_info_[i].binding,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .pBufferInfo = &desc_buffer_infos.back(),
-    });
-  }
+// void Material::writeDescriptorSets(
+//     VkDescriptorSet descriptor_set) {
+//   std::vector<VkWriteDescriptorSet> wds;
+//   wds.reserve(ubos_.size());
+//   std::vector<VkDescriptorBufferInfo> desc_buffer_infos;
+//   desc_buffer_infos.reserve(ubos_.size());
+//   for (auto i = 0; i < ubos_.size(); ++i) {
+//     desc_buffer_infos.emplace_back(VkDescriptorBufferInfo{
+//         .buffer = ubos_[i]->getHandle(),
+//         .offset = 0,
+//         .range = ubos_info_[i].size,
+//     });
+//     wds.emplace_back(VkWriteDescriptorSet{
+//         .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+//         .dstSet = descriptor_set,
+//         .dstBinding = ubos_info_[i].binding,
+//         .descriptorCount = 1,
+//         .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+//         .pBufferInfo = &desc_buffer_infos.back(),
+//     });
+//   }
 
-  if (wds.empty())
-    throw std::runtime_error("no ubo to update");
+//   if (wds.empty())
+//     throw std::runtime_error("no ubo to update");
 
-  driver_->update(wds);
-}
+//   driver_->update(wds);
+// }
 
 } // namespace vk_engine

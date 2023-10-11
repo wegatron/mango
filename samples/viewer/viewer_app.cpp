@@ -3,6 +3,7 @@
 #include <framework/utils/app_context.h>
 #include <framework/vk/stage_pool.h>
 #include <framework/scene/asset_manager.hpp>
+#include <framework/vk/queue.h>
 
 namespace vk_engine {
 
@@ -20,8 +21,10 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
     context_.resource_cache->setPipelineCache(std::move(pcw));
   }
   context_.stage_pool = std::make_shared<StagePool>(driver);
+
+  auto cmd_queue = driver->getGraphicsQueue();
   context_.command_pool = std::make_unique<CommandPool>(
-      driver, driver->getGraphicsQueueFamilyIndex(),
+      driver, cmd_queue->getFamilyIndex(),
       CommandPool::CmbResetMode::ResetPool);
 
   g_app_context = context_; // set default app context
@@ -32,27 +35,14 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
   AssimpLoader loader;
   loader.loadScene(scene_path_, *scene_, cmd_buf);
   cmd_buf->end();
-  
-  // submit
-  auto cmd_buf_handle = cmd_buf->getHandle();
-  VkSubmitInfo info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-  info.commandBufferCount = 1;
-  info.pCommandBuffers = &cmd_buf_handle;
-  info.waitSemaphoreCount = 1;
-  info.pWaitSemaphores = NULL;
-  info.pWaitDstStageMask = NULL;
-  info.signalSemaphoreCount = 1;
-  info.pSignalSemaphores = NULL;
-  // Submit command buffer to graphics queue
-  auto result = vkQueueSubmit(
-      driver->getGraphicsQueue(), 1, &info, NULL);
+  cmd_queue->submit(cmd_buf, VK_NULL_HANDLE);
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }
 
 void ViewerApp::tick(const float seconds, const uint32_t rt_index,
                      const uint32_t frame_index) {
-  context_.stage_pool->gc();                      
+  context_.stage_pool->gc();
   context_.gpu_asset_manager->gc();
   render_.beginFrame();
   render_.render(scene_.get());

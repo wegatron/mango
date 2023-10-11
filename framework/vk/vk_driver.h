@@ -11,11 +11,13 @@
 
 namespace vk_engine {
 
+class CommandQueue;
+
 struct RequestedDeviceExtension {
   const char *name;
   bool required;
 };
-  
+ 
 class VkDriver {
 public:
   VkDriver() = default;
@@ -34,9 +36,7 @@ public:
 
   VkSurfaceKHR getSurface() const { return surface_; }
 
-  uint32_t getGraphicsQueueFamilyIndex() const { return graphics_queue_family_index_; }
-
-  VkQueue getGraphicsQueue() const { return graphics_queue_; }
+  std::shared_ptr<CommandQueue> getGraphicsQueue() const { return graphics_cmd_queue_; }
 
   VkResult waitIdle() const { return vkDeviceWaitIdle(device_); }
 
@@ -70,8 +70,7 @@ private:
 
   std::vector<const char *> enabled_device_extensions_;
 
-  VkQueue graphics_queue_{VK_NULL_HANDLE};
-  uint32_t graphics_queue_family_index_{0};
+  std::shared_ptr<CommandQueue> graphics_cmd_queue_;
 
   VkSurfaceKHR surface_{VK_NULL_HANDLE};
 

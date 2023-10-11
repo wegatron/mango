@@ -38,7 +38,6 @@ PhysicalDevice::getPhysicalDevices(VkInstance instance) {
         queue_family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(handle, &queue_family_count,
                                              queue_family_properties.data());
-    uint32_t selected_queue_family_index = -1;
     for (uint32_t j = 0; j < queue_family_count; ++j) {
       const auto &p = queue_family_properties[j];
       if ((p.queueFlags & VK_QUEUE_GRAPHICS_BIT) &&

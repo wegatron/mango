@@ -106,14 +106,9 @@ public:
    * \brief update the information(vs,fs, multisample, subpass index) to
    * pipeline state
    */
-  virtual void update2PipelineState(PipelineState &pipeline_state) = 0;
+  virtual void setPipelineState(PipelineState &pipeline_state) = 0;
 
-  /**
-   * \brief update the material descriptor sets which index is
-   * MATERIAL_SET_INDEX
-   */
-  void
-  writeDescriptorSets(VkDescriptorSet descriptor_set);
+  std::shared_ptr<DescriptorSet> getDescriptorSet() const noexcept { return desc_set_; }
 
   virtual void compile() = 0;
 
@@ -125,6 +120,8 @@ protected:
 
   std::vector<MaterialUbo> ubos_info_;
   std::vector<std::shared_ptr<Buffer>> ubos_;
+
+  std::shared_ptr<DescriptorSet> desc_set_;
 
   //std::vector<MaterialTextureParam> textures_info_;
   std::shared_ptr<VkDriver> driver_;
@@ -138,7 +135,7 @@ public:
 
   ~PbrMaterial() override = default;
 
-  void update2PipelineState(PipelineState &pipeline_state) override;
+  void setPipelineState(PipelineState &pipeline_state) override;
 
   void compile() override;
 };
