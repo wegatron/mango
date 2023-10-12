@@ -16,7 +16,7 @@ entt::entity Scene::createRenderableEntity(const std::string &name,
   return entity;
 }
 
-void Scene::prepare() {
+void Scene::update(const float seconds, const std::shared_ptr<CommandBuffer> &cmd_buffer) {
   
 }
 
