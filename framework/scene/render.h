@@ -9,7 +9,7 @@ namespace vk_engine {
     public:
         Render(std::vector<RenderOutputSync> &render_output_syncs) : render_output_syncs_(render_output_syncs) {}
         
-        void beginFrame();
+        void beginFrame(uint32_t frame_index, uint32_t rt_index);
 
         void render(Scene *scene);
 
@@ -17,5 +17,6 @@ namespace vk_engine {
 
     private:
         std::vector<RenderOutputSync> &render_output_syncs_;
+        std::shared_ptr<CommandBuffer> cmd_buffer_;
     };
 }

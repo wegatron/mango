@@ -17,7 +17,7 @@ public:
   entt::registry &camera_manager() { return camera_manager_; }
   entt::registry &light_manager() { return light_manager_; }
 
-  entt::registry &renderable_manager() { return renderable_manager_; }
+  entt::registry &renderableManager() { return renderable_manager_; }
   entt::entity
   createRenderableEntity(const std::string &name,
                          const std::shared_ptr<TransformRelationship> tr,

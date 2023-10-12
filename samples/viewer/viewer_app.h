@@ -28,7 +28,6 @@ public:
 private:
   std::string scene_path_;
   Render render_;
-  std::vector<std::shared_ptr<RenderTarget>> rts_;
   std::unique_ptr<Scene> scene_;
 };
 } // namespace vk_engine
