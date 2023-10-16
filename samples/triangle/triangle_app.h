@@ -28,7 +28,7 @@ private:
   {
     std::shared_ptr<DescriptorSet> descriptor_set;
     std::unique_ptr<Buffer> uniform_buffer; // dynaic data
-    std::shared_ptr<CommandBuffer> cmd_buffer;
+    std::shared_ptr<CommandBuffer> cmd_buf;
     std::unique_ptr<FrameBuffer> frame_buffer;
   };
 

@@ -3,6 +3,7 @@
 #include <framework/utils/window_app.h>
 #include <framework/vk/image.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/queue.h>
 #include <framework/vk/syncs.h>
 
 namespace vk_engine {

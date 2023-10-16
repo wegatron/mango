@@ -26,7 +26,7 @@ public:
 
 	VkResult submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const;
 
-	VkResult submit(const std::shared_ptr<CommandBuffer> &cmd_buffer, VkFence fence) const;
+	VkResult submit(const std::shared_ptr<CommandBuffer> &cmd_buf, VkFence fence) const;
 
 	VkResult present(const VkPresentInfoKHR &present_infos) const;
 

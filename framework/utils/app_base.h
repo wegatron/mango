@@ -1,10 +1,13 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <framework/utils/app_context.h>
 #include <framework/vk/frame_buffer.h>
 #include <framework/vk/resource_cache.h>
-#include <memory>
-#include <string>
+#include <framework/vk/syncs.h>
 
 namespace vk_engine {
 
@@ -32,7 +35,7 @@ public:
   }
 
 protected:
-  const std::string name_;
+  std::string name_;
   AppContext context_;
   std::vector<RenderOutputSync> render_output_syncs_;
 };

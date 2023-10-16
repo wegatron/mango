@@ -12,7 +12,7 @@ public:
 
   ~Scene() = default;
 
-  void update(const float seconds, const std::shared_ptr<CommandBuffer> &cmd_buffer);
+  void update(const float seconds, const std::shared_ptr<CommandBuffer> &cmd_buf);
 
   entt::registry &camera_manager() { return camera_manager_; }
   entt::registry &light_manager() { return light_manager_; }

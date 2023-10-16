@@ -3,6 +3,7 @@
 #include <framework/scene/scene.h>
 #include <framework/utils/app_context.h>
 #include <framework/vk/commands.h>
+#include <framework/vk/queue.h>
 #include <cassert>
 
 namespace vk_engine
@@ -18,13 +19,13 @@ namespace vk_engine
         render_output_syncs_[frame_index].render_fence->reset();
         auto &cmd_pool = getDefaultAppContext().frames_data[cur_frame_index_].command_pool;
         cmd_pool->reset();
-        auto cmd_buffer_ = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);        
+        auto cmd_buf_ = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);        
     }
 
     void Render::render(Scene *scene)
     {
         assert(scene != nullptr);
-        scene->update(cur_time_, cmd_buffer_);
+        scene->update(cur_time_, cmd_buf_);
         auto &render_tgt = getDefaultAppContext().frames_data[cur_rt_index_].render_tgt;
         
         auto & rm = scene->renderableManager();
@@ -33,13 +34,13 @@ namespace vk_engine
         view.each([&rp, this](const std::shared_ptr<TransformRelationship> &tr, const std::shared_ptr<Material> &mat, const std::shared_ptr<StaticMesh> &mesh)
         {
             // update rt
-            rp.draw(mat, tr->transform, mesh, cmd_buffer_);
+            rp.draw(mat, tr->transform, mesh, cmd_buf_);
         });
     }
 
     void Render::endFrame()
     {
-        auto &cmd_queue = getDefaultAppContext().driver->getGraphicsQueue();
-        cmd_queue->submit(cmd_buffer_, render_output_syncs_[cur_frame_index_].render_fence->getHandle());
+        auto cmd_queue = getDefaultAppContext().driver->getGraphicsQueue();
+        cmd_queue->submit(cmd_buf_, render_output_syncs_[cur_frame_index_].render_fence->getHandle());
     }
 }

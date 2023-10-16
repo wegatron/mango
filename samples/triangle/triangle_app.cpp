@@ -26,7 +26,7 @@ void TriangleApp::tick(const float seconds, const uint32_t rt_index,
   frame_data_[rt_index].uniform_buffer->update(mats, sizeof(mats));
 
   // submit command buffer
-  VkCommandBuffer cmd_buf = frame_data_[rt_index].cmd_buffer->getHandle();
+  VkCommandBuffer cmd_buf = frame_data_[rt_index].cmd_buf->getHandle();
   VkSemaphore render_semaphore =
       render_output_syncs_[frame_index].render_semaphore->getHandle();
   VkSemaphore present_semaphore =
@@ -207,9 +207,9 @@ void TriangleApp::buildCommandBuffers() {
   for (uint32_t i = 0; i < frames_inflight_; ++i) {
     auto &frame_data = frame_data_[i];
     auto &sync = render_output_syncs_[i];
-    frame_data.cmd_buffer =
+    frame_data.cmd_buf =
         command_pool_->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    auto cmd_buf = frame_data.cmd_buffer;
+    auto cmd_buf = frame_data.cmd_buf;
     cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
     cmd_buf->beginRenderPass(sync.render_fence, sync.render_semaphore,
                              render_pass_, frame_data.frame_buffer);
