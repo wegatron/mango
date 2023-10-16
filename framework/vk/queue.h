@@ -12,23 +12,21 @@ class CommandBuffer;
 class CommandQueue final
 {
 public:
-    ~CommandQueue();
+	VkQueue getHandle() const { return handle_; }
 
-	VkQueue getHandle() const;
+	uint32_t getFamilyIndex() const { return family_index_; }
 
-	uint32_t getFamilyIndex() const;
+	uint32_t getIndex() const { return index_; }
 
-	uint32_t getIndex() const;
+	// const VkQueueFamilyProperties &get_properties() const;
 
-	const VkQueueFamilyProperties &get_properties() const;
-
-	VkBool32 supportPresent() const;
+	VkBool32 supportPresent() const { return can_present_; }
 
 	VkResult submit(const std::vector<VkSubmitInfo> &submit_infos, VkFence fence) const;
 
 	VkResult submit(const std::shared_ptr<CommandBuffer> &cmd_buf, VkFence fence) const;
 
-	VkResult present(const VkPresentInfoKHR &present_infos) const;
+	VkResult present(const VkPresentInfoKHR &present_info) const;
 
 	VkResult waitIdle() const;
 

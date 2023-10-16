@@ -106,9 +106,8 @@ void VkDriver::initDevice() {
   VK_THROW_IF_ERROR(
       vkCreateDevice(physical_device_, &device_info, nullptr, &device_),
       "failed to create vulkan device!");
-
+  volkLoadDevice(device_);      
   graphics_cmd_queue_.reset(new CommandQueue(device_, graphics_queue_family_index, VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT, VK_TRUE, 0));
-  volkLoadDevice(device_);
 }
 
 void VkDriver::init(const std::string &app_name,

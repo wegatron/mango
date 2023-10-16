@@ -26,12 +26,17 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
 
   auto cmd_queue = driver->getGraphicsQueue();
   
+  render_output_syncs_.resize(rts.size());
   for(auto i=0; i<rts.size(); ++i)
   {
     frames_data[i].command_pool = std::make_unique<CommandPool>(
       driver, cmd_queue->getFamilyIndex(),
       CommandPool::CmbResetMode::ResetPool);
     frames_data[i].render_tgt = rts[i];
+    auto &sync = render_output_syncs_[i];
+    sync.render_fence = std::make_shared<Fence>(driver, true);
+    sync.render_semaphore = std::make_shared<Semaphore>(driver);
+    sync.present_semaphore = std::make_shared<Semaphore>(driver);    
   }
 
   g_app_context = context_; // set default app context
@@ -42,7 +47,8 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
   AssimpLoader loader;
   loader.loadScene(scene_path_, *scene_, cmd_buf);
   cmd_buf->end();
-  cmd_queue->submit(cmd_buf, VK_NULL_HANDLE);
+  render_output_syncs_[0].render_fence->reset();
+  cmd_queue->submit(cmd_buf, render_output_syncs_[0].render_fence->getHandle());
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }
