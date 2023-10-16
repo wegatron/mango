@@ -2,6 +2,7 @@
 #include <framework/utils/logging.h>
 #include <framework/utils/window_app.h>
 #include <framework/vk/image.h>
+#include <framework/vk/vk_driver.h>
 #include <framework/vk/syncs.h>
 
 namespace vk_engine {
@@ -80,16 +81,17 @@ void WindowApp::run() {
     app_->tick(0.016f, rt_index, current_frame_index_); // 60fps
     
     // present
-    VkPresentInfoKHR present{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
+    VkPresentInfoKHR present_info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     VkSwapchainKHR swapchain = swapchain_->getHandle();
     VkSemaphore render_semaphore = render_output_sync.render_semaphore->getHandle();
-    present.swapchainCount     = 1;
-    present.pSwapchains        = &swapchain;
-    present.pImageIndices      = &rt_index;
-    present.waitSemaphoreCount = 1;
-    present.pWaitSemaphores    = &render_semaphore;
+    present_info.swapchainCount     = 1;
+    present_info.pSwapchains        = &swapchain;
+    present_info.pImageIndices      = &rt_index;
+    present_info.waitSemaphoreCount = 1;
+    present_info.pWaitSemaphores    = &render_semaphore;
+    
     // Present swapchain image
-    vkQueuePresentKHR(driver_->getGraphicsQueue(), &present);   
+    driver_->getGraphicsQueue()->present(present_info);
     current_frame_index_ = (current_frame_index_ + 1) % render_targets_.size();
   }
 }

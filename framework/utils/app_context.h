@@ -22,7 +22,6 @@ namespace vk_engine
     {
         std::shared_ptr<VkDriver> driver;
         std::shared_ptr<DescriptorPool> descriptor_pool;
-        // std::shared_ptr<CommandPool> command_pool; frame data
         std::shared_ptr<StagePool> stage_pool;
         std::shared_ptr<GPUAssetManager> gpu_asset_manager;
         std::shared_ptr<ResourceCache> resource_cache;

@@ -1,7 +1,8 @@
 #include <framework/scene/render.h>
 #include <framework/scene/rpass.h>
 #include <framework/scene/scene.h>
-#include <utils/app_context.h>
+#include <framework/utils/app_context.h>
+#include <framework/vk/commands.h>
 #include <cassert>
 
 namespace vk_engine
@@ -11,18 +12,19 @@ namespace vk_engine
         // wait sync
         assert(!render_output_syncs_.empty());
         cur_frame_index_ = frame_index;
-        cur_rt_index_ = rt_index;        
+        cur_rt_index_ = rt_index;
+        cur_time_ = time_elapse; 
         render_output_syncs_[frame_index].render_fence->wait();
         render_output_syncs_[frame_index].render_fence->reset();
         auto &cmd_pool = getDefaultAppContext().frames_data[cur_frame_index_].command_pool;
         cmd_pool->reset();
-        auto cmd_buffer_ = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-        scene->update(time_elapse, cmd_buffer_);
+        auto cmd_buffer_ = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);        
     }
 
     void Render::render(Scene *scene)
     {
         assert(scene != nullptr);
+        scene->update(cur_time_, cmd_buffer_);
         auto &render_tgt = getDefaultAppContext().frames_data[cur_rt_index_].render_tgt;
         
         auto & rm = scene->renderableManager();
