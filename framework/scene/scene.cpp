@@ -1,4 +1,6 @@
+#include <queue>
 #include <framework/scene/scene.h>
+#include <framework/scene/basic.h>
 
 // entt reference: https://skypjack.github.io/entt/md_docs_md_entity.html
 // https://github.com/skypjack/entt/wiki/Crash-Course:-core-functionalities#introduction
@@ -17,7 +19,28 @@ entt::entity Scene::createRenderableEntity(const std::string &name,
 }
 
 void Scene::update(const float seconds, const std::shared_ptr<CommandBuffer> &cmd_buf) {
-  
+  //// update rt
+  std::queue<std::shared_ptr<TransformRelationship>> q;
+  // add root->node's children  
+  auto rch = root_tr_->child;
+  rch->gtransform = rch->ltransform;
+  while(rch != nullptr) // add child nodes
+  {
+    q.emplace(rch);
+    rch = rch->sibling;
+  }
+  while(!q.empty())
+  {
+    auto node = q.front(); q.pop();
+    node->gtransform = node->parent->gtransform * node->ltransform;
+    // add child nodes
+    auto ch = node->child;
+    while(ch != nullptr)
+    {
+      q.emplace(ch);
+      ch = ch->sibling;
+    }
+  }
 }
 
 } // namespace vk_engine

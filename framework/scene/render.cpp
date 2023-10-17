@@ -33,8 +33,9 @@ namespace vk_engine
         RPass rp;
         view.each([&rp, this](const std::shared_ptr<TransformRelationship> &tr, const std::shared_ptr<Material> &mat, const std::shared_ptr<StaticMesh> &mesh)
         {
-            // update rt
-            rp.draw(mat, tr->transform, mesh, cmd_buf_);
+            // update materials
+            mat->updateParams();
+            rp.draw(mat, tr->gtransform, mesh, cmd_buf_);
         });
     }
 

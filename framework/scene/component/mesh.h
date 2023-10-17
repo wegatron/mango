@@ -20,7 +20,7 @@ struct IndexBuffer {
     VkPrimitiveTopology type;
 };
 
-struct StaticMesh {  
+struct StaticMesh {
   VertexBuffer vertices;
   VertexBuffer normals;
   VertexBuffer texture_coords;

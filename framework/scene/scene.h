@@ -6,6 +6,7 @@
 #include <framework/scene/component/mesh.h>
 
 namespace vk_engine {
+class TransformRelationship;
 class Scene final {
 public:
   Scene() = default;
@@ -23,6 +24,8 @@ public:
                          const std::shared_ptr<TransformRelationship> tr,
                          const std::shared_ptr<Material> material,
                          const std::shared_ptr<StaticMesh> mesh);
+  
+  void setRootTr(const std::shared_ptr<TransformRelationship> &root_tr) { root_tr_ = root_tr; }
 
   // disable copy/move
   Scene(const Scene &) = delete;
@@ -34,6 +37,7 @@ private:
   entt::registry camera_manager_;
   entt::registry light_manager_;
   entt::registry renderable_manager_;
+  std::shared_ptr<TransformRelationship> root_tr_; // root transform relationship node
 };
 
 } // namespace vk_engine

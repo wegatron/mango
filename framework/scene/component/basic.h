@@ -16,8 +16,9 @@ namespace vk_engine
     {
         std::shared_ptr<TransformRelationship> parent;
         std::shared_ptr<TransformRelationship> child;
-        std::shared_ptr<TransformRelationship> sibling;
-        Eigen::Matrix4f transform{Eigen::Matrix4f::Identity()};
+        std::shared_ptr<TransformRelationship> sibling;                
+        Eigen::Matrix4f ltransform{Eigen::Matrix4f::Identity()}; // local transformation
+        Eigen::Matrix4f gtransform{Eigen::Matrix4f::Identity()}; // global transformation
     };
 
     // entt renderable entity

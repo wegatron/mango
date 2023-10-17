@@ -127,12 +127,15 @@ void PbrMaterial::compile()
 
 bool Material::updateParams()
 {
+  // update uniform buffer params
   for (auto i = 0; i < ubos_info_.size(); ++i) {
     if (ubos_info_[i].dirty) {
       ubos_[i]->update(ubos_info_[i].data.data(), ubos_info_[i].size, 0);
       ubos_info_[i].dirty = false;
     }
   }
+
+  // update textures... descriptor set
   return true;
 }
 

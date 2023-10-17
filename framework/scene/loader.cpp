@@ -17,9 +17,9 @@ AssimpLoader::processNode(const std::shared_ptr<TransformRelationship> &parent,
                           std::vector<std::shared_ptr<Material>> &materials) {
   auto cur_tr = std::make_shared<TransformRelationship>();
   cur_tr->parent = parent;
-  memcpy(cur_tr->transform.data(), &node->mTransformation,
+  memcpy(cur_tr->ltransform.data(), &node->mTransformation,
          sizeof(Eigen::Matrix4f));
-  cur_tr->transform.transposeInPlace(); // row major to column major
+  cur_tr->ltransform.transposeInPlace(); // row major to column major
 
   // process all the node's meshes (if any)
   for (uint32_t i = 0; i < node->mNumMeshes; ++i) {
@@ -52,6 +52,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
 
   // process root node's mesh
   auto root_tr = processNode(nullptr, a_scene->mRootNode, a_scene, scene, meshes, materials);
+  scene.setRootTr(root_tr);
 
   std::queue<std::pair<std::shared_ptr<TransformRelationship>, aiNode *>> // parent tr, parent node
       process_queue;
