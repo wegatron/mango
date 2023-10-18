@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <framework/vk/syncs.h>
+#include <framework/scene/rpass.h>
 
 namespace vk_engine {
     class CommandBuffer;
@@ -22,5 +23,6 @@ namespace vk_engine {
         float cur_time_{0.0};
         std::vector<RenderOutputSync> &render_output_syncs_;
         std::shared_ptr<CommandBuffer> cmd_buf_;
+        RPass rpass_;
     };
 }

@@ -50,7 +50,7 @@ Buffer::~Buffer() {
   vmaDestroyBuffer(driver_->getAllocator(), buffer_, allocation_);
 }
 
-void Buffer::update(void *data, size_t size, size_t offset) {
+void Buffer::update(const void *data, size_t size, size_t offset) {
   if (persistent_) {
     memcpy(mapped_data_ + offset, data, size);
     //std::copy(data, data + size, mapped_data_ + offset);

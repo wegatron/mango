@@ -1,6 +1,5 @@
 #include <queue>
 #include <framework/scene/scene.h>
-#include <framework/scene/basic.h>
 
 // entt reference: https://skypjack.github.io/entt/md_docs_md_entity.html
 // https://github.com/skypjack/entt/wiki/Crash-Course:-core-functionalities#introduction

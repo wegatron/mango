@@ -1,5 +1,6 @@
 #pragma once
 #include <stdexcept>
+#include <map>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
@@ -112,6 +113,8 @@ public:
 
   virtual void compile() = 0;
 
+  uint32_t getHashId() const { return hash_id_; }
+
 protected:
   std::shared_ptr<ShaderModule> vs_;
   std::shared_ptr<ShaderModule> fs_;
@@ -125,6 +128,8 @@ protected:
 
   //std::vector<MaterialTextureParam> textures_info_;
   std::shared_ptr<VkDriver> driver_;
+
+  uint32_t hash_id_{0};
 
   //uint32_t variance_; // material variance bit flags, check by value
 };
@@ -140,13 +145,21 @@ public:
   void compile() override;
 };
 
-struct GlobalMVP {
-  glm::mat4 model;
-  glm::mat4 view_proj;
-  glm::vec3 camera_position;
+class MatPipelinePool
+{
+public:
+  std::shared_ptr<GraphicsPipeline> requestGraphicsPipeline(const std::shared_ptr<Material> &mat);
+private:
+  std::map<uint32_t, std::shared_ptr<GraphicsPipeline>> mat_pipelines_;
 };
 
+// struct GlobalMVP {
+//   glm::mat4 model;
+//   glm::mat4 view_proj;
+//   glm::vec3 camera_position;
+// };
+
 // set 0, binding 0
-MaterialUbo globalMVPUbo();
+// MaterialUbo globalMVPUbo();
 
 } // namespace vk_engine

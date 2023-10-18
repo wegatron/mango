@@ -17,7 +17,7 @@ struct IndexBuffer {
     uint32_t offset;
     uint32_t index_count; // number of vertices
     VkIndexType data_type;
-    VkPrimitiveTopology type;
+    VkPrimitiveTopology primitive_type;
 };
 
 struct StaticMesh {

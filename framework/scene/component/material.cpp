@@ -27,6 +27,7 @@ PbrMaterial::PbrMaterial(
     const std::shared_ptr<VkDriver> &driver)
     : Material(driver) 
 {
+  hash_id_ = 1;
   // // uniform buffer information
   // ubos_.emplace_back(globalMVPUbo());
 
@@ -139,19 +140,19 @@ bool Material::updateParams()
   return true;
 }
 
-MaterialUbo globalMVPUbo() {
-  static_assert(sizeof(glm::mat4) * 2 + sizeof(glm::vec4) == 64 * 2 + 16,
-                "ubo size error");
-  MaterialUbo ubo{
-      .set = 0,
-      .binding = 0,
-      .size = 64 * 2 + 16,
-      .params{{0, typeid(glm::mat4), 0, "mvp.model"},
-              {0, typeid(glm::mat4), sizeof(glm::mat4), "mvp.view_proj"},
-              {0, typeid(glm::vec3), sizeof(glm::mat4) * 2,
-               "mvp.camera_position"}}};
-  return ubo;
-}
+// MaterialUbo globalMVPUbo() {
+//   static_assert(sizeof(glm::mat4) * 2 + sizeof(glm::vec4) == 64 * 2 + 16,
+//                 "ubo size error");
+//   MaterialUbo ubo{
+//       .set = 0,
+//       .binding = 0,
+//       .size = 64 * 2 + 16,
+//       .params{{0, typeid(glm::mat4), 0, "mvp.model"},
+//               {0, typeid(glm::mat4), sizeof(glm::mat4), "mvp.view_proj"},
+//               {0, typeid(glm::vec3), sizeof(glm::mat4) * 2,
+//                "mvp.camera_position"}}};
+//   return ubo;
+// }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   pipeline_state.setShaders({vs_, fs_});

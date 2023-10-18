@@ -30,12 +30,12 @@ namespace vk_engine
         
         auto & rm = scene->renderableManager();
         auto view = rm.view<std::shared_ptr<TransformRelationship>, std::shared_ptr<Material>, std::shared_ptr<StaticMesh>>();
-        RPass rp;
-        view.each([&rp, this](const std::shared_ptr<TransformRelationship> &tr, const std::shared_ptr<Material> &mat, const std::shared_ptr<StaticMesh> &mesh)
+        rpass_.gc();
+        view.each([this](const std::shared_ptr<TransformRelationship> &tr, const std::shared_ptr<Material> &mat, const std::shared_ptr<StaticMesh> &mesh)
         {
             // update materials
             mat->updateParams();
-            rp.draw(mat, tr->gtransform, mesh, cmd_buf_);
+            rpass_.draw(mat, tr->gtransform, mesh, cmd_buf_);
         });
     }
 
