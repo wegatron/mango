@@ -46,7 +46,7 @@ PipelineLayout::PipelineLayout(
     auto set_index = itr->first;
     auto &set_resources = itr->second;
     descriptor_set_layouts_[set_index].reset(
-        new DescriptorSetLayout(driver, set_index, set_resources));
+        new DescriptorSetLayout(driver, set_index, set_resources.data(), set_resources.size()));
     descriptor_set_layout_handles[set_index] =
         descriptor_set_layouts_[set_index]->getHandle();
   }

@@ -3,14 +3,12 @@
 #include <framework/utils/compiler.h>
 #include <framework/utils/error.h>
 #include <framework/vk/vk_common.h>
+#include <framework/vk/vk_constants.h>
 
 
 
 namespace vk_engine
 {
-
-    static constexpr uint32_t TIME_BEFORE_EVICTION = VK_MAX_COMMAND_BUFFERS;
-
     // Finds or creates a stage whose capacity is at least the given number of bytes.
     // The stage is automatically released back to the pool after TIME_BEFORE_EVICTION frames.
     VulkanStage const* StagePool::acquireStage(uint32_t numBytes)

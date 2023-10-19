@@ -8,10 +8,11 @@ namespace vk_engine {
 class DescriptorSet;
 class DescriptorPool final {
 public:
-  DescriptorPool(const std::shared_ptr<VkDriver> &driver,
+    DescriptorPool(const std::shared_ptr<VkDriver> &driver,
                  const VkDescriptorPoolCreateFlags flags,
-                 const std::vector<VkDescriptorPoolSize> &pool_sizes,
-                 uint32_t max_sets);
+                 const VkDescriptorPoolSize *pool_sizes,
+                 const uint32_t pool_size_cnt,
+                 const uint32_t max_sets);
 
   DescriptorPool(const DescriptorPool &) = delete;
   DescriptorPool &operator=(const DescriptorPool &) = delete;

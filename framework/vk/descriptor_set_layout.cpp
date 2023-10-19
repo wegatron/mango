@@ -54,12 +54,13 @@ VkDescriptorType find_descriptor_type(ShaderResourceType resource_type,
   }
 }
 
-DescriptorSetLayout::DescriptorSetLayout(
-    const std::shared_ptr<VkDriver> &driver,
-    const uint32_t set_index,
-    const std::vector<ShaderResource> &resource_set) 
-      : driver_(driver), set_index_(set_index) {
-  for (auto &resource : resource_set) {
+DescriptorSetLayout::DescriptorSetLayout(const std::shared_ptr<VkDriver> &driver,
+                      const uint32_t set_index,
+                      const ShaderResource * resources,
+                      const uint32_t resource_size)
+{
+  for (uint32_t ri=0; ri<resource_size; ++ri) {
+    auto &resource = resources[ri];
     if (resource.type == ShaderResourceType::Input ||
         resource.type == ShaderResourceType::Output ||
         resource.type == ShaderResourceType::PushConstant ||
@@ -88,19 +89,19 @@ DescriptorSetLayout::DescriptorSetLayout(
   layout_info.pBindings = bindings_.data();
 
   // handle update after bind extensions
-  if (std::find_if(resource_set.begin(), resource_set.end(),
+  if (std::find_if(resources, resources+resource_size,
                    [](const ShaderResource &resource) {
                      return resource.mode ==
                             ShaderResourceMode::UpdateAfterBind;
-                   }) != resource_set.end()) {
+                   }) != resources+resource_size) {
 
     // Spec states you can't have ANY dynamic resources if you have one of the
     // bindings set to update-after-bind
-    if (std::find_if(resource_set.begin(), resource_set.end(),
+    if (std::find_if(resources, resources+resource_size,
                      [](const ShaderResource &shader_resource) {
                        return shader_resource.mode ==
                               ShaderResourceMode::Dynamic;
-                     }) != resource_set.end()) {
+                     }) != resources+resource_size) {
       throw std::runtime_error("Cannot create descriptor set layout, \
                     dynamic resources are not allowed if at least one resource is update-after-bind.");
     }

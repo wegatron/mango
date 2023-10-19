@@ -10,7 +10,8 @@ class DescriptorSetLayout final {
 public:
   DescriptorSetLayout(const std::shared_ptr<VkDriver> &driver,
                       const uint32_t set_index,
-                      const std::vector<ShaderResource> &resource_set);
+                      const ShaderResource * resources,
+                      const uint32_t resource_size);
 
   DescriptorSetLayout(const DescriptorSetLayout &) = delete;
   DescriptorSetLayout(DescriptorSetLayout &&) = delete;

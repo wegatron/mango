@@ -9,17 +9,7 @@
 #include <framework/vk/pipeline_state.h>
 #include <framework/vk/shader_module.h>
 #include <framework/vk/vk_driver.h>
-
-/**
- * set-0 for engine-global resource,
- * set-1 for per pass resource,
- * set-2 for material resource, for material only store this set
- * set-3 for per-object resource.
- */
-constexpr uint32_t GLOBAL_SET_INDEX = 0;
-constexpr uint32_t PER_PASS_SET_INDEX = 1;
-constexpr uint32_t MATERIAL_SET_INDEX = 2;
-constexpr uint32_t PER_OBJECT_SET_INDEX = 3;
+#include <framework/vk/vk_constants.h>
 
 namespace vk_engine {
 
@@ -148,6 +138,7 @@ public:
 class MatPipelinePool
 {
 public:
+  MatPipelinePool();
   std::shared_ptr<GraphicsPipeline> requestGraphicsPipeline(const std::shared_ptr<Material> &mat);
 private:
   std::map<uint32_t, std::shared_ptr<GraphicsPipeline>> mat_pipelines_;

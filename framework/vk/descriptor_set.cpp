@@ -2,19 +2,19 @@
 #include <framework/utils/error.h>
 
 namespace vk_engine {
-
 DescriptorPool::DescriptorPool(const std::shared_ptr<VkDriver> &driver,
                                const VkDescriptorPoolCreateFlags flags,
-                               const std::vector<VkDescriptorPoolSize> &pool_sizes,
-                               uint32_t max_sets)
+                               const VkDescriptorPoolSize *pool_sizes,
+                               const uint32_t pool_sizes_cnt,
+                               const uint32_t max_sets)
 : driver_(driver), flags_(flags)
 {
     VkDescriptorPoolCreateInfo pool_info = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .flags = flags,
         .maxSets = max_sets,
-        .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
-        .pPoolSizes = pool_sizes.data()
+        .poolSizeCount = pool_sizes_cnt,
+        .pPoolSizes = pool_sizes
     };
 
     auto result = vkCreateDescriptorPool(driver_->getDevice(), &pool_info, nullptr, &descriptor_pool_);

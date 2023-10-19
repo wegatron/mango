@@ -54,7 +54,7 @@ std::shared_ptr<DescriptorSetLayout> ResourceCache::requestDescriptorSetLayout(
     return itr->second;
 
   auto descriptor_set_layout =
-      std::make_shared<DescriptorSetLayout>(driver, set_index, resources);
+      std::make_shared<DescriptorSetLayout>(driver, set_index, resources.data(), resources.size());
   state_.descriptor_set_layouts[hash_code] = descriptor_set_layout;
   return descriptor_set_layout;
 }
