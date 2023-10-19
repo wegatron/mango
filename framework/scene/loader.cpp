@@ -193,7 +193,7 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
 
   for (auto i = 0; i < num_materials; ++i) {
     auto a_mat = a_scene->mMaterials[i];
-    auto cur_mat = std::make_shared<PbrMaterial>(driver);
+    auto cur_mat = std::make_shared<PbrMaterial>();
     ret_mats.emplace_back(cur_mat);
 
     // diffuse, base color

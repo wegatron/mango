@@ -100,8 +100,8 @@ namespace vk_engine
 
         // todo: fixme pipeline's vertex input state
         // using VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE
-        auto gp = mat_pipeline_pool_.requestGraphicsPipeline(mat);
-        auto mat_desc_set = mat->getDescriptorSet();
+        auto gp = mat_gpu_res_pool_.requestGraphicsPipeline(mat);
+        auto mat_desc_set = mat_gpu_res_pool_.requestMatDescriptorSet(mat);
         cmd_buf->bindPipelineWithDescriptorSets(gp, {mat_desc_set, mesh_params_set->desc_set}, {}, 0);
         
         // bind mesh vertices

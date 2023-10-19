@@ -1,18 +1,21 @@
 #pragma once
-#include <stdexcept>
-#include <map>
 #include <glm/glm.hpp>
+#include <map>
+#include <stdexcept>
+#include <list>
 #include <vulkan/vulkan.h>
 
 #include <framework/vk/buffer.h>
 #include <framework/vk/descriptor_set.h>
 #include <framework/vk/pipeline_state.h>
 #include <framework/vk/shader_module.h>
-#include <framework/vk/vk_driver.h>
 #include <framework/vk/vk_constants.h>
+#include <framework/vk/vk_driver.h>
+
 
 namespace vk_engine {
 
+class GraphicsPipeline;
 class ImageView;
 
 struct MaterialUboParam {
@@ -22,7 +25,7 @@ struct MaterialUboParam {
   std::string name;
 };
 
-struct MaterialUbo {
+struct MaterialUboInfo {
   uint32_t set;
   uint32_t binding;
   uint32_t size;
@@ -40,6 +43,34 @@ struct MaterialTextureParam {
   bool dirty;
 };
 
+struct MatParamsSet {
+  size_t mat_hash_id{0};
+  std::unique_ptr<Buffer> ubo;
+  // textures
+  std::shared_ptr<DescriptorSet> desc_set;
+  mutable uint32_t last_access{0};
+};
+
+class Material;
+
+class MatGpuResourcePool {
+public:
+  MatGpuResourcePool() = default;
+  
+  void gc();
+
+  std::shared_ptr<GraphicsPipeline>
+  requestGraphicsPipeline(const std::shared_ptr<Material> &mat);
+  
+  std::shared_ptr<DescriptorSet>
+  requestMatDescriptorSet(const std::shared_ptr<Material> &mat);
+
+private:
+  std::map<uint32_t, std::shared_ptr<GraphicsPipeline>> mat_pipelines_;
+  std::list<std::shared_ptr<MatParamsSet>> used_mat_params_set_;
+  std::list<std::shared_ptr<MatParamsSet>> free_mat_params_set_;
+};
+
 /**
  * \brief Material defines the texture of the rendered object,
  * specifying the shaders in the rendering pipeline, as well as its related
@@ -50,46 +81,29 @@ struct MaterialTextureParam {
  */
 class Material {
 public:
-  Material(const std::shared_ptr<VkDriver> &driver)
-      : driver_(driver) {}
+  Material() = default;
 
   virtual ~Material() = default;
 
   template <typename T>
   void setUboParamValue(const std::string &name, const T value,
-                        uint32_t index = 0) {
-    for (auto &info : ubos_info_) {
-      for (auto &param : info.params) {
-        if (param.name == name) {
-          // do the job
-          assert(param.tinfo == typeid(T));
-          uint32_t param_offset = index * param.stride + param.ub_offset;
-          if ((index != 0 && param.stride == 0) ||
-              param_offset + sizeof(T) >= info.size)
-            throw std::runtime_error("invalid ubo param index");
-          memcpy(info.data.data() + param_offset, &value, sizeof(T));
-          info.dirty = true;
-          return;
-        }
+                        uint32_t index = 0) 
+  {
+    for (auto &param : ubo_info_.params) {
+      if (param.name == name) {
+        // do the job
+        assert(param.tinfo == typeid(T));
+        uint32_t param_offset = index * param.stride + param.ub_offset;
+        if ((index != 0 && param.stride == 0) ||
+            param_offset + sizeof(T) >= ubo_info_.size)
+          throw std::runtime_error("invalid ubo param index");
+        memcpy(ubo_info_.data.data() + param_offset, &value, sizeof(T));
+        ubo_info_.dirty = true;
+        return;
       }
     }
     throw std::runtime_error("invalid ubo param name or type");
   }
-
-  // void setTextureParamValue(const std::string &name,
-  //                           const std::string &img_file_path) {
-  //   auto itr = std::find_if(texture_params_.begin(), texture_params_.end(),
-  //                           [&name](const MaterialTextureParam &param) {
-  //                             return param.name == name;
-  //                           });
-  //   if (itr == texture_params_.end())
-  //     throw std::runtime_error("invalid texture param name");
-  //   itr->img_file_path = img_file_path;
-  //   itr->dirty = true;
-  // }
-
-  //////// helper functions
-  //const std::vector<std::shared_ptr<Buffer>> &getMaterialUniformBuffers();
 
   bool updateParams();
 
@@ -98,8 +112,6 @@ public:
    * pipeline state
    */
   virtual void setPipelineState(PipelineState &pipeline_state) = 0;
-
-  std::shared_ptr<DescriptorSet> getDescriptorSet() const noexcept { return desc_set_; }
 
   virtual void compile() = 0;
 
@@ -111,37 +123,24 @@ protected:
 
   // std::vector<ShaderResource> shader_resources_;
 
-  std::vector<MaterialUbo> ubos_info_;
-  std::vector<std::shared_ptr<Buffer>> ubos_;
-
-  std::shared_ptr<DescriptorSet> desc_set_;
-
-  //std::vector<MaterialTextureParam> textures_info_;
-  std::shared_ptr<VkDriver> driver_;
-
+  MaterialUboInfo ubo_info_;
+  
+  std::shared_ptr<MatParamsSet> mat_param_set_;
+    
   uint32_t hash_id_{0};
 
-  //uint32_t variance_; // material variance bit flags, check by value
+  // uint32_t variance_; // material variance bit flags, check by value
 };
 
 class PbrMaterial : public Material {
 public:
-  PbrMaterial(const std::shared_ptr<VkDriver> &driver);
+  PbrMaterial();
 
   ~PbrMaterial() override = default;
 
   void setPipelineState(PipelineState &pipeline_state) override;
 
   void compile() override;
-};
-
-class MatPipelinePool
-{
-public:
-  MatPipelinePool();
-  std::shared_ptr<GraphicsPipeline> requestGraphicsPipeline(const std::shared_ptr<Material> &mat);
-private:
-  std::map<uint32_t, std::shared_ptr<GraphicsPipeline>> mat_pipelines_;
 };
 
 // struct GlobalMVP {

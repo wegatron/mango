@@ -14,20 +14,27 @@ namespace vk_engine {
 #define METALLIC_TEXTURE_NAME "metallic_texture"
 #define NORMAL_TEXTURE_NAME "normal_texture"
 
-enum PbrTextureParamIndex
-{
+enum PbrTextureParamIndex {
   BASE_COLOR_TEXTURE_INDEX = 0,
   METALLIC_TEXTURE_INDEX = 1,
   NORMAL_TEXTURE_INDEX = 2,
   TEXTURE_NUM_COUNT
 };
 
-
-PbrMaterial::PbrMaterial(
-    const std::shared_ptr<VkDriver> &driver)
-    : Material(driver) 
-{
-  hash_id_ = 1;
+PbrMaterial::PbrMaterial() {
+  hash_id_ = typeid(PbrMaterial).hash_code();
+  ubo_info_ = MaterialUboInfo{.set = MATERIAL_SET_INDEX,
+                           .binding = 0,
+                           .size = 32,
+                           .data = std::vector<std::byte>(32, std::byte{0}),
+                           .params{
+                               {.stride = 0,
+                                .tinfo = typeid(glm::vec4),
+                                .ub_offset = 0,
+                                .name = "pbr_mat.base_color"},
+                               {0, typeid(glm::vec2), sizeof(glm::vec4),
+                                "pbr_mat.metallic_roughness"},
+                           }};
   // // uniform buffer information
   // ubos_.emplace_back(globalMVPUbo());
 
@@ -46,21 +53,8 @@ PbrMaterial::PbrMaterial(
   //         "lights.info"}}});
 
   // pbr material
-  ubos_info_.emplace_back(
-      MaterialUbo{.set = MATERIAL_SET_INDEX,
-                  .binding = 0,
-                  .size = 32,
-                  .data = std::vector<std::byte>(32, std::byte{0}),
-                  .params{
-                      { .stride=0, 
-                        .tinfo=typeid(glm::vec4), 
-                        .ub_offset=0,
-                        .name="pbr_mat.base_color"},
-                      {0, typeid(glm::vec2), sizeof(glm::vec4),
-                       "pbr_mat.metallic_roughness"},
-                  }});
   // texture_params_.resize(TEXTURE_NUM_COUNT);
-  // texture_params_[BASE_COLOR_TEXTURE_INDEX] = 
+  // texture_params_[BASE_COLOR_TEXTURE_INDEX] =
   //   MaterialTextureParam{ // 0 for
   //     .set = 2,
   //     .binding = 0,
@@ -69,36 +63,36 @@ PbrMaterial::PbrMaterial(
   //     .img_file_path = "",
   //     .dirty = true
   //   };
-// unable to check because of variance
-//   // check uniform buffer in resources is consistent with ubos_
-// #ifndef NDEBUG
-//   for (auto &resource : shader_resources_) {
-//     if (resource.type == ShaderResourceType::BufferUniform) {
-//       if (resource.set != MATERIAL_SET_INDEX)
-//         continue; // only for material ubo
-//       auto itr = std::find_if(
-//           ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
-//             return ubo.set == resource.set && ubo.binding == resource.binding;
-//           });
-//       if (itr == ubos_.end())
-//         throw std::runtime_error("uniform buffer not found");
-//       if (itr->size < resource.size)
-//         throw std::runtime_error("uniform buffer size not match");
-//     }
-//   }
-// #endif
+  // unable to check because of variance
+  //   // check uniform buffer in resources is consistent with ubos_
+  // #ifndef NDEBUG
+  //   for (auto &resource : shader_resources_) {
+  //     if (resource.type == ShaderResourceType::BufferUniform) {
+  //       if (resource.set != MATERIAL_SET_INDEX)
+  //         continue; // only for material ubo
+  //       auto itr = std::find_if(
+  //           ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
+  //             return ubo.set == resource.set && ubo.binding ==
+  //             resource.binding;
+  //           });
+  //       if (itr == ubos_.end())
+  //         throw std::runtime_error("uniform buffer not found");
+  //       if (itr->size < resource.size)
+  //         throw std::runtime_error("uniform buffer size not match");
+  //     }
+  //   }
+  // #endif
 }
 
-void PbrMaterial::compile()
-{
+void PbrMaterial::compile() {
   ShaderVariant variant;
-  
+
   // // shader variance
   // if(!texture_params_[BASE_COLOR_TEXTURE_INDEX].img_file_path.empty())
   // {
   //   variant.addDefine(HAS_BASE_COLOR_TEXTURE);
   // }
-  
+
   vs_ = std::make_shared<ShaderModule>(variant);
   vs_->load("shaders/basic.vert");
 
@@ -106,53 +100,22 @@ void PbrMaterial::compile()
   fs_->load("shaders/basic.frag");
 
   // create uniform buffers
-    
 
-  //shader_resources_ = parseShaderResources({vs_, fs_});
+  // shader_resources_ = parseShaderResources({vs_, fs_});
 }
 
-
-// std::vector<std::shared_ptr<Buffer>> Material::createMaterialUniformBuffers() {
-//   // create uniform buffers
-//   std::vector<std::shared_ptr<Buffer>> uniform_buffers;
-//   uniform_buffers.reserve(ubos_.size());
-//   for (auto &ubo : ubos_) {
-//     uniform_buffers.emplace_back(std::make_unique<Buffer>(
-//         driver_, 0, ubo.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-//         VMA_ALLOCATION_CREATE_MAPPED_BIT |
-//             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-//         VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
-//   }
-//   return uniform_buffers;
-// }
-
-bool Material::updateParams()
-{
+bool Material::updateParams() {
   // update uniform buffer params
-  for (auto i = 0; i < ubos_info_.size(); ++i) {
-    if (ubos_info_[i].dirty) {
-      ubos_[i]->update(ubos_info_[i].data.data(), ubos_info_[i].size, 0);
-      ubos_info_[i].dirty = false;
-    }
+  assert(mat_param_set_ != nullptr);
+  auto &ubo = mat_param_set_->ubo;
+  if (ubo_info_.dirty) {
+    ubo->update(ubo_info_.data.data(), ubo_info_.size, 0);
+    ubo_info_.dirty = false;
   }
 
   // update textures... descriptor set
   return true;
 }
-
-// MaterialUbo globalMVPUbo() {
-//   static_assert(sizeof(glm::mat4) * 2 + sizeof(glm::vec4) == 64 * 2 + 16,
-//                 "ubo size error");
-//   MaterialUbo ubo{
-//       .set = 0,
-//       .binding = 0,
-//       .size = 64 * 2 + 16,
-//       .params{{0, typeid(glm::mat4), 0, "mvp.model"},
-//               {0, typeid(glm::mat4), sizeof(glm::mat4), "mvp.view_proj"},
-//               {0, typeid(glm::vec3), sizeof(glm::mat4) * 2,
-//                "mvp.camera_position"}}};
-//   return ubo;
-// }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   pipeline_state.setShaders({vs_, fs_});

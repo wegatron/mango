@@ -45,11 +45,11 @@ class RPass {
 public:
     RPass() = default;
     virtual ~RPass() = default;
-    void gc() { mesh_params_pool_.gc(); }
+    void gc() { mesh_params_pool_.gc(); mat_gpu_res_pool_.gc(); }
     void draw(const std::shared_ptr<Material> &mat, const Eigen::Matrix4f &rt, 
         const std::shared_ptr<StaticMesh> &mesh, const std::shared_ptr<CommandBuffer> &cmd_buf);
-private:
-    MatPipelinePool mat_pipeline_pool_;
+private:    
     MeshParamsPool mesh_params_pool_;
+    MatGpuResourcePool mat_gpu_res_pool_;
 };
 } // namespace vk_engine
