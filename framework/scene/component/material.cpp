@@ -78,8 +78,11 @@ std::shared_ptr<GraphicsPipeline> MatGpuResourcePool::requestGraphicsPipeline(
   auto &rs_cache = getDefaultAppContext().resource_cache;
   auto pipeline_state = std::make_unique<PipelineState>();
   mat->setPipelineState(*pipeline_state);
-  auto pipeline = std::make_shared<GraphicsPipeline>(driver, rs_cache, nullptr,
-                                                     std::move(pipeline_state));
+  // TODO other pipeline state
+  //pipeline_state
+
+  auto pipeline = std::make_shared<GraphicsPipeline>(
+      driver, rs_cache, default_render_pass_, std::move(pipeline_state));
   mat_pipelines_.emplace(mat->hashId(), pipeline);
   return pipeline;
 }
@@ -127,53 +130,16 @@ PbrMaterial::PbrMaterial() {
                                   {0, typeid(glm::vec2), sizeof(glm::vec4),
                                    "pbr_mat.metallic_roughness"},
                               }};
-  // // uniform buffer information
-  // ubos_.emplace_back(globalMVPUbo());
-
-  // // lights
-  // ubos_.emplace_back(MaterialUbo{
-  //     .set = 0,
-  //     .binding = 1,
-  //     .size = 64 * MAX_FORWARD_LIGHT_COUNT + 16,
-  //     .params{
-  //         {0, typeid(uint32_t), 0, "lights.count"},
-  //         {64, typeid(glm::vec4), 16, "lights.position"},
-  //         {64, typeid(glm::vec4), 16 + sizeof(glm::vec4), "lights.color"},
-  //         {64, typeid(glm::vec4), 16 + sizeof(glm::vec4) * 2,
-  //          "lights.direction"},
-  //         {64, typeid(glm::vec2), 16 + sizeof(glm::vec4) * 3,
-  //         "lights.info"}}});
-
-  // pbr material
-  // texture_params_.resize(TEXTURE_NUM_COUNT);
-  // texture_params_[BASE_COLOR_TEXTURE_INDEX] =
-  //   MaterialTextureParam{ // 0 for
-  //     .set = 2,
-  //     .binding = 0,
-  //     .index = 0,
-  //     .name = BASE_COLOR_TEXTURE_NAME,
-  //     .img_file_path = "",
-  //     .dirty = true
-  //   };
-  // unable to check because of variance
-  //   // check uniform buffer in resources is consistent with ubos_
-  // #ifndef NDEBUG
-  //   for (auto &resource : shader_resources_) {
-  //     if (resource.type == ShaderResourceType::BufferUniform) {
-  //       if (resource.set != MATERIAL_SET_INDEX)
-  //         continue; // only for material ubo
-  //       auto itr = std::find_if(
-  //           ubos_.begin(), ubos_.end(), [&resource](const MaterialUbo &ubo) {
-  //             return ubo.set == resource.set && ubo.binding ==
-  //             resource.binding;
-  //           });
-  //       if (itr == ubos_.end())
-  //         throw std::runtime_error("uniform buffer not found");
-  //       if (itr->size < resource.size)
-  //         throw std::runtime_error("uniform buffer size not match");
-  //     }
-  //   }
-  // #endif
+  ShaderResource sr[] = {{
+      .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .type = ShaderResourceType::BufferUniform,
+      .mode = ShaderResourceMode::Static,
+      .set = MATERIAL_SET_INDEX,
+      .binding = 0,
+      .size = ubo_info_.size,
+  }};
+  desc_set_layout_ = std::make_unique<DescriptorSetLayout>(
+      getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr, 1);
 }
 
 void PbrMaterial::compile() {
@@ -196,20 +162,33 @@ void PbrMaterial::compile() {
   // shader_resources_ = parseShaderResources({vs_, fs_});
 }
 
-std::shared_ptr<MatParamsSet> PbrMaterial::createMatParamsSet(
-      const std::shared_ptr<VkDriver> &driver,
-      DescriptorPool &desc_pool)
-{
+std::shared_ptr<MatParamsSet>
+PbrMaterial::createMatParamsSet(const std::shared_ptr<VkDriver> &driver,
+                                DescriptorPool &desc_pool) {
   // create uniform buffer
-  auto ubo = std::make_shared<Buffer>(
-      driver, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-      ubo_info_.size);
-  
+  auto ubo =
+      std::make_shared<Buffer>(driver, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                               ubo_info_.size);
+
   // create descriptor set
+  auto desc_set = desc_pool.requestDescriptorSet(*desc_set_layout_);
+  // update descriptor set
+  VkDescriptorBufferInfo desc_buffer_info{
+      .buffer = ubo->getHandle(),
+      .offset = 0,
+      .range = ubo_info_.size,
+  };
+  driver->update(
+      {VkWriteDescriptorSet{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                            .dstSet = desc_set->getHandle(),
+                            .dstBinding = 0,
+                            .descriptorCount = 1,
+                            .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                            .pBufferInfo = &desc_buffer_info}});
 
-
-  return nullptr;
+  return std::make_shared<MatParamsSet>(hash_id_, ubo, desc_set);
 }
 
 bool Material::updateParams() {

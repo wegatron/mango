@@ -127,8 +127,7 @@ protected:
   std::shared_ptr<ShaderModule> vs_;
   std::shared_ptr<ShaderModule> fs_;
 
-  std::shared_ptr<PipelineState> pipeline_state_;
-
+  // std::shared_ptr<PipelineState> pipeline_state_;
   // std::vector<ShaderResource> shader_resources_;
 
   MaterialUboInfo ubo_info_;
