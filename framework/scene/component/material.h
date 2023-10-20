@@ -48,14 +48,13 @@ struct MatParamsSet {
   std::unique_ptr<Buffer> ubo;
   // textures
   std::shared_ptr<DescriptorSet> desc_set;
-  mutable uint32_t last_access{0};
 };
 
 class Material;
 
 class MatGpuResourcePool {
 public:
-  MatGpuResourcePool() = default;
+  MatGpuResourcePool(VkFormat color_format, VkFormat ds_format);
   
   void gc();
 
@@ -66,7 +65,9 @@ public:
   requestMatDescriptorSet(const std::shared_ptr<Material> &mat);
 
 private:
+  std::shared_ptr<RenderPass> default_render_pass_;
   std::map<uint32_t, std::shared_ptr<GraphicsPipeline>> mat_pipelines_;
+  std::unique_ptr<DescriptorPool> desc_pool_;
   std::list<std::shared_ptr<MatParamsSet>> used_mat_params_set_;
   std::list<std::shared_ptr<MatParamsSet>> free_mat_params_set_;
 };
@@ -115,20 +116,29 @@ public:
 
   virtual void compile() = 0;
 
-  uint32_t getHashId() const { return hash_id_; }
+  uint32_t hashId() const { return hash_id_; }
 
 protected:
+
+  virtual std::shared_ptr<MatParamsSet> createMatParamsSet(
+      const std::shared_ptr<VkDriver> &driver,
+      DescriptorPool &desc_pool) = 0;
+  
   std::shared_ptr<ShaderModule> vs_;
   std::shared_ptr<ShaderModule> fs_;
+
+  std::shared_ptr<PipelineState> pipeline_state_;
 
   // std::vector<ShaderResource> shader_resources_;
 
   MaterialUboInfo ubo_info_;
   
   std::shared_ptr<MatParamsSet> mat_param_set_;
+  std::unique_ptr<DescriptorSetLayout> desc_set_layout_;
     
   uint32_t hash_id_{0};
 
+  friend class MatGpuResourcePool;  
   // uint32_t variance_; // material variance bit flags, check by value
 };
 
@@ -141,6 +151,11 @@ public:
   void setPipelineState(PipelineState &pipeline_state) override;
 
   void compile() override;
+
+protected:
+  std::shared_ptr<MatParamsSet> createMatParamsSet(
+        const std::shared_ptr<VkDriver> &driver,
+        DescriptorPool &desc_pool) override;
 };
 
 // struct GlobalMVP {

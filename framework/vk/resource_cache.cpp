@@ -79,9 +79,9 @@ std::shared_ptr<PipelineLayout> ResourceCache::requestPipelineLayout(
 
 std::shared_ptr<RenderPass>
 ResourceCache::requestRenderPass(const std::shared_ptr<VkDriver> &driver,
-                  std::vector<Attachment> attachments,
-                  std::vector<LoadStoreInfo> load_store_infos,
-                  std::vector<SubpassInfo> subpasses)
+                  const std::vector<Attachment> &attachments,
+                  const std::vector<LoadStoreInfo> &load_store_infos,
+                  const std::vector<SubpassInfo> &subpasses)
 {
   size_t hash_code = 0;
   for (const auto &attachment : attachments) {

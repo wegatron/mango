@@ -12,14 +12,20 @@ namespace vk_engine
     MeshParamsPool::MeshParamsPool()
     {
         auto &driver = getDefaultAppContext().driver;
-        ShaderResource sr{};
-        desc_layout_ = std::make_shared<DescriptorSetLayout>(driver, PER_OBJECT_SET_INDEX, &sr, 1);
+        ShaderResource sr{
+            .set_index = PER_OBJECT_SET_INDEX,
+            .binding = 0,
+            .count = 1,
+            .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+            .stage_flags = VK_SHADER_STAGE_VERTEX_BIT
+        };
+        desc_layout_ = std::make_unique<DescriptorSetLayout>(driver, PER_OBJECT_SET_INDEX, &sr, 1);
         VkDescriptorPoolSize pool_size = {
             .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
             .descriptorCount = MAX_MESH_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT
         };        
 
-        desc_pool_ = std::make_shared<DescriptorPool>(driver, 0, &pool_size, 1, MAX_MESH_DESC_SET);
+        desc_pool_ = std::make_unique<DescriptorPool>(driver, 0, &pool_size, 1, MAX_MESH_DESC_SET);
     }
 
     MeshParamsSet * MeshParamsPool::requestMeshParamsSet()

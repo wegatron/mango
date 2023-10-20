@@ -34,8 +34,8 @@ public:
     void reset();
     MeshParamsSet * requestMeshParamsSet();
 private:
-    std::shared_ptr<DescriptorSetLayout> desc_layout_;
-    std::shared_ptr<DescriptorPool> desc_pool_; 
+    std::unique_ptr<DescriptorSetLayout> desc_layout_;
+    std::unique_ptr<DescriptorPool> desc_pool_;
     std::list<MeshParamsSet*> free_mesh_params_set_;
     std::list<MeshParamsSet*> used_mesh_params_set_;
     uint32_t cur_frame_{0};

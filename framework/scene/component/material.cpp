@@ -1,5 +1,7 @@
 #include "material.h"
-#include <iostream>
+#include <framework/utils/app_context.h>
+#include <framework/vk/pipeline.h>
+#include <framework/vk/resource_cache.h>
 
 namespace vk_engine {
 
@@ -21,20 +23,110 @@ enum PbrTextureParamIndex {
   TEXTURE_NUM_COUNT
 };
 
+constexpr uint32_t MAX_MAT_DESC_SET = 100;
+
+MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
+                                       VkFormat ds_format) {
+  auto &driver = getDefaultAppContext().driver;
+  VkDescriptorPoolSize pool_size[] = {
+      {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+       .descriptorCount = MAX_MAT_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT},
+      {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+       .descriptorCount = MAX_MAT_DESC_SET * TEXTURE_NUM_COUNT}};
+  desc_pool_ = std::make_unique<DescriptorPool>(
+      driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, &pool_size, 2,
+      100);
+  auto &rs_cache = getDefaultAppContext().resource_cache;
+  std::vector<Attachment> attachments{
+      Attachment{color_format, VK_SAMPLE_COUNT_1_BIT,
+                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT},
+      Attachment{ds_format, VK_SAMPLE_COUNT_1_BIT,
+                 VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT}};
+  std::vector<LoadStoreInfo> load_store_infos{
+      {VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE},
+      {VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE}};
+  std::vector<SubpassInfo> subpass_infos{{
+      {},  // no input attachment
+      {0}, // color attachment index
+      {},  // no msaa
+      1    // depth stencil attachment index
+  }};
+  default_render_pass_ = rs_cache->requestRenderPass(
+      driver, attachments, load_store_infos, subpass_infos);
+}
+
+void MatGpuResourcePool::gc() {
+  for (auto itr = used_mat_params_set_.begin();
+       itr != used_mat_params_set_.end();) {
+    if (itr->use_count() == 1) {
+      free_mat_params_set_.push_back(*itr);
+      itr = used_mat_params_set_.erase(itr);
+    } else
+      ++itr;
+  }
+}
+
+std::shared_ptr<GraphicsPipeline> MatGpuResourcePool::requestGraphicsPipeline(
+    const std::shared_ptr<Material> &mat) {
+  auto itr = mat_pipelines_.find(mat->hashId());
+  if (itr != mat_pipelines_.end()) {
+    return itr->second;
+  }
+
+  // pipeline cache
+  auto &driver = getDefaultAppContext().driver;
+  auto &rs_cache = getDefaultAppContext().resource_cache;
+  auto pipeline_state = std::make_unique<PipelineState>();
+  mat->setPipelineState(*pipeline_state);
+  auto pipeline = std::make_shared<GraphicsPipeline>(driver, rs_cache, nullptr,
+                                                     std::move(pipeline_state));
+  mat_pipelines_.emplace(mat->hashId(), pipeline);
+  return pipeline;
+}
+
+std::shared_ptr<DescriptorSet> MatGpuResourcePool::requestMatDescriptorSet(
+    const std::shared_ptr<Material> &mat) {
+  if (mat->mat_param_set_ != nullptr)
+    return mat->mat_param_set_->desc_set;
+
+  // find a free mat param set
+  auto mat_id = mat->hashId();
+  auto itr =
+      std::find_if(free_mat_params_set_.begin(), free_mat_params_set_.end(),
+                   [mat_id](const std::shared_ptr<MatParamsSet> &ps) {
+                     return ps->mat_hash_id == mat_id;
+                   });
+
+  if (itr != free_mat_params_set_.end()) {
+    mat->mat_param_set_ = *itr;
+    used_mat_params_set_.push_back(*itr);
+    free_mat_params_set_.erase(itr);
+    return mat->mat_param_set_->desc_set;
+  }
+
+  // create new one
+  auto &driver = getDefaultAppContext().driver;
+  auto &rs_cache = getDefaultAppContext().resource_cache;
+  auto mat_param_set = mat->createMatParamsSet(driver, *desc_pool_);
+  mat->mat_param_set_ = mat_param_set;
+  used_mat_params_set_.push_back(mat_param_set);
+  return mat_param_set->desc_set;
+}
+
 PbrMaterial::PbrMaterial() {
   hash_id_ = typeid(PbrMaterial).hash_code();
   ubo_info_ = MaterialUboInfo{.set = MATERIAL_SET_INDEX,
-                           .binding = 0,
-                           .size = 32,
-                           .data = std::vector<std::byte>(32, std::byte{0}),
-                           .params{
-                               {.stride = 0,
-                                .tinfo = typeid(glm::vec4),
-                                .ub_offset = 0,
-                                .name = "pbr_mat.base_color"},
-                               {0, typeid(glm::vec2), sizeof(glm::vec4),
-                                "pbr_mat.metallic_roughness"},
-                           }};
+                              .binding = 0,
+                              .size = 32,
+                              .data = std::vector<std::byte>(32, std::byte{0}),
+                              .params{
+                                  {.stride = 0,
+                                   .tinfo = typeid(glm::vec4),
+                                   .ub_offset = 0,
+                                   .name = "pbr_mat.base_color"},
+                                  {0, typeid(glm::vec2), sizeof(glm::vec4),
+                                   "pbr_mat.metallic_roughness"},
+                              }};
   // // uniform buffer information
   // ubos_.emplace_back(globalMVPUbo());
 
@@ -102,6 +194,22 @@ void PbrMaterial::compile() {
   // create uniform buffers
 
   // shader_resources_ = parseShaderResources({vs_, fs_});
+}
+
+std::shared_ptr<MatParamsSet> PbrMaterial::createMatParamsSet(
+      const std::shared_ptr<VkDriver> &driver,
+      DescriptorPool &desc_pool)
+{
+  // create uniform buffer
+  auto ubo = std::make_shared<Buffer>(
+      driver, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+      VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+      ubo_info_.size);
+  
+  // create descriptor set
+
+
+  return nullptr;
 }
 
 bool Material::updateParams() {

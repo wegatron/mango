@@ -85,9 +85,9 @@ public:
 
   std::shared_ptr<RenderPass>
   requestRenderPass(const std::shared_ptr<VkDriver> &driver,
-                    std::vector<Attachment> attachments,
-                    std::vector<LoadStoreInfo> load_store_infos,
-                    std::vector<SubpassInfo> subpasses);
+                    const std::vector<Attachment> &attachments,
+                    const std::vector<LoadStoreInfo> &load_store_infos,
+                    const std::vector<SubpassInfo> &subpasses);
 
   VkPipelineCache getPipelineCache() const {
     return (state_.pipeline_cache == nullptr) ? VK_NULL_HANDLE : state_.pipeline_cache->getHandle();
