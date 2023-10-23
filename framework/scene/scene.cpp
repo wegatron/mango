@@ -6,9 +6,9 @@
 namespace vk_engine {
 
 entt::entity Scene::createRenderableEntity(const std::string &name,
-                                           const std::shared_ptr<TransformRelationship> tr,
-                                           const std::shared_ptr<Material> material,
-                                           const std::shared_ptr<StaticMesh> mesh) {
+                                           const std::shared_ptr<TransformRelationship> &tr,
+                                           const std::shared_ptr<Material> &material,
+                                           const std::shared_ptr<StaticMesh> &mesh) {
   entt::entity entity = renderable_manager_.create();
   renderable_manager_.emplace<std::string>(entity, name); // name
   renderable_manager_.emplace<std::shared_ptr<TransformRelationship>>(entity, tr); // node transform index

@@ -22,7 +22,7 @@ public:
   WindowApp(const WindowApp &) = delete;
   WindowApp &operator=(const WindowApp &) = delete;
 
-  bool init();
+  bool init(VkFormat color_format, VkFormat ds_format);
   void setApp(std::shared_ptr<AppBase> &&app);
   void run();
 
@@ -36,7 +36,8 @@ private:
   std::shared_ptr<Swapchain> swapchain_;
   std::vector<std::shared_ptr<RenderTarget>> render_targets_;
 
-  VkFormat ds_format_;
+  VkFormat color_format_;
+  VkFormat ds_format_;  
   std::vector<std::shared_ptr<Image>> depth_images_;
 
   std::shared_ptr<AppBase> app_;  

@@ -22,7 +22,9 @@ WindowApp::~WindowApp() {
   // destroy swapchain and depth images implicitly
 }
 
-bool WindowApp::init() {
+bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
+  color_format_ = color_format;
+  ds_format_ = ds_format;
 #if defined(VK_USE_PLATFORM_XLIB_KHR)
   glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, false);
 #endif
@@ -103,15 +105,16 @@ void WindowApp::initSwapchain() {
   // real resolution compatiable with highdpi
   glfwGetFramebufferSize(window_, &width, &height);
   SwapchainProperties properties{
-      .extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)}};
+    .extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)},
+    .surface_format = {.format = color_format_},
+  };
   swapchain_ =
       std::make_shared<Swapchain>(driver_, driver_->getSurface(), properties);  
 }
 
 void WindowApp::initRenderTargets()
 {
-  // depth stencil images
-  ds_format_ = VK_FORMAT_D24_UNORM_S8_UINT;
+  // depth stencil images  
   const auto img_cnt = swapchain_->getImageCount();  
   VkExtent3D extent{swapchain_->getExtent().width, swapchain_->getExtent().height, 1};
   render_targets_.resize(img_cnt);

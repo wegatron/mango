@@ -9,7 +9,8 @@ namespace vk_engine {
     class Scene;
     class Render {
     public:
-        Render(std::vector<RenderOutputSync> &render_output_syncs) : render_output_syncs_(render_output_syncs) {}
+        Render(std::vector<RenderOutputSync> &render_output_syncs, VkFormat color_format, VkFormat ds_format) 
+            : render_output_syncs_(render_output_syncs), rpass_(color_format, ds_format) {}
         
         void beginFrame(const float time_elapse, const uint32_t frame_index, const uint32_t rt_index);
 

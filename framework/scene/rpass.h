@@ -43,7 +43,7 @@ private:
 
 class RPass {
 public:
-    RPass() = default;
+    RPass(VkFormat color_format, VkFormat ds_format) : mat_gpu_res_pool_(color_format, ds_format) {}
     virtual ~RPass() = default;
     void gc() { mesh_params_pool_.gc(); mat_gpu_res_pool_.gc(); }
     void draw(const std::shared_ptr<Material> &mat, const Eigen::Matrix4f &rt, 

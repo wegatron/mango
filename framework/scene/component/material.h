@@ -17,6 +17,7 @@ namespace vk_engine {
 
 class GraphicsPipeline;
 class ImageView;
+class RenderPass;
 
 struct MaterialUboParam {
   uint32_t stride{0}; // for array element in uniform buffer

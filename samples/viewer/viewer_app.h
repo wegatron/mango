@@ -12,8 +12,8 @@ class CommandBuffer;
 class StagePool;
 class ViewerApp : public AppBase {
 public:
-  ViewerApp(const std::string &name)
-      : AppBase(name), scene_(std::make_unique<Scene>()), render_(render_output_syncs_) {}
+  ViewerApp(const std::string &name, VkFormat color_format, VkFormat ds_format)
+      : AppBase(name), scene_(std::make_unique<Scene>()), render_(render_output_syncs_, color_format, ds_format) {}
 
   ~ViewerApp() override = default;
 

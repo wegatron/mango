@@ -6,7 +6,6 @@
 #include <framework/scene/component/mesh.h>
 
 namespace vk_engine {
-class TransformRelationship;
 class Scene final {
 public:
   Scene() = default;
@@ -21,9 +20,9 @@ public:
   entt::registry &renderableManager() { return renderable_manager_; }
   entt::entity
   createRenderableEntity(const std::string &name,
-                         const std::shared_ptr<TransformRelationship> tr,
-                         const std::shared_ptr<Material> material,
-                         const std::shared_ptr<StaticMesh> mesh);
+                         const std::shared_ptr<TransformRelationship> &tr,
+                         const std::shared_ptr<Material> &material,
+                         const std::shared_ptr<StaticMesh> &mesh);
   
   void setRootTr(const std::shared_ptr<TransformRelationship> &root_tr) { root_tr_ = root_tr; }
 

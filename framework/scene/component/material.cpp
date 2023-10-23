@@ -2,6 +2,7 @@
 #include <framework/utils/app_context.h>
 #include <framework/vk/pipeline.h>
 #include <framework/vk/resource_cache.h>
+#include <framework/vk/buffer.h>
 
 namespace vk_engine {
 
@@ -34,7 +35,7 @@ MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
       {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
        .descriptorCount = MAX_MAT_DESC_SET * TEXTURE_NUM_COUNT}};
   desc_pool_ = std::make_unique<DescriptorPool>(
-      driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, &pool_size, 2,
+      driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_size, 2,
       100);
   auto &rs_cache = getDefaultAppContext().resource_cache;
   std::vector<Attachment> attachments{
@@ -78,8 +79,7 @@ std::shared_ptr<GraphicsPipeline> MatGpuResourcePool::requestGraphicsPipeline(
   auto &rs_cache = getDefaultAppContext().resource_cache;
   auto pipeline_state = std::make_unique<PipelineState>();
   mat->setPipelineState(*pipeline_state);
-  // TODO other pipeline state
-  //pipeline_state
+  // set other pipeline state:
 
   auto pipeline = std::make_shared<GraphicsPipeline>(
       driver, rs_cache, default_render_pass_, std::move(pipeline_state));
@@ -104,6 +104,7 @@ std::shared_ptr<DescriptorSet> MatGpuResourcePool::requestMatDescriptorSet(
     mat->mat_param_set_ = *itr;
     used_mat_params_set_.push_back(*itr);
     free_mat_params_set_.erase(itr);
+    mat->updateParams(); // update mat paramsto gpu
     return mat->mat_param_set_->desc_set;
   }
 
@@ -113,6 +114,7 @@ std::shared_ptr<DescriptorSet> MatGpuResourcePool::requestMatDescriptorSet(
   auto mat_param_set = mat->createMatParamsSet(driver, *desc_pool_);
   mat->mat_param_set_ = mat_param_set;
   used_mat_params_set_.push_back(mat_param_set);
+  mat->updateParams(); // update mat paramsto gpu
   return mat_param_set->desc_set;
 }
 
@@ -165,30 +167,31 @@ void PbrMaterial::compile() {
 std::shared_ptr<MatParamsSet>
 PbrMaterial::createMatParamsSet(const std::shared_ptr<VkDriver> &driver,
                                 DescriptorPool &desc_pool) {
+  auto ret = std::make_shared<MatParamsSet>();
+  ret->mat_hash_id = hash_id_;
   // create uniform buffer
-  auto ubo =
-      std::make_shared<Buffer>(driver, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                   VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-                               ubo_info_.size);
+  ret->ubo = std::make_unique<Buffer>(
+      driver, 0, ubo_info_.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+      VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+      VMA_MEMORY_USAGE_AUTO_PREFER_HOST);
 
   // create descriptor set
-  auto desc_set = desc_pool.requestDescriptorSet(*desc_set_layout_);
+  ret->desc_set = desc_pool.requestDescriptorSet(*desc_set_layout_);
   // update descriptor set
   VkDescriptorBufferInfo desc_buffer_info{
-      .buffer = ubo->getHandle(),
+      .buffer = ret->ubo->getHandle(),
       .offset = 0,
       .range = ubo_info_.size,
   };
   driver->update(
       {VkWriteDescriptorSet{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                            .dstSet = desc_set->getHandle(),
+                            .dstSet = ret->desc_set->getHandle(),
                             .dstBinding = 0,
                             .descriptorCount = 1,
                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             .pBufferInfo = &desc_buffer_info}});
 
-  return std::make_shared<MatParamsSet>(hash_id_, ubo, desc_set);
+  return ret;
 }
 
 bool Material::updateParams() {
@@ -205,9 +208,30 @@ bool Material::updateParams() {
 }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
+  VertexInputState vertex_input_state{
+      {// bindings, 3 float pos + 3 float normal + 2 float uv
+       {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX},
+       {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX},
+       {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX}},
+      {// attribute
+       {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
+       {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
+       {2, 0, VK_FORMAT_R32G32_SFLOAT, 6 * sizeof(float)}}};
+  pipeline_state.setVertexInputState(vertex_input_state);
+  pipeline_state.setInputAssemblyState(
+      {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false});
+  RasterizationState rasterize{.depth_clamp_enable = false,
+                               .rasterizer_discard_enable = false,
+                               .polygon_mode = VK_POLYGON_MODE_FILL,
+                               .cull_mode = VK_CULL_MODE_BACK_BIT,
+                               .front_face = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+                               .depth_bias_enable = false};
+  pipeline_state.setRasterizationState(rasterize);
   pipeline_state.setShaders({vs_, fs_});
   pipeline_state.setMultisampleState(
       {VK_SAMPLE_COUNT_1_BIT, false, 0.0f, 0xFFFFFFFF, false, false});
+  // default depth stencil state, depth test enable, depth write enable, depth
+  // default color blend state for opaque object
   pipeline_state.setSubpassIndex(0);
 }
 
