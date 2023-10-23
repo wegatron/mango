@@ -36,7 +36,6 @@ public:
 
 protected:
   std::string name_;
-  AppContext context_;
   std::vector<RenderOutputSync> render_output_syncs_;
 };
 

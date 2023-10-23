@@ -4,6 +4,7 @@
 #include <framework/vk/stage_pool.h>
 #include <framework/scene/asset_manager.hpp>
 #include <framework/vk/queue.h>
+#include <framework/vk/frame_buffer.h>
 
 namespace vk_engine {
 
@@ -13,16 +14,16 @@ const AppContext &getDefaultAppContext() { return g_app_context; }
 
 void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
                      const std::vector<std::shared_ptr<RenderTarget>> &rts) {
-  context_.resource_cache = std::make_shared<ResourceCache>();
-  context_.driver = driver;
-  auto &frames_data = context_.frames_data;
+  g_app_context.resource_cache = std::make_shared<ResourceCache>();
+  g_app_context.driver = driver;
+  auto &frames_data = g_app_context.frames_data;
   frames_data.resize(rts.size());
   
-  if (context_.resource_cache->getPipelineCache() == nullptr) {
+  if (g_app_context.resource_cache->getPipelineCache() == nullptr) {
     auto pcw = std::make_unique<VkPipelineCacheWraper>(driver->getDevice());
-    context_.resource_cache->setPipelineCache(std::move(pcw));
+    g_app_context.resource_cache->setPipelineCache(std::move(pcw));
   }
-  context_.stage_pool = std::make_shared<StagePool>(driver);
+  g_app_context.stage_pool = std::make_shared<StagePool>(driver);
 
   auto cmd_queue = driver->getGraphicsQueue();
   
@@ -39,7 +40,10 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
     sync.present_semaphore = std::make_shared<Semaphore>(driver);    
   }
 
-  g_app_context = context_; // set default app context
+  // gpu asset manager
+  g_app_context.gpu_asset_manager = std::make_shared<GPUAssetManager>();
+
+  render_ = std::make_unique<Render>(render_output_syncs_, rts[0]->getColorFormat(0), rts[0]->getDSFormat());
 
   auto cmd_buf =
       frames_data[0].command_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -55,10 +59,10 @@ void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }
 
 void ViewerApp::tick(const float seconds, const uint32_t rt_index,
                      const uint32_t frame_index) {
-  context_.stage_pool->gc();
-  context_.gpu_asset_manager->gc();
-  render_.beginFrame(seconds, frame_index, rt_index);
-  render_.render(scene_.get());
-  render_.endFrame();
+  g_app_context.stage_pool->gc();
+  g_app_context.gpu_asset_manager->gc();
+  render_->beginFrame(seconds, frame_index, rt_index);
+  render_->render(scene_.get());
+  render_->endFrame();
 }
 } // namespace vk_engine

@@ -1,8 +1,8 @@
 #pragma once
-#include <glm/glm.hpp>
 #include <map>
 #include <stdexcept>
 #include <list>
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
 #include <framework/vk/buffer.h>
@@ -107,7 +107,7 @@ public:
     throw std::runtime_error("invalid ubo param name or type");
   }
 
-  bool updateParams();
+  void updateParams();
 
   /**
    * \brief update the information(vs,fs, multisample, subpass index) to

@@ -80,7 +80,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
   }
 
   // load the default camera if have
-  LOGI("load scene: %s", path.c_str());
+  LOGI("load scene: {}", path.c_str());
 }
 
 std::vector<std::shared_ptr<StaticMesh>>
@@ -194,7 +194,7 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
   for (auto i = 0; i < num_materials; ++i) {
     auto a_mat = a_scene->mMaterials[i];
     auto cur_mat = std::make_shared<PbrMaterial>();
-    ret_mats.emplace_back(cur_mat);
+    ret_mats[i] = cur_mat;
 
     // diffuse, base color
     loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,

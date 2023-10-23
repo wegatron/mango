@@ -12,8 +12,8 @@ class CommandBuffer;
 class StagePool;
 class ViewerApp : public AppBase {
 public:
-  ViewerApp(const std::string &name, VkFormat color_format, VkFormat ds_format)
-      : AppBase(name), scene_(std::make_unique<Scene>()), render_(render_output_syncs_, color_format, ds_format) {}
+  ViewerApp(const std::string &name)
+      : AppBase(name), scene_(std::make_unique<Scene>()) {}
 
   ~ViewerApp() override = default;
 
@@ -27,7 +27,7 @@ public:
 
 private:
   std::string scene_path_;
-  Render render_;
+  std::unique_ptr<Render> render_;
   std::unique_ptr<Scene> scene_;
 };
 } // namespace vk_engine

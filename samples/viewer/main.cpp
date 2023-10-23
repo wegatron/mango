@@ -16,7 +16,7 @@ int main(int argc, char const *argv[])
   
   VkFormat color_format = VK_FORMAT_B8G8R8A8_SRGB;
   VkFormat depth_stencil_format = VK_FORMAT_D24_UNORM_S8_UINT;
-  auto app = std::make_shared<vk_engine::ViewerApp>("viewer", color_format, depth_stencil_format);
+  auto app = std::make_shared<vk_engine::ViewerApp>("viewer");
 
   //app->setScene("data/buster_drone/scene.gltf");
   app->setScene("data/plane/plane0.obj");

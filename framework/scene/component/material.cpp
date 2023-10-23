@@ -194,17 +194,18 @@ PbrMaterial::createMatParamsSet(const std::shared_ptr<VkDriver> &driver,
   return ret;
 }
 
-bool Material::updateParams() {
+void Material::updateParams() {
   // update uniform buffer params
-  assert(mat_param_set_ != nullptr);
+  if(mat_param_set_ == nullptr) return;
   auto &ubo = mat_param_set_->ubo;
   if (ubo_info_.dirty) {
     ubo->update(ubo_info_.data.data(), ubo_info_.size, 0);
     ubo_info_.dirty = false;
   }
 
-  // update textures... descriptor set
-  return true;
+  // todo update textures... descriptor set
+  // todo add memory barrier
+  
 }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
