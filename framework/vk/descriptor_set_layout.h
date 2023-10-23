@@ -21,7 +21,9 @@ public:
 
   ~DescriptorSetLayout();
 
-  VkDescriptorSetLayout getHandle() const { return handle_; }
+  VkDescriptorSetLayout getHandle() const noexcept { return handle_; }
+
+  uint32_t getSetIndex() const noexcept { return set_index_; }
 
 private:
   std::shared_ptr<VkDriver> driver_;

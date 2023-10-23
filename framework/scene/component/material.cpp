@@ -138,6 +138,7 @@ PbrMaterial::PbrMaterial() {
       .mode = ShaderResourceMode::Static,
       .set = MATERIAL_SET_INDEX,
       .binding = 0,
+      .array_size = 1,
       .size = ubo_info_.size,
   }};
   desc_set_layout_ = std::make_unique<DescriptorSetLayout>(
@@ -204,8 +205,7 @@ void Material::updateParams() {
   }
 
   // todo update textures... descriptor set
-  // todo add memory barrier
-  
+  // add memory barrier for image
 }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
@@ -232,7 +232,16 @@ void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   pipeline_state.setMultisampleState(
       {VK_SAMPLE_COUNT_1_BIT, false, 0.0f, 0xFFFFFFFF, false, false});
   // default depth stencil state, depth test enable, depth write enable, depth
-  // default color blend state for opaque object
+  ColorBlendState color_blend_st{
+    .attachments = {{
+          .blendEnable = VK_FALSE,
+          .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                            VK_COLOR_COMPONENT_G_BIT |
+                            VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
+      }}
+  };
+  pipeline_state.setColorBlendState(color_blend_st);
+
   pipeline_state.setSubpassIndex(0);
 }
 

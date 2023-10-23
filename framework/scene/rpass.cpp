@@ -18,6 +18,7 @@ namespace vk_engine
             .mode = ShaderResourceMode::Static,
             .set = PER_OBJECT_SET_INDEX,
             .binding = 0,
+            .array_size = 1,
             .size = MESH_UBO_SIZE,
         };
         desc_layout_ = std::make_unique<DescriptorSetLayout>(driver, PER_OBJECT_SET_INDEX, &sr, 1);

@@ -39,16 +39,13 @@ PipelineLayout::PipelineLayout(
   }
 
   // create descriptor set layouts
-  std::vector<VkDescriptorSetLayout> descriptor_set_layout_handles(
-      max_set_index + 1);
-  descriptor_set_layouts_.resize(max_set_index + 1);
+  std::vector<VkDescriptorSetLayout> descriptor_set_layout_handles;
+  descriptor_set_layout_handles.reserve(max_set_index + 1);
   for (auto itr = set_resources_.begin(); itr != set_resources_.end(); ++itr) {
     auto set_index = itr->first;
     auto &set_resources = itr->second;
-    descriptor_set_layouts_[set_index].reset(
-        new DescriptorSetLayout(driver, set_index, set_resources.data(), set_resources.size()));
-    descriptor_set_layout_handles[set_index] =
-        descriptor_set_layouts_[set_index]->getHandle();
+    descriptor_set_layouts_.emplace_back(std::make_shared<DescriptorSetLayout>(driver, set_index, set_resources.data(), set_resources.size()));
+    descriptor_set_layout_handles.emplace_back(descriptor_set_layouts_.back()->getHandle());
   }
 
   VkPipelineLayoutCreateInfo create_info{
@@ -71,9 +68,10 @@ PipelineLayout::~PipelineLayout() {
 
 const DescriptorSetLayout &
 PipelineLayout::getDescriptorSetLayout(const uint32_t set_index) const {
-  auto &ptr = descriptor_set_layouts_[set_index];
-  if (ptr == nullptr)
-    throw std::runtime_error("invalid set index");
-  return *ptr;
+  auto itr = std::find_if(descriptor_set_layouts_.begin(), descriptor_set_layouts_.end(), [set_index](const std::shared_ptr<DescriptorSetLayout> &e){
+    return e->getSetIndex() == set_index;
+  });
+  assert(itr != descriptor_set_layouts_.end());
+  return *(*itr);
 }
 } // namespace vk_engine

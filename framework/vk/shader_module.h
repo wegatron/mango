@@ -55,7 +55,7 @@ struct ShaderResource {
 
   uint32_t columns;
 
-  uint32_t array_size;
+  uint32_t array_size{1};
 
   uint32_t offset;
 
