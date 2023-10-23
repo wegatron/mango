@@ -74,8 +74,7 @@ GraphicsPipeline::GraphicsPipeline(
   pipeline_state_->getDynamicStateCreateInfo(dynamic_state);
   pipeline_info.pDynamicState = &dynamic_state;
 
-  auto pipeline_layout = cache->requestPipelineLayout(driver, shader_modules);
-  pipeline_info.layout = pipeline_layout->getHandle();
+  pipeline_info.layout = pipeline_layout_->getHandle();
   pipeline_info.renderPass = render_pass->getHandle();
   pipeline_info.subpass = pipeline_state_->getSubpassIndex();
   pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
