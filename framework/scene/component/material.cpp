@@ -211,13 +211,11 @@ void Material::updateParams() {
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   VertexInputState vertex_input_state{
       {// bindings, 3 float pos + 3 float normal + 2 float uv
-       {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX},
-       {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX},
        {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX}},
       {// attribute
-       {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},
-       {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)},
-       {2, 0, VK_FORMAT_R32G32_SFLOAT, 6 * sizeof(float)}}};
+       {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0}, // 3floats pos
+       {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)}, // 3floats normal
+       {2, 0, VK_FORMAT_R32G32_SFLOAT, 6 * sizeof(float)}}}; // 2 floats uv
   pipeline_state.setVertexInputState(vertex_input_state);
   pipeline_state.setInputAssemblyState(
       {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false});

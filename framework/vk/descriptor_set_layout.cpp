@@ -55,7 +55,6 @@ VkDescriptorType find_descriptor_type(ShaderResourceType resource_type,
 }
 
 DescriptorSetLayout::DescriptorSetLayout(const std::shared_ptr<VkDriver> &driver,
-                      const uint32_t set_index,
                       const ShaderResource * resources,
                       const uint32_t resource_size) : driver_(driver)
 {
