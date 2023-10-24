@@ -1,6 +1,6 @@
 #version 450
 
-layout(set=2, binding = 0) uniform BasicMaterial
+layout(set=1, binding = 0) uniform BasicMaterial
 {
     vec4 base_color;
 }pbr_mat;

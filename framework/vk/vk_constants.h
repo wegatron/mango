@@ -7,15 +7,13 @@ static constexpr uint32_t DESCRIPTOR_TYPE_COUNT = 3;
 
 
 /**
- * set-0 for engine-global resource,
- * set-1 for per pass resource,
- * set-2 for material resource, for material only store this set
- * set-3 for per-object resource.
+ * set-0 for engine-global resource
+ * set-1 for material resource, for material only store this set
+ * set-2 for per-object resource.
  */
 constexpr uint32_t GLOBAL_SET_INDEX = 0;
-constexpr uint32_t PER_PASS_SET_INDEX = 1;
-constexpr uint32_t MATERIAL_SET_INDEX = 2;
-constexpr uint32_t PER_OBJECT_SET_INDEX = 3;
+constexpr uint32_t MATERIAL_SET_INDEX = 1;
+constexpr uint32_t PER_OBJECT_SET_INDEX = 2;
 
 
 static constexpr uint32_t TIME_BEFORE_EVICTION = VK_MAX_COMMAND_BUFFERS;

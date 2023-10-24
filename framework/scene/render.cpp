@@ -7,7 +7,7 @@
 #include <cassert>
 
 namespace vk_engine
-{   
+{
     void Render::beginFrame(const float time_elapse, const uint32_t frame_index, const uint32_t rt_index)
     {
         // wait sync
