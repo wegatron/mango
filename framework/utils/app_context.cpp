@@ -13,6 +13,11 @@ static AppContext g_app_context;
 
 const AppContext &getDefaultAppContext() { return g_app_context; }
 
+void destroyDefaultAppContext()
+{
+    g_app_context.destroy();
+}
+
 bool initAppContext(const std::shared_ptr<VkDriver> &driver,
                     const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   g_app_context.resource_cache = std::make_shared<ResourceCache>();

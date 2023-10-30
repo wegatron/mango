@@ -51,9 +51,21 @@ namespace vk_engine
         std::vector<FrameData> frames_data;
         std::unique_ptr<GlobalParamSet> global_param_set;
         std::vector<RenderOutputSync> render_output_syncs;
+
+        void destroy() {
+            resource_cache.reset();
+            stage_pool.reset();
+            gpu_asset_manager.reset();
+            global_param_set.reset();
+            descriptor_pool.reset();            
+            frames_data.clear();
+            render_output_syncs.clear();
+        }
     };
 
     bool initAppContext(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts);
     
-    const AppContext &getDefaultAppContext();    
+    const AppContext &getDefaultAppContext();
+    
+    void destroyDefaultAppContext();
 }

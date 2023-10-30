@@ -5,6 +5,7 @@
 #include <framework/vk/vk_driver.h>
 #include <framework/vk/queue.h>
 #include <framework/vk/syncs.h>
+#include <framework/utils/app_context.h>
 
 namespace vk_engine {
 WindowApp::~WindowApp() {
@@ -12,10 +13,14 @@ WindowApp::~WindowApp() {
   driver_->waitIdle();
 
   app_.reset();
+  // destroy resources in global context
+  destroyDefaultAppContext();
   // destroy render targets(ImageView) before swapchain and depth images
-  for(auto &rt : render_targets_) {
-    rt.reset();
-  }
+  render_targets_.clear();
+  depth_images_.clear();
+  swapchain_.reset();
+  driver_.reset();
+  
   glfwDestroyWindow(window_);
   glfwTerminate();
 

@@ -93,10 +93,16 @@ else
 fi
 
 # if [ ! -d "thirdparty/ImGuizmo" ]; then
-#     git clone https://github.com/gismo/gismo.git thirdparty/ImGuizmo
+#     git clone https://github.com/CedricGuillemet/ImGuizmo.git thirdparty/ImGuizmo
 # else
 #     echo "ImGuizmo found"
 # fi
+
+if [ ! -d "thirdparty/imgui" ]; then
+    git clone https://github.com/ocornut/imgui.git thirdparty/imgui
+else
+    echo "imgui found"
+fi
 
 # if [ ! -d "thirdparty/SPIRV-Reflect" ]; then
 #     git clone https://github.com/KhronosGroup/SPIRV-Reflect.git
