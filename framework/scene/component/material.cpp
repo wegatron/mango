@@ -222,7 +222,8 @@ void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   RasterizationState rasterize{.depth_clamp_enable = false,
                                .rasterizer_discard_enable = false,
                                .polygon_mode = VK_POLYGON_MODE_FILL,
-                               .cull_mode = VK_CULL_MODE_BACK_BIT,
+                               //.cull_mode = VK_CULL_MODE_BACK_BIT,
+                               .cull_mode = VK_CULL_MODE_NONE,
                                .front_face = VK_FRONT_FACE_COUNTER_CLOCKWISE,
                                .depth_bias_enable = false};
   pipeline_state.setRasterizationState(rasterize);

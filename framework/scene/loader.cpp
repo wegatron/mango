@@ -103,14 +103,15 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     std::vector<float> data(nv * 8);
     static_assert(std::is_same<ai_real, float>::value,
                   "Type should be same while using memory copy.");
-
-    memcpy(data.data(), &tmp_a_mesh->mVertices,
-           nv * 3 * sizeof(float)); // vertices
-    memcpy(data.data() + nv * 3, &tmp_a_mesh->mNormals,
-           nv * 3 * sizeof(float)); // normals
     for (auto vi = 0; vi < nv; ++vi) {
-      data[6 * nv + vi * 2] = tmp_a_mesh->mTextureCoords[0][vi].x;
-      data[6 * nv + vi * 2 + 1] = tmp_a_mesh->mTextureCoords[0][vi].y;
+      data[8*vi] = tmp_a_mesh->mVertices[vi].x;
+      data[8*vi+1] = tmp_a_mesh->mVertices[vi].y;
+      data[8*vi+2] = tmp_a_mesh->mVertices[vi].z;
+      data[8*vi+3] = tmp_a_mesh->mNormals[vi].x;
+      data[8*vi+4] = tmp_a_mesh->mNormals[vi].y;
+      data[8*vi+5] = tmp_a_mesh->mNormals[vi].z;
+      data[8*vi+6] = tmp_a_mesh->mTextureCoords[0][vi].x;
+      data[8*vi+7] = tmp_a_mesh->mTextureCoords[0][vi].y;
     }
 
     auto stage_pool = getDefaultAppContext().stage_pool;

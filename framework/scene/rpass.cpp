@@ -79,8 +79,8 @@ namespace vk_engine
         {
             if((*itr)->last_access < eviction_time)
             {
-                itr = used_mesh_params_set_.erase(itr);
                 free_mesh_params_set_.emplace_front(*itr);
+                itr = used_mesh_params_set_.erase(itr);                
             } else ++itr;
         }
     }
