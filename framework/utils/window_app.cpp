@@ -78,7 +78,7 @@ void WindowApp::setApp(std::shared_ptr<AppBase> &&app) {
 void WindowApp::run() {
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
-    auto &render_output_sync = app_->getRenderOutputSync(current_frame_index_);
+    auto &render_output_sync = getDefaultAppContext().render_output_syncs[current_frame_index_];
     uint32_t rt_index = swapchain_->acquireNextImage(render_output_sync.present_semaphore->getHandle(), VK_NULL_HANDLE);
     // current_frame_index_ maybe different with rt_index, depends on the swapchain present mode
     app_->tick(0.016f, rt_index, current_frame_index_); // 60fps

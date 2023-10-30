@@ -14,16 +14,17 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
   auto &frames_data = getDefaultAppContext().frames_data;
 
   // render
-  render_ = std::make_unique<Render>(render_output_syncs_, rts[0]->getColorFormat(0), rts[0]->getDSFormat());
+  render_ = std::make_unique<Render>(rts[0]->getColorFormat(0), rts[0]->getDSFormat());
   auto cmd_buf =
       frames_data[0].command_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
   cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
   AssimpLoader loader;
   loader.loadScene(scene_path_, *scene_, cmd_buf);
   cmd_buf->end();
-  render_output_syncs_[0].render_fence->reset();
+  auto &render_output_syncs = getDefaultAppContext().render_output_syncs;
+  render_output_syncs[0].render_fence->reset();
   auto cmd_queue = driver->getGraphicsQueue();
-  cmd_queue->submit(cmd_buf, render_output_syncs_[0].render_fence->getHandle());
+  cmd_queue->submit(cmd_buf, render_output_syncs[0].render_fence->getHandle());
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }

@@ -30,13 +30,8 @@ public:
   virtual void init(const std::shared_ptr<VkDriver> &driver,
                     const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
-  const RenderOutputSync &getRenderOutputSync(const uint32_t index) const {
-    return render_output_syncs_[index];
-  }
-
 protected:
   std::string name_;
-  std::vector<RenderOutputSync> render_output_syncs_;
 };
 
 } // namespace vk_engine

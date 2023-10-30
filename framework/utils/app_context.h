@@ -2,6 +2,9 @@
 
 #include <vector>
 #include <memory>
+#include <framework/vk/syncs.h>
+#include <framework/vk/buffer.h>
+#include <Eigen/Dense>
 
 namespace vk_engine
 {
@@ -27,12 +30,15 @@ namespace vk_engine
     {
     public:
         GlobalParamSet();
-        ~GlobalParamSet();
-        std::shared_ptr<DescriptorSet> getDescSet() const { return desc_set; }
-        void updateParam(const Eigen::Matrix4f &proj);
+        ~GlobalParamSet() = default;       
+        void updateParam(const Eigen::Matrix4f &proj) {
+            ubo_->update(&proj, sizeof(proj));
+        }
+        std::shared_ptr<DescriptorSet> getDescSet() const { return desc_set_; }
     private:
-        std::unique_ptr<Buffer> ubo;
-        std::shared_ptr<DescriptorSet> desc_set;    
+        
+        std::unique_ptr<Buffer> ubo_;
+        std::shared_ptr<DescriptorSet> desc_set_;
     };    
 
     struct AppContext
@@ -44,6 +50,7 @@ namespace vk_engine
         std::shared_ptr<ResourceCache> resource_cache;
         std::vector<FrameData> frames_data;
         std::unique_ptr<GlobalParamSet> global_param_set;
+        std::vector<RenderOutputSync> render_output_syncs;
     };
 
     bool initAppContext(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts);

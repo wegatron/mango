@@ -102,6 +102,9 @@ namespace vk_engine
     void RPass::draw(const std::shared_ptr<Material> &mat, const Eigen::Matrix4f &rt,
         const std::shared_ptr<StaticMesh> &mesh, const std::shared_ptr<CommandBuffer> &cmd_buf)
     {
+        // global param set
+        auto global_param_set = getDefaultAppContext().global_param_set->getDescSet();
+        
         // bind ubo set3
         auto mesh_params_set = mesh_params_pool_.requestMeshParamsSet();
         mesh_params_set->ubo->update(rt.data(), sizeof(rt));
@@ -110,7 +113,7 @@ namespace vk_engine
         // using VK_DYNAMIC_STATE_VERTEX_INPUT_BINDING_STRIDE
         auto gp = mat_gpu_res_pool_.requestGraphicsPipeline(mat);
         auto mat_desc_set = mat_gpu_res_pool_.requestMatDescriptorSet(mat);
-        cmd_buf->bindPipelineWithDescriptorSets(gp, {mat_desc_set, mesh_params_set->desc_set}, {}, 0);
+        cmd_buf->bindPipelineWithDescriptorSets(gp, {global_param_set, mat_desc_set, mesh_params_set->desc_set}, {}, 0);
         
         // bind mesh vertices
         cmd_buf->bindVertexBuffer({mesh->vertices.buffer, mesh->normals.buffer},
