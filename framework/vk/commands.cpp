@@ -166,8 +166,6 @@ void CommandBuffer::end() {
 }
 
 void CommandBuffer::beginRenderPass(
-    const std::shared_ptr<Fence> &render_fence,
-    const std::shared_ptr<Semaphore> &render_semaphore,
     const std::shared_ptr<RenderPass> &render_pass,
     const std::unique_ptr<FrameBuffer> &frame_buffer) {
   VkClearValue clear_values[2]; // 与render pass load store clear attachment对应

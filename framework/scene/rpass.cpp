@@ -6,6 +6,7 @@
 #include <framework/scene/component/mesh.h>
 #include <framework/vk/vk_constants.h>
 #include <framework/utils/app_context.h>
+#include <framework/vk/resource_cache.h>
 
 namespace vk_engine
 {
@@ -99,8 +100,32 @@ namespace vk_engine
         used_mesh_params_set_.clear();
     }
 
+    RPass::RPass(VkFormat color_format, VkFormat ds_format) 
+        : mat_gpu_res_pool_(color_format, ds_format)
+    {
+        std::vector<Attachment> attachments{
+            Attachment{color_format, VK_SAMPLE_COUNT_1_BIT,
+                        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT},
+            Attachment{ds_format, VK_SAMPLE_COUNT_1_BIT,
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT}};
+        std::vector<LoadStoreInfo> load_store_infos{
+            {VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE},
+            {VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE}};
+        std::vector<SubpassInfo> subpass_infos{{
+            {},  // no input attachment
+            {0}, // color attachment index
+            {},  // no msaa
+            1    // depth stencil attachment index
+        }};
+        auto &resource_cache = getDefaultAppContext().resource_cache;
+        auto &driver = getDefaultAppContext().driver;
+        render_pass_ = resource_cache->requestRenderPass(
+            driver, attachments, load_store_infos, subpass_infos);        
+    }
+
     void RPass::draw(const std::shared_ptr<Material> &mat, const Eigen::Matrix4f &rt,
-        const std::shared_ptr<StaticMesh> &mesh, const std::shared_ptr<CommandBuffer> &cmd_buf)
+        const std::shared_ptr<StaticMesh> &mesh, const std::shared_ptr<CommandBuffer> &cmd_buf,
+        const uint32_t width, const uint32_t height)
     {
         // global param set
         auto global_param_set = getDefaultAppContext().global_param_set->getDescSet();
@@ -115,6 +140,11 @@ namespace vk_engine
         auto mat_desc_set = mat_gpu_res_pool_.requestMatDescriptorSet(mat);
         cmd_buf->bindPipelineWithDescriptorSets(gp, {global_param_set, mat_desc_set, mesh_params_set->desc_set}, {}, 0);
         
+        // dynamic state
+        cmd_buf->setViewPort({VkViewport{0.0f, 0.0f, static_cast<float>(width),
+                                     static_cast<float>(height), 0.f, 1.f}});
+        cmd_buf->setScissor({VkRect2D{{0, 0}, {width, height}}});
+
         // bind mesh vertices
         cmd_buf->bindVertexBuffer({mesh->vertices.buffer, mesh->normals.buffer},
             {mesh->vertices.offset, mesh->normals.offset}, 0);

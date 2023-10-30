@@ -1,8 +1,8 @@
 #include "material.h"
 #include <framework/utils/app_context.h>
+#include <framework/vk/buffer.h>
 #include <framework/vk/pipeline.h>
 #include <framework/vk/resource_cache.h>
-#include <framework/vk/buffer.h>
 
 namespace vk_engine {
 
@@ -21,10 +21,8 @@ enum PbrTextureParamIndex {
   BASE_COLOR_TEXTURE_INDEX = 0,
   METALLIC_TEXTURE_INDEX = 1,
   NORMAL_TEXTURE_INDEX = 2,
-  TEXTURE_NUM_COUNT
+  MAT_TEXTURE_NUM_COUNT
 };
-
-constexpr uint32_t MAX_MAT_DESC_SET = 100;
 
 MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
                                        VkFormat ds_format) {
@@ -33,10 +31,10 @@ MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
       {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
        .descriptorCount = MAX_MAT_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT},
       {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-       .descriptorCount = MAX_MAT_DESC_SET * TEXTURE_NUM_COUNT}};
+       .descriptorCount = MAX_MAT_DESC_SET * MAT_TEXTURE_NUM_COUNT}};
   desc_pool_ = std::make_unique<DescriptorPool>(
-      driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_size, 2,
-      100);
+      driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_size,
+      sizeof(pool_size) / sizeof(VkDescriptorPoolSize), MAX_MAT_DESC_SET);
   auto &rs_cache = getDefaultAppContext().resource_cache;
   std::vector<Attachment> attachments{
       Attachment{color_format, VK_SAMPLE_COUNT_1_BIT,
@@ -173,7 +171,8 @@ PbrMaterial::createMatParamsSet(const std::shared_ptr<VkDriver> &driver,
   // create uniform buffer
   ret->ubo = std::make_unique<Buffer>(
       driver, 0, ubo_info_.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-      VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+      VMA_ALLOCATION_CREATE_MAPPED_BIT |
+          VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
       VMA_MEMORY_USAGE_AUTO_PREFER_HOST);
 
   // create descriptor set
@@ -197,7 +196,8 @@ PbrMaterial::createMatParamsSet(const std::shared_ptr<VkDriver> &driver,
 
 void Material::updateParams() {
   // update uniform buffer params
-  if(mat_param_set_ == nullptr) return;
+  if (mat_param_set_ == nullptr)
+    return;
   auto &ubo = mat_param_set_->ubo;
   if (ubo_info_.dirty) {
     ubo->update(ubo_info_.data.data(), ubo_info_.size, 0);
@@ -212,10 +212,10 @@ void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
   VertexInputState vertex_input_state{
       {// bindings, 3 float pos + 3 float normal + 2 float uv
        {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX}},
-      {// attribute
-       {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0}, // 3floats pos
+      {                                                       // attribute
+       {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},                 // 3floats pos
        {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 3 * sizeof(float)}, // 3floats normal
-       {2, 0, VK_FORMAT_R32G32_SFLOAT, 6 * sizeof(float)}}}; // 2 floats uv
+       {2, 0, VK_FORMAT_R32G32_SFLOAT, 6 * sizeof(float)}}};  // 2 floats uv
   pipeline_state.setVertexInputState(vertex_input_state);
   pipeline_state.setInputAssemblyState(
       {VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false});
@@ -231,13 +231,12 @@ void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
       {VK_SAMPLE_COUNT_1_BIT, false, 0.0f, 0xFFFFFFFF, false, false});
   // default depth stencil state, depth test enable, depth write enable, depth
   ColorBlendState color_blend_st{
-    .attachments = {{
+      .attachments = {{
           .blendEnable = VK_FALSE,
           .colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
                             VK_COLOR_COMPONENT_G_BIT |
                             VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT,
-      }}
-  };
+      }}};
   pipeline_state.setColorBlendState(color_blend_st);
 
   pipeline_state.setSubpassIndex(0);

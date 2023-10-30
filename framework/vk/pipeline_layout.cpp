@@ -40,12 +40,12 @@ PipelineLayout::PipelineLayout(
 
   // create descriptor set layouts
   std::vector<VkDescriptorSetLayout> descriptor_set_layout_handles(max_set_index + 1);
-  descriptor_set_layout_handles.resize(max_set_index + 1);
+  descriptor_set_layouts_.resize(max_set_index + 1);
   for (auto itr = set_resources_.begin(); itr != set_resources_.end(); ++itr) {
     auto set_index = itr->first;
     auto &set_resources = itr->second;
     descriptor_set_layouts_[set_index] = std::make_shared<DescriptorSetLayout>(driver, set_index, set_resources.data(), set_resources.size());
-    descriptor_set_layout_handles[set_index] = descriptor_set_layouts_.back()->getHandle();
+    descriptor_set_layout_handles[set_index] = descriptor_set_layouts_[set_index]->getHandle();
   }
 
   VkPipelineLayoutCreateInfo create_info{

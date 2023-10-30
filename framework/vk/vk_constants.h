@@ -2,6 +2,7 @@
 
 static constexpr uint32_t VK_MAX_COMMAND_BUFFERS = 10;
 static constexpr uint32_t CONFIG_UNIFORM_BINDING_COUNT = 10;  // This is guaranteed by OpenGL ES.
+static constexpr uint32_t CONFIG_STORAGE_BINDING_COUNT = 10;  // This is guaranteed by OpenGL ES.
 static constexpr uint32_t CONFIG_SAMPLER_BINDING_COUNT = 4;   // This is guaranteed by OpenGL ES.
 static constexpr uint32_t DESCRIPTOR_TYPE_COUNT = 3;
 
@@ -15,5 +16,8 @@ constexpr uint32_t GLOBAL_SET_INDEX = 0;
 constexpr uint32_t MATERIAL_SET_INDEX = 1;
 constexpr uint32_t PER_OBJECT_SET_INDEX = 2;
 
+constexpr uint32_t MAX_MAT_DESC_SET = 100;
+constexpr uint32_t MAX_GLOBAL_DESC_SET = 100;
+constexpr uint32_t MAX_TEXTURE_NUM_COUNT = 4; // average max texture number for one descriptor set
 
 static constexpr uint32_t TIME_BEFORE_EVICTION = VK_MAX_COMMAND_BUFFERS;
