@@ -33,12 +33,10 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
 
   // descriptor pool
   VkDescriptorPoolSize pool_size[] = {
-      {.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-       .descriptorCount = MAX_GLOBAL_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT},
-      {.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-       .descriptorCount = MAX_GLOBAL_DESC_SET * MAX_TEXTURE_NUM_COUNT},
-      {.type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
-       .descriptorCount = MAX_GLOBAL_DESC_SET * CONFIG_STORAGE_BINDING_COUNT}};
+      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_GLOBAL_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT},
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_GLOBAL_DESC_SET * MAX_TEXTURE_NUM_COUNT},
+      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_GLOBAL_DESC_SET * CONFIG_STORAGE_BINDING_COUNT}
+       };
   g_app_context.descriptor_pool = std::make_unique<DescriptorPool>(
       driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_size,
       sizeof(pool_size) / sizeof(pool_size[0]), MAX_GLOBAL_DESC_SET);

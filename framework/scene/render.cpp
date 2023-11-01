@@ -33,7 +33,6 @@ void Render::beginFrame(const float time_elapse, const uint32_t frame_index,
   cmd_pool->reset();
   cmd_buf_ = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
   cmd_buf_->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-  auto &frame_data = getDefaultAppContext().frames_data[rt_index];
   cmd_buf_->beginRenderPass(rpass_.getRenderPass(), frame_buffers_[rt_index]);
 }
 

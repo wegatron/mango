@@ -43,6 +43,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/Vulkan-Hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/eigen
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stbi
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty # for imgui
 )
 
 if (NOT APPLE AND ${CMAKE_CXX_COMPILER} MATCHES "(C|c?)lang")
@@ -50,7 +51,7 @@ if (NOT APPLE AND ${CMAKE_CXX_COMPILER} MATCHES "(C|c?)lang")
     add_compile_options(-stdlib=libc++)
 endif()
 
-add_definitions(-DVK_NO_PROTOTYPES)
+add_definitions(-DVK_NO_PROTOTYPES -DGLFW_INCLUDE_VULKAN)
 if (WIN32)
    set(VOLK_STATIC_DEFINES VK_USE_PLATFORM_WIN32_KHR)
 elseif()
