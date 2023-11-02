@@ -4,16 +4,30 @@
 #include <framework/vk/queue.h>
 #include <framework/vk/render_pass.h>
 #include <imgui/backends/imgui_impl_glfw.h>
+#include <imgui/backends/imgui_impl_vulkan.h>
+#include <framework/utils/error.h>
+#include <framework/vk/resource_cache.h>
+#include <framework/vk/commands.h>
+#include <framework/vk/descriptor_set.h>
+#include <framework/vk/syncs.h>
+#include <framework/vk/frame_buffer.h>
+
+static void check_vk_result(VkResult err)
+{
+    if (err == 0)
+        return;
+    LOGE("Detected Vulkan error: {}", vkb::to_string(err));
+    if (err < 0)
+        abort();
+}
 
 namespace vk_engine {
-Gui::Gui(GLFWwindow *window, const float font_size = 21.0f,
-         bool explicit_update = false) {
+Gui::Gui(GLFWwindow *window, const float font_size, bool explicit_update) {
   // refer to: https://frguthmann.github.io/posts/vulkan_imgui/
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
   ImGui::CreateContext();
   ImGuiIO &io = ImGui::GetIO();
-  (void)io;
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable
   // Keyboard Controls io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; //
   // Enable Gamepad Controls
@@ -23,37 +37,42 @@ Gui::Gui(GLFWwindow *window, const float font_size = 21.0f,
 
   ImGui_ImplGlfw_InitForVulkan(window,
                                true); // init viewport and key/mouse events
-
+  auto &ctx = getDefaultAppContext();                            
+  auto &driver = ctx.driver;
+  auto &frames_data = ctx.frames_data;
   ImGui_ImplVulkan_InitInfo init_info = {};
-  init_info.Instance = g_Instance;
-  init_info.PhysicalDevice = g_PhysicalDevice;
-  init_info.Device = g_Device;
-  init_info.QueueFamily = g_QueueFamily;
-  init_info.Queue = g_Queue;
-  init_info.PipelineCache = g_PipelineCache;
-  init_info.DescriptorPool = g_DescriptorPool;
-  init_info.Allocator = g_Allocator;
-  init_info.MinImageCount = g_MinImageCount;
-  init_info.ImageCount = wd->ImageCount;
+  init_info.Instance = driver->getInstance();
+  init_info.PhysicalDevice = driver->getPhysicalDevice();
+  init_info.Device = driver->getDevice();
+  auto queue = driver->getGraphicsQueue();
+  init_info.QueueFamily = queue->getFamilyIndex();
+  init_info.Queue = queue->getHandle();
+  init_info.PipelineCache = ctx.resource_cache->getPipelineCache();
+  init_info.DescriptorPool = ctx.descriptor_pool->getHandle();
+  init_info.Allocator = nullptr;
+  init_info.MinImageCount = frames_data.size();
+  init_info.ImageCount = frames_data.size();
   init_info.CheckVkResultFn = check_vk_result;
 
   initRenderStuffs();
+  auto cmd_buf = frames_data[0].command_pool->requestCommandBuffer(
+      VK_COMMAND_BUFFER_LEVEL_PRIMARY);  
   ImGui_ImplVulkan_Init(
       &init_info,
       render_pass_->getHandle()); // init create resources for render imgui
-  ImGui_ImplVulkan_CreateFontsTexture(cmd_buffer);
-
-  auto cmd_buf =
-      frames_data[0].command_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);  
-  auto &queue = getDefaultAppContext().driver->getGraphicsQueue();
-  queue->submit(cmd_buf, frames_data[0].render_fence->getHandle());
-  frames_data[0].render_fence->wait(); // signaled -> unsignaled
-  frames_data[0].render_fence->reset(); // unsignaled -> signaled
+  ImGui_ImplVulkan_CreateFontsTexture(cmd_buf->getHandle());
+  
+  auto &sync = ctx.render_output_syncs[0];
+  queue->submit(cmd_buf, sync.render_fence->getHandle());
+  sync.render_fence->wait();  // signaled -> unsignaled
+  sync.render_fence->reset(); // unsignaled -> signaled
   ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
 void Gui::initRenderStuffs() {
   auto &driver = getDefaultAppContext().driver;
+  auto &frames_data = getDefaultAppContext().frames_data;
+  auto color_format = frames_data[0].render_tgt->getColorFormat(0);
   std::vector<Attachment> attachments{Attachment{
       color_format, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
       VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
@@ -62,15 +81,13 @@ void Gui::initRenderStuffs() {
   std::vector<SubpassInfo> subpass_infos{{
       {},  // no input attachment
       {0}, // color attachment index
-      {}  // no msaa
+      {}   // no msaa
   }};
   auto &resource_cache = getDefaultAppContext().resource_cache;
-  auto &driver = getDefaultAppContext().driver;
   render_pass_ = resource_cache->requestRenderPass(
       driver, attachments, load_store_infos, subpass_infos);
 
   // frame buffer
-  auto &frames_data = getDefaultAppContext().frames_data;
   frame_buffers_.resize(frames_data.size());
   for (auto i = 0; i < frames_data.size(); ++i) {
     frame_buffers_[i] = std::move(std::make_unique<FrameBuffer>(
@@ -84,22 +101,40 @@ Gui::~Gui() {
   ImGui::DestroyContext();
 }
 
-void Gui::update(const float delta_time, uint32_t frame_index, uint32_t rt_index)
-{
+void Gui::update(const float delta_time, uint32_t frame_index,
+                 uint32_t rt_index) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
-  // ... imgui elements
+  ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and
+                                 // append into it.
+  ImGui::Text("This is some useful text."); // Display some text (you can use a
+                                            // format strings too)
+  // ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools
+  // storing our window open/close state ImGui::Checkbox("Another Window",
+  // &show_another_window);
 
-  ImGui::ShowDemoWindow();
+  // ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float
+  // using a slider from 0.0f to 1.0f ImGui::ColorEdit3("clear color",
+  // (float*)&clear_color); // Edit 3 floats representing a color
 
+  // if (ImGui::Button("Button"))                            // Buttons return
+  // true when clicked (most widgets return true when edited/activated)
+  //     counter++;
+  // ImGui::SameLine();
+  // ImGui::Text("counter = %d", counter);
+
+  // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
+  // io.Framerate, io.Framerate);
+  ImGui::End();
   // (Your code clears your framebuffer, renders your other stuff etc.)
   // render imgui
   auto &cmd_pool =
-      getDefaultAppContext().frames_data[cur_frame_index_].command_pool;
-  auto cmd_buf = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+      getDefaultAppContext().frames_data[frame_index].command_pool;
+  auto cmd_buf =
+      cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
   cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-  cmd_buf->beginRenderPass(rpass_.getRenderPass(), frame_buffers_[rt_index]);
+  cmd_buf->beginRenderPass(render_pass_, frame_buffers_[rt_index]);
 
   ImGui::Render(); // draw data
   ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(),
@@ -117,9 +152,11 @@ void Gui::update(const float delta_time, uint32_t frame_index, uint32_t rt_index
       .dst_stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
       .src_queue_family_index = VK_QUEUE_FAMILY_IGNORED,
       .dst_queue_family_index = VK_QUEUE_FAMILY_IGNORED};
-  auto &frame_data = getDefaultAppContext().frames_data[cur_rt_index_];
-  cmd_buf_->imageMemoryBarrier(barrier,
+  auto &frame_data = getDefaultAppContext().frames_data[rt_index];
+  cmd_buf->imageMemoryBarrier(barrier,
                                frame_data.render_tgt->getImageViews()[0]);
-  cmd_buf_->end();  
+  cmd_buf->end();
+
+  // submit
 }
 } // namespace vk_engine

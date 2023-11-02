@@ -28,6 +28,8 @@ public:
   void init(const std::string &app_name, const std::shared_ptr<VkConfig> &config,
             GLFWwindow *window);
 
+  VkInstance getInstance() const { return instance_; }
+  
   VkPhysicalDevice getPhysicalDevice() const { return physical_device_; }
   
   VkDevice getDevice() const { return device_; }

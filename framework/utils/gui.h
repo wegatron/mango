@@ -8,7 +8,7 @@
 namespace vk_engine {
 
 class RenderPass;
-class GLFWwindow;
+class FrameBuffer;
 
 /**
  * @brief Responsible for drawing new elements into the gui
@@ -134,7 +134,8 @@ public:
    */
   void resize(const uint32_t width, const uint32_t height) const;
 
-  void update(const float delta_time);
+  void update(const float delta_time, uint32_t frame_index,
+                 uint32_t rt_index);
 
   //   bool input_event(const InputEvent &input_event);
   
@@ -142,9 +143,9 @@ private:
   
   void initRenderStuffs();
 
-  std::unique_ptr<RenderPass> render_pass_;
+  std::shared_ptr<RenderPass> render_pass_;
 
-  std::vector<std::unique_ptr<FrameBuffer>> frame_buffers_;  
+  std::vector<std::unique_ptr<FrameBuffer>> frame_buffers_;
 
   Drawer drawer;
 };
