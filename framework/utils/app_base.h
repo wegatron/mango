@@ -27,7 +27,7 @@ public:
   virtual void tick(const float seconds, const uint32_t rt_index,
                     const uint32_t frame_index) = 0;
 
-  virtual void init(const std::shared_ptr<VkDriver> &driver,
+  virtual void init(GLFWwindow * window, const std::shared_ptr<VkDriver> &driver,
                     const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
 protected:

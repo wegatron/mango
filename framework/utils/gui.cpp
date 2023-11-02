@@ -22,7 +22,7 @@ static void check_vk_result(VkResult err)
 }
 
 namespace vk_engine {
-Gui::Gui(GLFWwindow *window, const float font_size, bool explicit_update) {
+void Gui::init(GLFWwindow *window) {
   // refer to: https://frguthmann.github.io/posts/vulkan_imgui/
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();

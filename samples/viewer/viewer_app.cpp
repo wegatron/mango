@@ -8,7 +8,7 @@
 
 namespace vk_engine {
 
-void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
+void ViewerApp::init(GLFWwindow * window, const std::shared_ptr<VkDriver> &driver,
                      const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   initAppContext(driver, rts);
   auto &frames_data = getDefaultAppContext().frames_data;
@@ -25,6 +25,8 @@ void ViewerApp::init(const std::shared_ptr<VkDriver> &driver,
   render_output_syncs[0].render_fence->reset();
   auto cmd_queue = driver->getGraphicsQueue();
   cmd_queue->submit(cmd_buf, render_output_syncs[0].render_fence->getHandle());
+
+  gui_->init(window);
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }

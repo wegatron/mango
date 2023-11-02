@@ -4,7 +4,6 @@
 #include <vector>
 #include <vk_mem_alloc.h>
 #include <volk.h>
-#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <framework/vk/vk_config.h>
@@ -29,7 +28,7 @@ public:
             GLFWwindow *window);
 
   VkInstance getInstance() const { return instance_; }
-  
+
   VkPhysicalDevice getPhysicalDevice() const { return physical_device_; }
   
   VkDevice getDevice() const { return device_; }

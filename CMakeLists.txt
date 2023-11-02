@@ -43,6 +43,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/Vulkan-Hpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/eigen
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/stbi
+    ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/imgui
     ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty # for imgui
 )
 

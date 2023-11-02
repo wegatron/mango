@@ -3,8 +3,9 @@
 #include <memory>
 #include <vector>
 #include <imgui/imgui.h>
-// #include <imgui_internal.h>
 
+
+struct GLFWwindow;
 namespace vk_engine {
 
 class RenderPass;
@@ -33,7 +34,7 @@ public:
   void set_dirty(bool dirty);
 
   /**
-   * @brief Adds a collapsable header item to the gui
+   * @brief Adds a collapsable header item tGLFWwindowo the gui
    * @param caption The text to display
    * @returns True if adding item was successful
    */
@@ -119,8 +120,10 @@ private:
  */
 class Gui final {
 public:
-  Gui(GLFWwindow *window, const float font_size = 21.0f,
-      bool explicit_update = false);
+  
+  Gui() = default;
+
+  void init(GLFWwindow *window);
 
   /**
    * @brief Destroys the Gui

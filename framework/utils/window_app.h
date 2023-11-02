@@ -3,7 +3,6 @@
 #include <memory>
 #include <string>
 
-// #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
 #include <framework/utils/app_base.h>

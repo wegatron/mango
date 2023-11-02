@@ -71,7 +71,7 @@ bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
   initRenderTargets();
 
   assert(app_ != nullptr);
-  app_->init(driver_, render_targets_);
+  app_->init(window_, driver_, render_targets_);
   return true;
 }
 

@@ -5,6 +5,7 @@
 #include <framework/utils/app_base.h>
 #include <framework/vk/commands.h>
 #include <framework/vk/descriptor_set.h>
+#include <framework/utils/gui.h>
 
 
 namespace vk_engine {
@@ -13,11 +14,11 @@ class StagePool;
 class ViewerApp : public AppBase {
 public:
   ViewerApp(const std::string &name)
-      : AppBase(name), scene_(std::make_unique<Scene>()) {}
+      : AppBase(name), scene_(std::make_unique<Scene>()), gui_(std::make_unique<Gui>()) {}
 
   ~ViewerApp() override = default;
 
-  void init(const std::shared_ptr<VkDriver> &driver,
+  void init(GLFWwindow * window, const std::shared_ptr<VkDriver> &driver,
             const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
   void setScene(const std::string &path);
@@ -29,5 +30,6 @@ private:
   std::string scene_path_;
   std::unique_ptr<Render> render_;
   std::unique_ptr<Scene> scene_;
+  std::unique_ptr<Gui> gui_;
 };
 } // namespace vk_engine
