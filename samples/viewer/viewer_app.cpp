@@ -25,7 +25,8 @@ void ViewerApp::init(GLFWwindow * window, const std::shared_ptr<VkDriver> &drive
   render_output_syncs[0].render_fence->reset();
   auto cmd_queue = driver->getGraphicsQueue();
   cmd_queue->submit(cmd_buf, render_output_syncs[0].render_fence->getHandle());
-
+  render_output_syncs[0].render_fence->wait();  // signaled -> unsignaled
+  render_output_syncs[0].render_fence->reset(); // unsignaled -> signaled
   gui_->init(window);
 }
 

@@ -66,6 +66,11 @@ public:
   FrameBuffer(const std::shared_ptr<VkDriver> &driver,
               const std::shared_ptr<RenderPass> &render_pass,
               const std::shared_ptr<RenderTarget> &render_target);
+  
+  FrameBuffer(const std::shared_ptr<VkDriver> &driver,
+              const std::shared_ptr<RenderPass> &render_pass,
+              const std::shared_ptr<RenderTarget> &render_target,
+              const uint32_t sub_image_views_count);
 
   FrameBuffer(const FrameBuffer &) = delete;
   FrameBuffer &operator=(const FrameBuffer &) = delete;

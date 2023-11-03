@@ -55,13 +55,22 @@ void Gui::init(GLFWwindow *window) {
   init_info.CheckVkResultFn = check_vk_result;
 
   initRenderStuffs();
-  auto cmd_buf = frames_data[0].command_pool->requestCommandBuffer(
-      VK_COMMAND_BUFFER_LEVEL_PRIMARY);  
+  auto instance_ptr = getDefaultAppContext().driver->getInstancePtr();
+  
+  // refer to https://zhuanlan.zhihu.com/p/634912614
+  ImGui_ImplVulkan_LoadFunctions([](const char *function_name, void *vulkan_instance) {
+    auto instance_ptr = getDefaultAppContext().driver->getInstancePtr();
+    return vkGetInstanceProcAddr(*instance_ptr, function_name);
+  }, reinterpret_cast<void*>(instance_ptr));
+
   ImGui_ImplVulkan_Init(
       &init_info,
       render_pass_->getHandle()); // init create resources for render imgui
+  auto cmd_buf = frames_data[0].command_pool->requestCommandBuffer(
+      VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+  cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);  
   ImGui_ImplVulkan_CreateFontsTexture(cmd_buf->getHandle());
-  
+  cmd_buf->end();
   auto &sync = ctx.render_output_syncs[0];
   queue->submit(cmd_buf, sync.render_fence->getHandle());
   sync.render_fence->wait();  // signaled -> unsignaled
@@ -91,7 +100,7 @@ void Gui::initRenderStuffs() {
   frame_buffers_.resize(frames_data.size());
   for (auto i = 0; i < frames_data.size(); ++i) {
     frame_buffers_[i] = std::move(std::make_unique<FrameBuffer>(
-        driver, render_pass_, frames_data[i].render_tgt));
+        driver, render_pass_, frames_data[i].render_tgt, 1));
   }
 }
 
