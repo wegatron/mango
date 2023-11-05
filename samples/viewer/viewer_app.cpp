@@ -21,12 +21,11 @@ void ViewerApp::init(GLFWwindow * window, const std::shared_ptr<VkDriver> &drive
   AssimpLoader loader;
   loader.loadScene(scene_path_, *scene_, cmd_buf);
   cmd_buf->end();
-  auto &render_output_syncs = getDefaultAppContext().render_output_syncs;
-  render_output_syncs[0].render_fence->reset();
+  auto &render_output_syncs = getDefaultAppContext().render_output_syncs;  
   auto cmd_queue = driver->getGraphicsQueue();
+  render_output_syncs[0].render_fence->reset();
   cmd_queue->submit(cmd_buf, render_output_syncs[0].render_fence->getHandle());
-  render_output_syncs[0].render_fence->wait();  // signaled -> unsignaled
-  render_output_syncs[0].render_fence->reset(); // unsignaled -> signaled
+  render_output_syncs[0].render_fence->wait();
   gui_->init(window);
 }
 
@@ -39,6 +38,7 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
   getDefaultAppContext().gpu_asset_manager->gc();
   render_->beginFrame(seconds, frame_index, rt_index);
   render_->render(scene_.get());
+  gui_->update(seconds, frame_index, rt_index);
   render_->endFrame();
 }
 } // namespace vk_engine

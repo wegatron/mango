@@ -137,7 +137,7 @@ public:
    */
   void resize(const uint32_t width, const uint32_t height) const;
 
-  void update(const float delta_time, uint32_t frame_index,
+  void update(const float time_elapse, uint32_t frame_index,
                  uint32_t rt_index);
 
   //   bool input_event(const InputEvent &input_event);

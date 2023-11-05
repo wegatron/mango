@@ -91,12 +91,12 @@ void WindowApp::run() {
     // present
     VkPresentInfoKHR present_info{VK_STRUCTURE_TYPE_PRESENT_INFO_KHR};
     VkSwapchainKHR swapchain = swapchain_->getHandle();
-    VkSemaphore render_semaphore = render_output_sync.render_semaphore->getHandle();
+    VkSemaphore gui_semaphore = render_output_sync.gui_semaphore->getHandle();
     present_info.swapchainCount     = 1;
     present_info.pSwapchains        = &swapchain;
     present_info.pImageIndices      = &rt_index;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores    = &render_semaphore;
+    present_info.pWaitSemaphores    = &gui_semaphore;
     
     // Present swapchain image
     driver_->getGraphicsQueue()->present(present_info);

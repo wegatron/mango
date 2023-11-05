@@ -72,9 +72,9 @@ void Gui::init(GLFWwindow *window) {
   ImGui_ImplVulkan_CreateFontsTexture(cmd_buf->getHandle());
   cmd_buf->end();
   auto &sync = ctx.render_output_syncs[0];
+  sync.render_fence->reset(); // signaled -> unsignaled
   queue->submit(cmd_buf, sync.render_fence->getHandle());
-  sync.render_fence->wait();  // signaled -> unsignaled
-  sync.render_fence->reset(); // unsignaled -> signaled
+  sync.render_fence->wait();  // unsignaled -> signaled
   ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
@@ -110,7 +110,7 @@ Gui::~Gui() {
   ImGui::DestroyContext();
 }
 
-void Gui::update(const float delta_time, uint32_t frame_index,
+void Gui::update(const float time_elapse, uint32_t frame_index,
                  uint32_t rt_index) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();
@@ -167,5 +167,26 @@ void Gui::update(const float delta_time, uint32_t frame_index,
   cmd_buf->end();
 
   // submit
+  auto &ctx = getDefaultAppContext();
+  VkPipelineStageFlags wait_stage{
+      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+  auto &sync = ctx.render_output_syncs[frame_index];
+  VkSemaphore render_semaphore =
+      sync.render_semaphore->getHandle();
+  VkSemaphore gui_semaphore =
+      sync.gui_semaphore->getHandle();
+
+  auto cmd_buf_handle = cmd_buf->getHandle();
+  VkSubmitInfo submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  submit_info.commandBufferCount = 1;
+  submit_info.pCommandBuffers = &cmd_buf_handle;
+  submit_info.waitSemaphoreCount = 1;
+  submit_info.pWaitSemaphores = &render_semaphore;
+  submit_info.pWaitDstStageMask = &wait_stage;
+  submit_info.signalSemaphoreCount = 1;
+  submit_info.pSignalSemaphores = &gui_semaphore;
+  auto cmd_queue = ctx.driver->getGraphicsQueue();
+  cmd_queue->submit({submit_info},
+      sync.render_fence->getHandle());  
 }
 } // namespace vk_engine

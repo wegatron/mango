@@ -53,7 +53,7 @@ void Render::render(Scene *scene) {
         // update materials
         mat->updateParams();
         rpass_.draw(mat, tr->gtransform, mesh, cmd_buf_, width, height);
-      });
+      });  
   cmd_buf_->endRenderPass();
 }
 
@@ -62,7 +62,7 @@ void Render::endFrame() {
   // present
   ImageMemoryBarrier barrier{
       .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .new_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
       .dst_access_mask = 0,
       .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
@@ -75,7 +75,6 @@ void Render::endFrame() {
   cmd_buf_->end();
   auto cmd_queue = getDefaultAppContext().driver->getGraphicsQueue();
   auto &render_output_syncs = getDefaultAppContext().render_output_syncs;
-
   auto cmd_buf_handle = cmd_buf_->getHandle();
   auto present_semaphore =
       render_output_syncs[cur_frame_index_].present_semaphore->getHandle();
