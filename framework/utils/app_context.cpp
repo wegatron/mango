@@ -17,8 +17,7 @@ void destroyDefaultAppContext() { g_app_context.destroy(); }
 
 void updateRtsInContext(const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   auto &frames_data = g_app_context.frames_data;
-  frames_data.resize(rts.size());
-  g_app_context.render_output_syncs.resize(rts.size());
+  assert(rts.size() == frames_data.size());
   for (auto i = 0; i < rts.size(); ++i) {
     frames_data[i].render_tgt = rts[i];
   }

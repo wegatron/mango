@@ -66,7 +66,7 @@ void Render::render(Scene *scene, Gui * gui)
 
   // image memory barrier
   ImageMemoryBarrier barrier{
-      .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      .old_layout = VK_IMAGE_LAYOUT_UNDEFINED,
       .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
       .dst_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
@@ -85,7 +85,7 @@ void Render::endFrame() {
   // present
   ImageMemoryBarrier barrier{
       .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      .new_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
       .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
       .dst_access_mask = 0,
       .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,

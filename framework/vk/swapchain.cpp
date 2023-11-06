@@ -8,7 +8,6 @@ Swapchain::Swapchain(const std::shared_ptr<VkDriver> &driver,
                      const SwapchainProperties &properties)
     : driver_(driver), surface_(surface) {
   initSwapchain(properties);
-  initImages();
 }
 
 void Swapchain::initSwapchain(const SwapchainProperties &properties) {
@@ -53,6 +52,7 @@ void Swapchain::initSwapchain(const SwapchainProperties &properties) {
   // https://stackoverflow.com/questions/55131406/why-would-vkcreateswapchainkhr-result-in-an-access-violation-at-0
   VK_THROW_IF_ERROR(vkCreateSwapchainKHR(driver_->getDevice(), &swapchain_info,
                                          nullptr, &swapchain_), "vulkan failed to create swapchain");
+  initImages();
 }
 
 void Swapchain::initImages() {
