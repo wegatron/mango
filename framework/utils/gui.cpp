@@ -1,24 +1,23 @@
 #include <GLFW/glfw3.h>
 #include <framework/utils/app_context.h>
-#include <framework/utils/gui.h>
-#include <framework/vk/queue.h>
-#include <framework/vk/render_pass.h>
-#include <imgui/backends/imgui_impl_glfw.h>
-#include <imgui/backends/imgui_impl_vulkan.h>
 #include <framework/utils/error.h>
-#include <framework/vk/resource_cache.h>
+#include <framework/utils/gui.h>
 #include <framework/vk/commands.h>
 #include <framework/vk/descriptor_set.h>
-#include <framework/vk/syncs.h>
 #include <framework/vk/frame_buffer.h>
+#include <framework/vk/queue.h>
+#include <framework/vk/render_pass.h>
+#include <framework/vk/resource_cache.h>
+#include <framework/vk/syncs.h>
+#include <imgui/backends/imgui_impl_glfw.h>
+#include <imgui/backends/imgui_impl_vulkan.h>
 
-static void check_vk_result(VkResult err)
-{
-    if (err == 0)
-        return;
-    LOGE("Detected Vulkan error: {}", vkb::to_string(err));
-    if (err < 0)
-        abort();
+static void check_vk_result(VkResult err) {
+  if (err == 0)
+    return;
+  LOGE("Detected Vulkan error: {}", vkb::to_string(err));
+  if (err < 0)
+    abort();
 }
 
 namespace vk_engine {
@@ -37,7 +36,7 @@ void Gui::init(GLFWwindow *window) {
 
   ImGui_ImplGlfw_InitForVulkan(window,
                                true); // init viewport and key/mouse events
-  auto &ctx = getDefaultAppContext();                            
+  auto &ctx = getDefaultAppContext();
   auto &driver = ctx.driver;
   auto &frames_data = ctx.frames_data;
   ImGui_ImplVulkan_InitInfo init_info = {};
@@ -56,25 +55,27 @@ void Gui::init(GLFWwindow *window) {
 
   initRenderStuffs();
   auto instance_ptr = getDefaultAppContext().driver->getInstancePtr();
-  
+
   // refer to https://zhuanlan.zhihu.com/p/634912614
-  ImGui_ImplVulkan_LoadFunctions([](const char *function_name, void *vulkan_instance) {
-    auto instance_ptr = getDefaultAppContext().driver->getInstancePtr();
-    return vkGetInstanceProcAddr(*instance_ptr, function_name);
-  }, reinterpret_cast<void*>(instance_ptr));
+  ImGui_ImplVulkan_LoadFunctions(
+      [](const char *function_name, void *vulkan_instance) {
+        auto instance_ptr = getDefaultAppContext().driver->getInstancePtr();
+        return vkGetInstanceProcAddr(*instance_ptr, function_name);
+      },
+      reinterpret_cast<void *>(instance_ptr));
 
   ImGui_ImplVulkan_Init(
       &init_info,
       render_pass_->getHandle()); // init create resources for render imgui
   auto cmd_buf = frames_data[0].command_pool->requestCommandBuffer(
       VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-  cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);  
+  cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
   ImGui_ImplVulkan_CreateFontsTexture(cmd_buf->getHandle());
   cmd_buf->end();
   auto &sync = ctx.render_output_syncs[0];
   sync.render_fence->reset(); // signaled -> unsignaled
   queue->submit(cmd_buf, sync.render_fence->getHandle());
-  sync.render_fence->wait();  // unsignaled -> signaled
+  sync.render_fence->wait(); // unsignaled -> signaled
   ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
@@ -110,16 +111,19 @@ Gui::~Gui() {
   ImGui::DestroyContext();
 }
 
-void Gui::update(const float time_elapse, uint32_t frame_index,
+void Gui::update(const std::shared_ptr<CommandBuffer> &cmd_buf,
+                 const float time_elapse, uint32_t frame_index,
                  uint32_t rt_index) {
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
   ImGui::ShowDemoWindow();
-  //ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and
-                                 // append into it.
-  //ImGui::Text("This is some useful text."); // Display some text (you can use a
-                                            // format strings too)
+  // ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!"
+  // and
+  //  append into it.
+  // ImGui::Text("This is some useful text."); // Display some text (you can use
+  // a
+  //  format strings too)
   // ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools
   // storing our window open/close state ImGui::Checkbox("Another Window",
   // &show_another_window);
@@ -136,14 +140,9 @@ void Gui::update(const float time_elapse, uint32_t frame_index,
 
   // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
   // io.Framerate, io.Framerate);
-  //ImGui::End();
+  // ImGui::End();
   // (Your code clears your framebuffer, renders your other stuff etc.)
   // render imgui
-  auto &cmd_pool =
-      getDefaultAppContext().frames_data[frame_index].command_pool;
-  auto cmd_buf =
-      cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-  cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
   cmd_buf->beginRenderPass(render_pass_, frame_buffers_[rt_index]);
 
   ImGui::Render(); // draw data
@@ -151,43 +150,5 @@ void Gui::update(const float time_elapse, uint32_t frame_index,
                                   cmd_buf->getHandle()); // draw cmd
   // (Your code calls vkCmdEndRenderPass, vkQueueSubmit, vkQueuePresentKHR etc.)
   cmd_buf->endRenderPass();
-  // add a barrier to transition the swapchain image from color attachment to
-  // present
-  ImageMemoryBarrier barrier{
-      .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-      .new_layout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-      .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-      .dst_access_mask = 0,
-      .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-      .dst_stage_mask = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
-      .src_queue_family_index = VK_QUEUE_FAMILY_IGNORED,
-      .dst_queue_family_index = VK_QUEUE_FAMILY_IGNORED};
-  auto &frame_data = getDefaultAppContext().frames_data[rt_index];
-  cmd_buf->imageMemoryBarrier(barrier,
-                               frame_data.render_tgt->getImageViews()[0]);
-  cmd_buf->end();
-
-  // submit
-  auto &ctx = getDefaultAppContext();
-  VkPipelineStageFlags wait_stage{
-      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-  auto &sync = ctx.render_output_syncs[frame_index];
-  VkSemaphore render_semaphore =
-      sync.render_semaphore->getHandle();
-  VkSemaphore gui_semaphore =
-      sync.gui_semaphore->getHandle();
-
-  auto cmd_buf_handle = cmd_buf->getHandle();
-  VkSubmitInfo submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-  submit_info.commandBufferCount = 1;
-  submit_info.pCommandBuffers = &cmd_buf_handle;
-  submit_info.waitSemaphoreCount = 1;
-  submit_info.pWaitSemaphores = &render_semaphore;
-  submit_info.pWaitDstStageMask = &wait_stage;
-  submit_info.signalSemaphoreCount = 1;
-  submit_info.pSignalSemaphores = &gui_semaphore;
-  auto cmd_queue = ctx.driver->getGraphicsQueue();
-  cmd_queue->submit({submit_info},
-      sync.render_fence->getHandle());  
 }
 } // namespace vk_engine

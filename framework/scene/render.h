@@ -9,6 +9,7 @@ namespace vk_engine {
 class CommandBuffer;
 class Scene;
 class FrameBuffer;
+class Gui;
 class Render {
 public:
   Render(VkFormat color_format, VkFormat ds_format);
@@ -16,7 +17,7 @@ public:
   void beginFrame(const float time_elapse, const uint32_t frame_index,
                   const uint32_t rt_index);
 
-  void render(Scene *scene);
+  void render(Scene *scene, Gui *gui);
 
   void endFrame();
 

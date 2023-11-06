@@ -37,8 +37,7 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
   getDefaultAppContext().stage_pool->gc();
   getDefaultAppContext().gpu_asset_manager->gc();
   render_->beginFrame(seconds, frame_index, rt_index);
-  render_->render(scene_.get());
-  gui_->update(seconds, frame_index, rt_index);
+  render_->render(scene_.get(), gui_.get());
   render_->endFrame();
 }
 } // namespace vk_engine

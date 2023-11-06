@@ -59,7 +59,6 @@ namespace vk_engine
     struct RenderOutputSync {
     std::shared_ptr<Fence> render_fence;
     std::shared_ptr<Semaphore> render_semaphore;
-    std::shared_ptr<Semaphore> gui_semaphore;
     std::shared_ptr<Semaphore> present_semaphore;
     };    
 }

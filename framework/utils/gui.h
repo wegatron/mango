@@ -1,15 +1,15 @@
 #pragma once
 
+#include <imgui/imgui.h>
 #include <memory>
 #include <vector>
-#include <imgui/imgui.h>
-
 
 struct GLFWwindow;
 namespace vk_engine {
 
 class RenderPass;
 class FrameBuffer;
+class CommandBuffer;
 
 /**
  * @brief Responsible for drawing new elements into the gui
@@ -120,7 +120,6 @@ private:
  */
 class Gui final {
 public:
-  
   Gui() = default;
 
   void init(GLFWwindow *window);
@@ -137,13 +136,12 @@ public:
    */
   void resize(const uint32_t width, const uint32_t height) const;
 
-  void update(const float time_elapse, uint32_t frame_index,
-                 uint32_t rt_index);
+  void update(const std::shared_ptr<CommandBuffer> &cmd_buf,
+              const float time_elapse, uint32_t frame_index, uint32_t rt_index);
 
   //   bool input_event(const InputEvent &input_event);
-  
+
 private:
-  
   void initRenderStuffs();
 
   std::shared_ptr<RenderPass> render_pass_;

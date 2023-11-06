@@ -6,6 +6,8 @@
 #include <framework/vk/commands.h>
 #include <framework/vk/frame_buffer.h>
 #include <framework/vk/queue.h>
+#include<framework/utils/gui.h>
+
 namespace vk_engine {
 Render::Render(VkFormat color_format, VkFormat ds_format)
     : rpass_(color_format, ds_format) {
@@ -32,11 +34,11 @@ void Render::beginFrame(const float time_elapse, const uint32_t frame_index,
       getDefaultAppContext().frames_data[cur_frame_index_].command_pool;
   cmd_pool->reset();
   cmd_buf_ = cmd_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-  cmd_buf_->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-  cmd_buf_->beginRenderPass(rpass_.getRenderPass(), frame_buffers_[rt_index]);
+  cmd_buf_->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);  
 }
 
-void Render::render(Scene *scene) {
+void Render::render(Scene *scene, Gui * gui)
+{
   assert(scene != nullptr);
   scene->update(cur_time_, cmd_buf_);
 
@@ -46,6 +48,7 @@ void Render::render(Scene *scene) {
   rpass_.gc();
   auto width = frame_buffers_[cur_rt_index_]->getWidth();
   auto height = frame_buffers_[cur_rt_index_]->getHeight();
+  cmd_buf_->beginRenderPass(rpass_.getRenderPass(), frame_buffers_[cur_rt_index_]);
   view.each(
       [this, width, height](const std::shared_ptr<TransformRelationship> &tr,
                             const std::shared_ptr<Material> &mat,
@@ -55,6 +58,21 @@ void Render::render(Scene *scene) {
         rpass_.draw(mat, tr->gtransform, mesh, cmd_buf_, width, height);
       });  
   cmd_buf_->endRenderPass();
+
+  // image memory barrier
+  ImageMemoryBarrier barrier{
+      .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+      .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      .dst_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+      .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      .dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+      .src_queue_family_index = VK_QUEUE_FAMILY_IGNORED,
+      .dst_queue_family_index = VK_QUEUE_FAMILY_IGNORED};
+  cmd_buf_->imageMemoryBarrier(barrier,
+                               frame_buffers_[cur_rt_index_]->getRenderTarget()->getImageViews()[0]);
+  // render gui
+  gui->update(cmd_buf_, cur_time_, cur_frame_index_, cur_rt_index_);
 }
 
 void Render::endFrame() {
@@ -74,10 +92,11 @@ void Render::endFrame() {
                                frame_data.render_tgt->getImageViews()[0]);
   cmd_buf_->end();
   auto cmd_queue = getDefaultAppContext().driver->getGraphicsQueue();
-  auto &render_output_syncs = getDefaultAppContext().render_output_syncs;
+  auto &sync = getDefaultAppContext().render_output_syncs[cur_frame_index_];
   auto cmd_buf_handle = cmd_buf_->getHandle();
-  auto present_semaphore =
-      render_output_syncs[cur_frame_index_].present_semaphore->getHandle();
+  auto present_semaphore = sync.present_semaphore->getHandle();
+  auto render_semaphore = sync.render_semaphore->getHandle();
+  auto render_fence = sync.render_fence->getHandle();
   VkPipelineStageFlags wait_stage{
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
   VkSubmitInfo submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
@@ -86,8 +105,8 @@ void Render::endFrame() {
   submit_info.waitSemaphoreCount = 1;
   submit_info.pWaitSemaphores = &present_semaphore;
   submit_info.pWaitDstStageMask = &wait_stage;
-  submit_info.signalSemaphoreCount = 0;
-  submit_info.pSignalSemaphores = nullptr;
-  cmd_queue->submit({submit_info}, nullptr);
+  submit_info.signalSemaphoreCount = 1;
+  submit_info.pSignalSemaphores = &render_semaphore;
+  cmd_queue->submit({submit_info}, render_fence);
 }
 } // namespace vk_engine

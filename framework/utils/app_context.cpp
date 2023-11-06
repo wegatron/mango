@@ -57,7 +57,6 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
     auto &sync = g_app_context.render_output_syncs[i];
     sync.render_fence = std::make_shared<Fence>(driver, true);
     sync.render_semaphore = std::make_shared<Semaphore>(driver);
-    sync.gui_semaphore = std::make_shared<Semaphore>(driver);
     sync.present_semaphore = std::make_shared<Semaphore>(driver);
   }
   return true;
