@@ -16,6 +16,7 @@ set(IMGUI_SRC
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/imgui_draw.cpp
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/imgui_widgets.cpp
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/imgui_tables.cpp
+    ${CMAKE_SOURCE_DIR}/thirdparty/imgui/imgui_demo.cpp
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_glfw.cpp
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_vulkan.cpp
 )

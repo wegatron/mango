@@ -80,17 +80,14 @@ void Render::endFrame() {
       render_output_syncs[cur_frame_index_].present_semaphore->getHandle();
   VkPipelineStageFlags wait_stage{
       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-  VkSemaphore render_semaphore =
-      render_output_syncs[cur_frame_index_].render_semaphore->getHandle();
   VkSubmitInfo submit_info{VK_STRUCTURE_TYPE_SUBMIT_INFO};
   submit_info.commandBufferCount = 1;
   submit_info.pCommandBuffers = &cmd_buf_handle;
   submit_info.waitSemaphoreCount = 1;
   submit_info.pWaitSemaphores = &present_semaphore;
   submit_info.pWaitDstStageMask = &wait_stage;
-  submit_info.signalSemaphoreCount = 1;
-  submit_info.pSignalSemaphores = &render_semaphore;
-  cmd_queue->submit({submit_info},
-      render_output_syncs[cur_frame_index_].render_fence->getHandle());
+  submit_info.signalSemaphoreCount = 0;
+  submit_info.pSignalSemaphores = nullptr;
+  cmd_queue->submit({submit_info}, nullptr);
 }
 } // namespace vk_engine

@@ -115,9 +115,10 @@ void Gui::update(const float time_elapse, uint32_t frame_index,
   ImGui_ImplVulkan_NewFrame();
   ImGui_ImplGlfw_NewFrame();
   ImGui::NewFrame();
-  ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and
+  ImGui::ShowDemoWindow();
+  //ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!" and
                                  // append into it.
-  ImGui::Text("This is some useful text."); // Display some text (you can use a
+  //ImGui::Text("This is some useful text."); // Display some text (you can use a
                                             // format strings too)
   // ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools
   // storing our window open/close state ImGui::Checkbox("Another Window",
@@ -135,7 +136,7 @@ void Gui::update(const float time_elapse, uint32_t frame_index,
 
   // ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f /
   // io.Framerate, io.Framerate);
-  ImGui::End();
+  //ImGui::End();
   // (Your code clears your framebuffer, renders your other stuff etc.)
   // render imgui
   auto &cmd_pool =
