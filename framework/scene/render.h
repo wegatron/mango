@@ -19,6 +19,8 @@ public:
 
   void render(Scene *scene, Gui *gui);
 
+  void initRts();
+
   void endFrame();
 
 private:

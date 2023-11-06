@@ -63,6 +63,8 @@ namespace vk_engine
         }
     };
 
+    void updateRtsInContext(const std::vector<std::shared_ptr<RenderTarget>> &rts);
+    
     bool initAppContext(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts);
     
     const AppContext &getDefaultAppContext();

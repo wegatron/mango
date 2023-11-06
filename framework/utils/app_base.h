@@ -30,6 +30,8 @@ public:
   virtual void init(GLFWwindow * window, const std::shared_ptr<VkDriver> &driver,
                     const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
+  virtual void updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
+
 protected:
   std::string name_;
 };

@@ -22,10 +22,14 @@ public:
   WindowApp &operator=(const WindowApp &) = delete;
 
   bool init(VkFormat color_format, VkFormat ds_format);
+
   void setApp(std::shared_ptr<AppBase> &&app);
+  
   void run();
 
 private:
+
+  void resize(uint32_t width, uint32_t height);
   
   void initSwapchain();
 

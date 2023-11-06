@@ -43,8 +43,9 @@ public:
 
   uint32_t acquireNextImage(VkSemaphore semaphore, VkFence fence);
 
-private:
   void initSwapchain(const SwapchainProperties &properties);
+  
+private:
 
   void initImages();
 

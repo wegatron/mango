@@ -26,6 +26,7 @@ public:
   void tick(const float seconds, const uint32_t rt_index,
             const uint32_t frame_index) override;
 
+  void updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 private:
   std::string scene_path_;
   std::unique_ptr<Render> render_;

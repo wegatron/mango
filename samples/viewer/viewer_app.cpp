@@ -29,6 +29,14 @@ void ViewerApp::init(GLFWwindow * window, const std::shared_ptr<VkDriver> &drive
   gui_->init(window);
 }
 
+void ViewerApp::updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts)
+{
+  // update rts in app context
+  updateRtsInContext(rts);
+  // update render
+  render_->initRts();
+}
+
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }
 
 void ViewerApp::tick(const float seconds, const uint32_t rt_index,

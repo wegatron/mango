@@ -13,9 +13,15 @@ static AppContext g_app_context;
 
 const AppContext &getDefaultAppContext() { return g_app_context; }
 
-void destroyDefaultAppContext()
-{
-    g_app_context.destroy();
+void destroyDefaultAppContext() { g_app_context.destroy(); }
+
+void updateRtsInContext(const std::vector<std::shared_ptr<RenderTarget>> &rts) {
+  auto &frames_data = g_app_context.frames_data;
+  frames_data.resize(rts.size());
+  g_app_context.render_output_syncs.resize(rts.size());
+  for (auto i = 0; i < rts.size(); ++i) {
+    frames_data[i].render_tgt = rts[i];
+  }
 }
 
 bool initAppContext(const std::shared_ptr<VkDriver> &driver,
@@ -33,10 +39,12 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
 
   // descriptor pool
   VkDescriptorPoolSize pool_size[] = {
-      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_GLOBAL_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT},
-      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_GLOBAL_DESC_SET * MAX_TEXTURE_NUM_COUNT},
-      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, MAX_GLOBAL_DESC_SET * CONFIG_STORAGE_BINDING_COUNT}
-       };
+      {VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+       MAX_GLOBAL_DESC_SET * CONFIG_UNIFORM_BINDING_COUNT},
+      {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+       MAX_GLOBAL_DESC_SET * MAX_TEXTURE_NUM_COUNT},
+      {VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+       MAX_GLOBAL_DESC_SET * CONFIG_STORAGE_BINDING_COUNT}};
   g_app_context.descriptor_pool = std::make_unique<DescriptorPool>(
       driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_size,
       sizeof(pool_size) / sizeof(pool_size[0]), MAX_GLOBAL_DESC_SET);

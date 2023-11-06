@@ -11,6 +11,11 @@
 namespace vk_engine {
 Render::Render(VkFormat color_format, VkFormat ds_format)
     : rpass_(color_format, ds_format) {
+  initRts();
+}
+
+void Render::initRts()
+{
   auto &frames_data = getDefaultAppContext().frames_data;
   frame_buffers_.resize(frames_data.size());
   auto &driver = getDefaultAppContext().driver;

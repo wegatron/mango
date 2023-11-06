@@ -83,6 +83,13 @@ void WindowApp::setApp(std::shared_ptr<AppBase> &&app) {
 void WindowApp::run() {
   while (!glfwWindowShouldClose(window_)) {
     glfwPollEvents();
+
+    // for resize
+    int width = width_;
+    int height = height_;
+    glfwGetWindowSize(window_, &width, &height);
+    resize(width, height); // TODO resize swapchain and depth images
+
     auto &render_output_sync = getDefaultAppContext().render_output_syncs[current_frame_index_];
     uint32_t rt_index = swapchain_->acquireNextImage(render_output_sync.present_semaphore->getHandle(), VK_NULL_HANDLE);
     // current_frame_index_ maybe different with rt_index, depends on the swapchain present mode
@@ -104,24 +111,38 @@ void WindowApp::run() {
   }
 }
 
+void WindowApp::resize(uint32_t width, uint32_t height)
+{
+  if(width_ == width && height_ == height)
+    return;
+  
+  vkDeviceWaitIdle(driver_->getDevice());
+  width_ = width;
+  height_ = height;
+  initSwapchain();
+  initRenderTargets();
+
+  app_->updateRts(render_targets_);
+}
+
 void WindowApp::initSwapchain() {
-  int width = 0;
-  int height = 0;
-  // real resolution compatiable with highdpi
-  glfwGetFramebufferSize(window_, &width, &height);
   SwapchainProperties properties{
-    .extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)},
+    .extent = {width_, height_},
     .surface_format = {.format = color_format_},
   };
-  swapchain_ =
-      std::make_shared<Swapchain>(driver_, driver_->getSurface(), properties);  
+  if(swapchain_ == nullptr)
+    swapchain_ =
+        std::make_shared<Swapchain>(driver_, driver_->getSurface(), properties);  
+  else {    
+    swapchain_->initSwapchain(properties);
+  }
 }
 
 void WindowApp::initRenderTargets()
 {
   // depth stencil images  
   const auto img_cnt = swapchain_->getImageCount();  
-  VkExtent3D extent{swapchain_->getExtent().width, swapchain_->getExtent().height, 1};
+  VkExtent3D extent{width_, height_, 1};
   render_targets_.resize(img_cnt);
   depth_images_.resize(img_cnt);
   
