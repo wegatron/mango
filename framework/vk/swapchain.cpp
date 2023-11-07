@@ -33,6 +33,7 @@ void Swapchain::initSwapchain(const SwapchainProperties &properties) {
   swapchain_info.imageExtent = extent_;
   swapchain_info.minImageCount = image_count_;
 
+  auto old_swapchain = swapchain_;
   // imageFormat specifies what the image format is (same as it does in vkCreateImage()).
   // imageColorSpace is how the swapchain\display interprets the values when the image is presented.
   swapchain_info.imageFormat = properties.surface_format.format;
@@ -44,14 +45,21 @@ void Swapchain::initSwapchain(const SwapchainProperties &properties) {
   swapchain_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
   swapchain_info.clipped = VK_TRUE;
   swapchain_info.presentMode = VK_PRESENT_MODE_FIFO_KHR;
-  swapchain_info.oldSwapchain = swapchain_;
-
+  swapchain_info.oldSwapchain = old_swapchain;
+  
   // vkCreateSwapchainKHR maybe null if not enable VK_KHR_swapchain
   // make sure eanbleExtensionCount is correct when create logical device
   // refer to:
   // https://stackoverflow.com/questions/55131406/why-would-vkcreateswapchainkhr-result-in-an-access-violation-at-0
   VK_THROW_IF_ERROR(vkCreateSwapchainKHR(driver_->getDevice(), &swapchain_info,
                                          nullptr, &swapchain_), "vulkan failed to create swapchain");
+  
+
+  if(old_swapchain != VK_NULL_HANDLE) {
+    image_views_.clear();
+    vkDestroySwapchainKHR(driver_->getDevice(), old_swapchain, nullptr);
+  }
+
   initImages();
 }
 
@@ -73,11 +81,12 @@ void Swapchain::initImages() {
 
 Swapchain::~Swapchain()
 {
+  #if !NDEBUG
   for (auto &image_view : image_views_) {
     assert(image_view.use_count() == 1);
-    image_view.reset();
-    //vkDestroyImageView(driver_->getDevice(), image_view, nullptr);
   }
+  #endif
+  image_views_.clear();
   vkDestroySwapchainKHR(driver_->getDevice(), swapchain_, nullptr);  
 }
 

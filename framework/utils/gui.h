@@ -139,6 +139,8 @@ public:
   void update(const std::shared_ptr<CommandBuffer> &cmd_buf,
               const float time_elapse, uint32_t frame_index, uint32_t rt_index);
 
+  void initRts();
+  
   //   bool input_event(const InputEvent &input_event);
 
 private:

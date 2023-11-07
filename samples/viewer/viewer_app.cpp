@@ -35,6 +35,7 @@ void ViewerApp::updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts)
   updateRtsInContext(rts);
   // update render
   render_->initRts();
+  gui_->initRts();
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }

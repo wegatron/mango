@@ -79,6 +79,18 @@ void Gui::init(GLFWwindow *window) {
   ImGui_ImplVulkan_DestroyFontUploadObjects();
 }
 
+void Gui::initRts()
+{
+  auto &driver = getDefaultAppContext().driver;
+  auto &frames_data = getDefaultAppContext().frames_data;
+  // frame buffer
+  frame_buffers_.resize(frames_data.size());
+  for (auto i = 0; i < frames_data.size(); ++i) {
+    frame_buffers_[i] = std::move(std::make_unique<FrameBuffer>(
+        driver, render_pass_, frames_data[i].render_tgt, 1));
+  }  
+}
+
 void Gui::initRenderStuffs() {
   auto &driver = getDefaultAppContext().driver;
   auto &frames_data = getDefaultAppContext().frames_data;

@@ -66,7 +66,7 @@ void Render::render(Scene *scene, Gui * gui)
 
   // image memory barrier
   ImageMemoryBarrier barrier{
-      .old_layout = VK_IMAGE_LAYOUT_UNDEFINED,
+      .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
       .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
       .dst_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
