@@ -1,5 +1,5 @@
-file(GLOB headers scene/*.h  scene/component/*.h utils/*.h vk/*.h)
-file(GLOB srcs scene/*.cpp scene/component/*.cpp utils/*.cpp vk/*.cpp)
+file(GLOB headers scene/*.h  scene/component/*.h utils/*.h vk/*.h platform/*.h)
+file(GLOB srcs scene/*.cpp scene/component/*.cpp utils/*.cpp vk/*.cpp platform/*.cpp)
 
 set(IMGUI_HEADERS
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/imconfig.h

@@ -1,14 +1,18 @@
 #include <iostream>
 
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
-#include <entt/entt.hpp>
-#include <framework/scene/component/material.h>
-#include <framework/vk/shader_module.h>
+// #include <assimp/Importer.hpp>
+// #include <assimp/postprocess.h>
+// #include <assimp/scene.h>
+// #include <entt/entt.hpp>
+// #include <framework/scene/component/material.h>
+// #include <framework/vk/shader_module.h>
+#include <Eigen/Dense>
 
 int main(int argc, char const *argv[])
 {
+    Eigen::Matrix4f ids[2] = {Eigen::Matrix4f::Identity(), Eigen::Matrix4f::Identity() };
+
+    std::cout << sizeof(ids) << std::endl;
     /* code */
     // Assimp::Importer importer;
     // const aiScene * scene = importer.ReadFile("data/buster_drone/scene.gltf", aiProcessPreset_TargetRealtime_Quality);
