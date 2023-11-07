@@ -71,15 +71,17 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
 
 GlobalParamSet::GlobalParamSet() {
   auto driver = getDefaultAppContext().driver;
-  constexpr uint32_t ubo_size = 64;
   ubo_ = std::move(std::make_unique<Buffer>(
-      driver, 0, ubo_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+      driver, 0, GLOBAL_UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
       VMA_ALLOCATION_CREATE_MAPPED_BIT |
           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
       VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
 
-  Eigen::Matrix4f identity = Eigen::Matrix4f::Identity();
-  ubo_->update(&identity, sizeof(identity));
+  Eigen::Matrix4f identitys[2] = {
+    Eigen::Matrix4f::Identity(),
+    Eigen::Matrix4f::Identity()
+  };
+  ubo_->update(&identitys, GLOBAL_UBO_CAMERA_SIZE);
 
   ShaderResource sr[] = {{
       .stages = VK_SHADER_STAGE_VERTEX_BIT,
@@ -88,7 +90,7 @@ GlobalParamSet::GlobalParamSet() {
       .set = GLOBAL_SET_INDEX,
       .binding = 0,
       .array_size = 1,
-      .size = ubo_size,
+      .size = GLOBAL_UBO_SIZE,
   }};
   DescriptorSetLayout desc_layout(getDefaultAppContext().driver,
                                   MATERIAL_SET_INDEX, sr, 1);
@@ -96,7 +98,7 @@ GlobalParamSet::GlobalParamSet() {
   desc_set_ = desc_pool->requestDescriptorSet(desc_layout);
 
   VkDescriptorBufferInfo desc_buffer_info{
-      .buffer = ubo_->getHandle(), .offset = 0, .range = ubo_size};
+      .buffer = ubo_->getHandle(), .offset = 0, .range = GLOBAL_UBO_SIZE};
   driver->update(
       {VkWriteDescriptorSet{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                             .dstSet = desc_set_->getHandle(),

@@ -7,7 +7,9 @@ layout(location=2) in vec2 uv;
 
 layout(set=0, binding = 0) uniform GlobalUniform
 {
-    mat4 camera_proj;
+    // camera
+    mat4 view;
+    mat4 proj;
 } global_uniform;
 
 layout(set=2, binding = 0) uniform MeshUniform
@@ -17,5 +19,5 @@ layout(set=2, binding = 0) uniform MeshUniform
 
 void main(void)
 {
-    gl_Position = global_uniform.camera_proj * mesh_uniform.model * vpos;
+    gl_Position = global_uniform.proj * global_uniform.view * mesh_uniform.model * vpos;
 }

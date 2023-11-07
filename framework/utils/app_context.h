@@ -24,15 +24,19 @@ namespace vk_engine
         std::shared_ptr<RenderTarget> render_tgt;
     };
 
-    constexpr uint32_t GLOBAL_PARAM_UBO_SIZE = sizeof(float) * 16;
+    constexpr uint32_t GLOBAL_UBO_CAMERA_SIZE = sizeof(float) * 32;
+    constexpr uint32_t GLOBAL_UBO_SIZE = GLOBAL_UBO_CAMERA_SIZE;
 
     class GlobalParamSet final
     {
     public:
         GlobalParamSet();
         ~GlobalParamSet() = default;       
-        void updateParam(const Eigen::Matrix4f &proj) {
-            ubo_->update(&proj, sizeof(proj));
+        void updateCameraParam(const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
+          float data[GLOBAL_UBO_CAMERA_SIZE];
+          memcpy(data, view.data(), sizeof(float) * 16);
+          memcpy(data + 16, proj.data(), sizeof(float) * 16);
+          ubo_->update(data, GLOBAL_UBO_CAMERA_SIZE);
         }
         std::shared_ptr<DescriptorSet> getDescSet() const { return desc_set_; }
     private:

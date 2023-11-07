@@ -45,6 +45,8 @@ void Render::beginFrame(const float time_elapse, const uint32_t frame_index,
 void Render::render(Scene *scene, Gui * gui)
 {
   assert(scene != nullptr);
+  // todo update camera
+  
   scene->update(cur_time_, cmd_buf_);
 
   auto &rm = scene->renderableManager();
