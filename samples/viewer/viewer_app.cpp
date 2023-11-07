@@ -49,4 +49,9 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
   render_->render(scene_.get(), gui_.get());
   render_->endFrame();
 }
+
+void ViewerApp::inputEvent(const InputEvent &event)
+{
+  // TODO
+}
 } // namespace vk_engine

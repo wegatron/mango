@@ -30,6 +30,8 @@ public:
   void
   updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
+  void inputEvent(const InputEvent &event) override;
+
 private:
   std::string scene_path_;
   std::unique_ptr<Render> render_;

@@ -72,6 +72,12 @@ bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
 
   assert(app_ != nullptr);
   app_->init(window_, driver_, render_targets_);
+  // // set callback
+  // glfwSetWindowUserPointer(window_, this);
+	// glfwSetWindowFocusCallback(handle, window_focus_callback);
+	// glfwSetKeyCallback(handle, key_callback);
+	// glfwSetCursorPosCallback(handle, cursor_position_callback);
+	// glfwSetMouseButtonCallback(handle, mouse_button_callback);  
   return true;
 }
 

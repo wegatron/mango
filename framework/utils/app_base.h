@@ -7,6 +7,7 @@
 #include <framework/utils/app_context.h>
 #include <framework/vk/frame_buffer.h>
 #include <framework/vk/resource_cache.h>
+#include <framework/platform/input_events.h>
 #include <framework/vk/syncs.h>
 
 namespace vk_engine {
@@ -31,6 +32,8 @@ public:
                     const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
   virtual void updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
+
+  virtual void inputEvent(const InputEvent &event) = 0;
 
 protected:
   std::string name_;
