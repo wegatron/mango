@@ -19,7 +19,7 @@ public:
 
   ~ViewerApp() override = default;
 
-  void init(GLFWwindow *window, const std::shared_ptr<VkDriver> &driver,
+  void init(Window *window, const std::shared_ptr<VkDriver> &driver,
             const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
   void setScene(const std::string &path);

@@ -1,30 +1,27 @@
 #include <framework/platform/glfw_window.h>
 #include <framework/utils/app_base.h>
+#include <framework/utils/error.h>
+#include <imgui/backends/imgui_impl_glfw.h>
+//#include <imgui/backends/imgui_impl_vulkan.h>
 
 namespace vk_engine {
 
-MouseButton translateMouseButton(int button)
-{
-	if (button < GLFW_MOUSE_BUTTON_6)
-	{
-		return static_cast<MouseButton>(button);
-	}
+MouseButton translateMouseButton(int button) {
+  if (button < GLFW_MOUSE_BUTTON_6) {
+    return static_cast<MouseButton>(button);
+  }
 
-	return MouseButton::Unknown;
+  return MouseButton::Unknown;
 }
 
-MouseAction translateMouseAction(int action)
-{
-	if (action == GLFW_PRESS)
-	{
-		return MouseAction::Down;
-	}
-	else if (action == GLFW_RELEASE)
-	{
-		return MouseAction::Up;
-	}
+MouseAction translateMouseAction(int action) {
+  if (action == GLFW_PRESS) {
+    return MouseAction::Down;
+  } else if (action == GLFW_RELEASE) {
+    return MouseAction::Up;
+  }
 
-	return MouseAction::Unknown;
+  return MouseAction::Unknown;
 }
 
 void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
@@ -40,7 +37,7 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action,
                          int /*mods*/) {
   MouseAction mouse_action = translateMouseAction(action);
 
-  if (auto *app=
+  if (auto *app =
           reinterpret_cast<AppBase *>(glfwGetWindowUserPointer(window))) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
@@ -66,11 +63,28 @@ GlfwWindow::GlfwWindow(const std::string &window_title, const int width,
       glfwCreateWindow(width, height, window_title.c_str(), nullptr, nullptr);
 }
 
-VkSurfaceKHR GlfwWindow::create_surface(VkInstance instance,
-                                        VkPhysicalDevice physical_device) {
+bool GlfwWindow::shouldClose() { return glfwWindowShouldClose(window_); }
+
+VkSurfaceKHR GlfwWindow::createSurface(VkInstance instance) {
   VkSurfaceKHR surface;
-  glfwCreateWindowSurface(instance, window_, nullptr, &surface);
+  VK_THROW_IF_ERROR(
+      glfwCreateWindowSurface(instance, window_, nullptr, &surface),
+      "failed to create window surface");
   return surface;
+}
+
+void GlfwWindow::initImgui() {
+  ImGui_ImplGlfw_InitForVulkan(window_,
+                               true); // init viewport and key/mouse events
+}
+
+void GlfwWindow::shutdownImgui()
+{
+  ImGui_ImplGlfw_Shutdown();
+}
+void GlfwWindow::imguiNewFrame()
+{
+  ImGui_ImplGlfw_NewFrame();
 }
 
 void GlfwWindow::getExtent(uint32_t &width, uint32_t &height) const {
@@ -78,9 +92,14 @@ void GlfwWindow::getExtent(uint32_t &width, uint32_t &height) const {
                     reinterpret_cast<int *>(&height));
 }
 
-void GlfwWindow::init(AppBase * app) {
+void GlfwWindow::setupCallback(AppBase *app) {
   glfwSetWindowUserPointer(window_, app);
   glfwSetCursorPosCallback(window_, cursorPositionCallback);
   glfwSetMouseButtonCallback(window_, mouseButtonCallback);
+}
+
+GlfwWindow::~GlfwWindow() {
+  glfwDestroyWindow(window_);
+  glfwTerminate();
 }
 } // namespace vk_engine

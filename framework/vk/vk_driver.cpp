@@ -13,6 +13,7 @@
 #include <framework/vk/physical_device.h>
 #include <framework/vk/vk_driver.h>
 #include <framework/vk/queue.h>
+#include <framework/platform/window.h>
 
 namespace vk_engine {
 constexpr uint32_t vulkan_version = VK_API_VERSION_1_1;
@@ -111,14 +112,13 @@ void VkDriver::initDevice() {
 
 void VkDriver::init(const std::string &app_name,
                     const std::shared_ptr<VkConfig> &config,
-                    GLFWwindow *window) {
+                    Window *window) {
   config_ = config;
   initInstance();
 
   assert(window != nullptr);
-  VK_THROW_IF_ERROR(glfwCreateWindowSurface(instance_, window, nullptr,
-                                            &surface_),
-                    "failed to create window surface!");
+
+  surface_ = window->createSurface(instance_);
 
   initDevice();
 

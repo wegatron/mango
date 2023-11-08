@@ -6,6 +6,7 @@
 #include <framework/vk/queue.h>
 #include <framework/vk/syncs.h>
 #include <framework/utils/app_context.h>
+#include <framework/platform/glfw_window.h>
 
 namespace vk_engine {
 WindowApp::~WindowApp() {
@@ -20,28 +21,14 @@ WindowApp::~WindowApp() {
   depth_images_.clear();
   swapchain_.reset();
   driver_.reset();
-  
-  glfwDestroyWindow(window_);
-  glfwTerminate();
-
+  window_.reset();
   // destroy swapchain and depth images implicitly
 }
 
 bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
   color_format_ = color_format;
   ds_format_ = ds_format;
-#if defined(VK_USE_PLATFORM_XLIB_KHR)
-  glfwInitHint(GLFW_X11_XCB_VULKAN_SURFACE, false);
-#endif
-  if (GLFW_TRUE != glfwInit()) {
-    LOGE("Failed to init glfw");
-    return false;
-  }
-
-  glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-  glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-  window_ = glfwCreateWindow(width_, height_, window_title_.c_str(), nullptr,
-                             nullptr);
+  window_ = std::make_unique<GlfwWindow>(window_title_, width_, height_);
   driver_ = std::make_shared<VkDriver>();
   auto config = std::make_shared<Vk11Config>();
   config->setDeviceType(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
@@ -57,7 +44,7 @@ bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
 #else
     config->setFeatureEnabled(VkConfig::FeatureExtension::KHR_VALIDATION_LAYER,
                               VkConfig::EnableState::REQUIRED);
-    driver_->init(window_title_, config, window_);
+    driver_->init(window_title_, config, window_.get());
 #endif
   } catch (std::runtime_error &e) {
      const char * str = e.what();
@@ -71,13 +58,8 @@ bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
   initRenderTargets();
 
   assert(app_ != nullptr);
-  app_->init(window_, driver_, render_targets_);
-  // // set callback
-  // glfwSetWindowUserPointer(window_, this);
-	// glfwSetWindowFocusCallback(handle, window_focus_callback);
-	// glfwSetKeyCallback(handle, key_callback);
-	// glfwSetCursorPosCallback(handle, cursor_position_callback);
-	// glfwSetMouseButtonCallback(handle, mouse_button_callback);  
+  window_->setupCallback(app_.get());
+  app_->init(window_.get(), driver_, render_targets_);  
   return true;
 }
 
@@ -87,14 +69,11 @@ void WindowApp::setApp(std::shared_ptr<AppBase> &&app) {
 }
 
 void WindowApp::run() {
-  while (!glfwWindowShouldClose(window_)) {
-    glfwPollEvents();
-
-    // for resize
-    int width = width_;
-    int height = height_;
-    glfwGetWindowSize(window_, &width, &height);
-    resize(width, height); // TODO resize swapchain and depth images
+  while(!window_->shouldClose()) {
+    window_->processEvents();
+    uint32_t width, height;
+    window_->getExtent(width, height);
+    resize(width, height);
 
     auto &render_output_sync = getDefaultAppContext().render_output_syncs[current_frame_index_];
     uint32_t rt_index = swapchain_->acquireNextImage(render_output_sync.present_semaphore->getHandle(), VK_NULL_HANDLE);

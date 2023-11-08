@@ -10,6 +10,7 @@ namespace vk_engine {
 class RenderPass;
 class FrameBuffer;
 class CommandBuffer;
+class Window;
 
 /**
  * @brief Responsible for drawing new elements into the gui
@@ -122,7 +123,7 @@ class Gui final {
 public:
   Gui() = default;
 
-  void init(GLFWwindow *window);
+  void init(Window *window);
 
   /**
    * @brief Destroys the Gui
@@ -151,5 +152,7 @@ private:
   std::vector<std::unique_ptr<FrameBuffer>> frame_buffers_;
 
   Drawer drawer;
+
+  Window *window_;
 };
 } // namespace vk_engine

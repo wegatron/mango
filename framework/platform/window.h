@@ -22,19 +22,24 @@ public:
   /**
    * @brief Gets a handle from the platform's Vulkan surface
    * @param instance A Vulkan instance
-   * @param physical_device A Vulkan PhysicalDevice
    * @returns A VkSurfaceKHR handle, for use by the application
    */
-  virtual VkSurfaceKHR create_surface(VkInstance instance,
-                                      VkPhysicalDevice physical_device) = 0;
+  virtual VkSurfaceKHR createSurface(VkInstance instance) = 0;
+
+  virtual bool shouldClose() = 0;
 
   virtual void getExtent(uint32_t &width, uint32_t &height) const = 0;
 
   virtual void processEvents() = 0;
 
-  // start event process
+  virtual void initImgui() = 0;
+
+  virtual void shutdownImgui() = 0;
+
+  virtual void imguiNewFrame() = 0;
+
   // setup callback function
-  virtual void init(AppBase * app) = 0;
+  virtual void setupCallback(AppBase * app) = 0;
 
 protected:
   std::function<void (const InputEvent &, AppBase * app)> input_event_callback_;

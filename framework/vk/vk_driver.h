@@ -11,6 +11,7 @@
 namespace vk_engine {
 
 class CommandQueue;
+class Window;
 
 struct RequestedDeviceExtension {
   const char *name;
@@ -25,7 +26,7 @@ public:
   VkDriver(const VkDriver &) = delete;
   VkDriver &operator=(const VkDriver &) = delete;
   void init(const std::string &app_name, const std::shared_ptr<VkConfig> &config,
-            GLFWwindow *window);
+            Window *window);
 
   VkInstance getInstance() const noexcept { return instance_; }
 

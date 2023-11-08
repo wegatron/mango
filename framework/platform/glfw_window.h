@@ -8,9 +8,18 @@ class GlfwWindow final : public Window {
 public:
   GlfwWindow(const std::string &window_title, const int width,
              const int height);
+  
+  ~GlfwWindow() override;
 
-  VkSurfaceKHR create_surface(VkInstance instance,
-                                      VkPhysicalDevice physical_device) override;
+  VkSurfaceKHR createSurface(VkInstance instance) override;
+
+  bool shouldClose() override;
+
+  void initImgui() override;
+
+  void shutdownImgui() override;
+
+  void imguiNewFrame() override;  
 
   void getExtent(uint32_t &width, uint32_t &height) const override;
 
@@ -20,7 +29,7 @@ public:
   }
 
   // setup callback function
-  void init(AppBase * app) override;
+  void setupCallback(AppBase * app) override;
 private:  
   GLFWwindow *window_;
 };

@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 
 #include <framework/utils/app_base.h>
+#include <framework/platform/window.h>
 #include <framework/vk/vk_driver.h>
 #include <framework/vk/swapchain.h>
 #include <framework/vk/frame_buffer.h>
@@ -43,8 +44,8 @@ private:
   VkFormat ds_format_;  
   std::vector<std::shared_ptr<Image>> depth_images_;
 
-  std::shared_ptr<AppBase> app_;  
-  GLFWwindow *window_;
+  std::shared_ptr<AppBase> app_;
+  std::unique_ptr<Window> window_;
 
   uint32_t width_;
   uint32_t height_;

@@ -9,7 +9,7 @@
 #include <framework/vk/render_pass.h>
 #include <framework/vk/resource_cache.h>
 #include <framework/vk/syncs.h>
-#include <imgui/backends/imgui_impl_glfw.h>
+#include <framework/platform/window.h>
 #include <imgui/backends/imgui_impl_vulkan.h>
 
 static void check_vk_result(VkResult err) {
@@ -21,7 +21,7 @@ static void check_vk_result(VkResult err) {
 }
 
 namespace vk_engine {
-void Gui::init(GLFWwindow *window) {
+void Gui::init(Window *window) {
   // refer to: https://frguthmann.github.io/posts/vulkan_imgui/
   // Setup Dear ImGui context
   IMGUI_CHECKVERSION();
@@ -34,8 +34,9 @@ void Gui::init(GLFWwindow *window) {
   // Setup Dear ImGui style
   ImGui::StyleColorsDark();
 
-  ImGui_ImplGlfw_InitForVulkan(window,
-                               true); // init viewport and key/mouse events
+  window_ = window;
+  window_->initImgui();
+
   auto &ctx = getDefaultAppContext();
   auto &driver = ctx.driver;
   auto &frames_data = ctx.frames_data;
@@ -119,7 +120,7 @@ void Gui::initRenderStuffs() {
 
 Gui::~Gui() {
   ImGui_ImplVulkan_Shutdown();
-  ImGui_ImplGlfw_Shutdown();
+  window_->shutdownImgui();
   ImGui::DestroyContext();
 }
 
@@ -127,7 +128,7 @@ void Gui::update(const std::shared_ptr<CommandBuffer> &cmd_buf,
                  const float time_elapse, uint32_t frame_index,
                  uint32_t rt_index) {
   ImGui_ImplVulkan_NewFrame();
-  ImGui_ImplGlfw_NewFrame();
+  window_->imguiNewFrame();
   ImGui::NewFrame();
   ImGui::ShowDemoWindow();
   // ImGui::Begin("Hello, world!"); // Create a window called "Hello, world!"

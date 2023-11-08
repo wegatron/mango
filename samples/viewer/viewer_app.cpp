@@ -5,10 +5,11 @@
 #include <framework/scene/asset_manager.hpp>
 #include <framework/vk/queue.h>
 #include <framework/vk/frame_buffer.h>
+#include <framework/utils/logging.h>
 
 namespace vk_engine {
 
-void ViewerApp::init(GLFWwindow * window, const std::shared_ptr<VkDriver> &driver,
+void ViewerApp::init(Window * window, const std::shared_ptr<VkDriver> &driver,
                      const std::vector<std::shared_ptr<RenderTarget>> &rts) {
   initAppContext(driver, rts);
   auto &frames_data = getDefaultAppContext().frames_data;
@@ -52,6 +53,6 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
 
 void ViewerApp::inputEvent(const InputEvent &event)
 {
-  // TODO
+  LOGI("ViewerApp::inputEvent {}", static_cast<uint8_t>(event.get_source()));
 }
 } // namespace vk_engine
