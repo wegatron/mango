@@ -54,5 +54,7 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
 void ViewerApp::inputEvent(const InputEvent &event)
 {
   LOGI("ViewerApp::inputEvent {}", static_cast<uint8_t>(event.get_source()));
+  // for mouse event, we need to update camera
+  
 }
 } // namespace vk_engine

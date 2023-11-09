@@ -4,6 +4,7 @@
 #include <framework/scene/component/basic.h>
 #include <framework/scene/component/material.h>
 #include <framework/scene/component/mesh.h>
+#include <framework/scene/component/camera.h>
 
 namespace vk_engine {
 class Scene final {
@@ -23,6 +24,10 @@ public:
                          const std::shared_ptr<TransformRelationship> &tr,
                          const std::shared_ptr<Material> &material,
                          const std::shared_ptr<StaticMesh> &mesh);
+  
+  entt::entity
+  createCameraEntity(const std::string &name, const std::shared_ptr<TransformRelationship> &tr,
+                     const Camera &camera);
   
   void setRootTr(const std::shared_ptr<TransformRelationship> &root_tr) { root_tr_ = root_tr; }
 

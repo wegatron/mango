@@ -40,15 +40,15 @@ public:
         dirty_proj_ = true;
     }
 
-    void setFov(float fov) // height / focalLength
+    void setFovHorizontal(float fov) // width / focalLength
     {
-        fov_ = fov;
+        fov_horizontal_ = fov;
         dirty_proj_ = true;
     }
 
-    void setAspectRatio(float aspect_ratio) // height / width
+    void setAspect(float aspect) // width / height
     {
-        aspect_ratio_ = aspect_ratio;
+        aspect_ = aspect;
         dirty_proj_ = true;
     }
 
@@ -56,8 +56,8 @@ public:
     
     const Eigen::Matrix4f &getProjectionMatrix() { 
         if (!dirty_proj_) return proj_mat_;
-        proj_mat_ << 1.0f / (aspect_ratio_ * tan(fov_ / 2.0f)), 0.0f, 0.0f, 0.0f,
-                     0.0f, 1.0f / tan(fov_ / 2.0f), 0.0f, 0.0f,
+        proj_mat_ << 1.0f / tan(fov_horizontal_ / 2.0f), 0.0f, 0.0f, 0.0f,
+                     0.0f, aspect_ / tan(fov_horizontal_ / 2.0f), 0.0f, 0.0f,
                      0.0f, 0.0f, far_/(far_-near_), far_*near_/(far_-near_),
                      0.0f, 0.0f, -1.0f, 0.0f;
         dirty_proj_ = false;
@@ -67,8 +67,8 @@ private:
   bool dirty_proj_{true};
   float near_{0.1f};
   float far_{1000.0f};
-  float fov_{60.0f};
-  float aspect_ratio_{1.0f};
+  float fov_horizontal_{60.0f};
+  float aspect_{1.0f};
   Eigen::Matrix4f proj_mat_;
 
   Eigen::Matrix4f view_mat_{Eigen::Matrix4f::Identity()};

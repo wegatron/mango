@@ -4,7 +4,6 @@
 #include <framework/scene/rpass.h>
 #include <framework/vk/syncs.h>
 
-
 namespace vk_engine {
 class CommandBuffer;
 class Scene;

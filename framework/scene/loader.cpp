@@ -6,7 +6,7 @@
 #include <framework/scene/asset_manager.hpp>
 #include <framework/utils/logging.h>
 #include <framework/vk/commands.h>
-#include <iostream>
+#include <framework/scene/component/camera.h>
 
 namespace vk_engine {
 
@@ -49,7 +49,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
       processMeshs(a_scene, scene, cmd_buf);
   std::vector<std::shared_ptr<Material>> materials =
       processMaterials(a_scene, scene);
-
+  std::vector<Camera> cameras = processCameras(a_scene, scene);
   // process root node's mesh
   auto root_tr = processNode(nullptr, a_scene->mRootNode, a_scene, scene, meshes, materials);
   scene.setRootTr(root_tr);
@@ -149,18 +149,34 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
   }
 
-  // add barrier to make sure transfer is complete before rendering
-  VkMemoryBarrier memoryBarrier = {};
-  memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
-  memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-  memoryBarrier.dstAccessMask =
-      VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
+  // // add barrier to make sure transfer is complete before rendering
+  // VkMemoryBarrier memoryBarrier = {};
+  // memoryBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
+  // memoryBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+  // memoryBarrier.dstAccessMask =
+  //     VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
 
-  vkCmdPipelineBarrier(cmd_buf->getHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
-                       VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &memoryBarrier,
-                       0, nullptr, 0, nullptr);
+  // vkCmdPipelineBarrier(cmd_buf->getHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
+  //                      VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &memoryBarrier,
+  //                      0, nullptr, 0, nullptr);
 
   return ret_meshes;
+}
+
+std::vector<Camera> AssimpLoader::processCameras(const aiScene *a_scene, Scene &)
+{
+  std::vector<Camera> ret_cameras(a_scene->mNumCameras);
+  for (auto i = 0; i < a_scene->mNumCameras; ++i) {
+    auto a_camera = a_scene->mCameras[i];
+    auto &cur_camera = ret_cameras[i];
+    cur_camera.setClipPlanes(a_camera->mClipPlaneNear, a_camera->mClipPlaneFar);
+    cur_camera.setFovHorizontal(a_camera->mHorizontalFOV);
+    //a_camera->mLookAt;
+    float aspect = a_camera->mAspect < 1e-3 ? 1.0f : a_camera->mAspect;
+    cur_camera.setAspect(aspect);
+  }
+  
+  return ret_cameras;
 }
 
 void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,

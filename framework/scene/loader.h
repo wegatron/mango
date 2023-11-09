@@ -12,6 +12,7 @@ namespace vk_engine {
 class CommandBuffer;
 class StagePool;
 class GPUAssetManager;
+class Camera;
 
 // todo Static Mesh, Material TransformRelationship memory management
 class AssimpLoader final {
@@ -34,6 +35,8 @@ private:
 
   std::vector<std::shared_ptr<Material>>
   processMaterials(const aiScene *a_scene, Scene &);
+
+  std::vector<Camera> processCameras(const aiScene *a_scene, Scene &);
 
   void loadAndSet(aiMaterial *a_mat, aiTextureType ttype, const char *pKey,
                   unsigned int vtype, unsigned int idx,

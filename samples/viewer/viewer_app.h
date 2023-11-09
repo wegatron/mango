@@ -1,6 +1,5 @@
 #pragma once
 
-#include <framework/scene/camera.h>
 #include <framework/scene/render.h>
 #include <framework/scene/scene.h>
 #include <framework/utils/app_base.h>
@@ -14,8 +13,7 @@ class StagePool;
 class ViewerApp : public AppBase {
 public:
   ViewerApp(const std::string &name)
-      : AppBase(name), scene_(std::make_unique<Scene>()),
-        camera_(std::make_unique<Camera>()), gui_(std::make_unique<Gui>()) {}
+      : AppBase(name), scene_(std::make_unique<Scene>()), gui_(std::make_unique<Gui>()) {}
 
   ~ViewerApp() override = default;
 
@@ -36,7 +34,6 @@ private:
   std::string scene_path_;
   std::unique_ptr<Render> render_;
   std::unique_ptr<Scene> scene_;
-  std::unique_ptr<Camera> camera_;
   std::unique_ptr<Gui> gui_;
 };
 } // namespace vk_engine
