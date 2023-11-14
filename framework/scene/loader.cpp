@@ -4,9 +4,9 @@
 #include <queue>
 
 #include <framework/scene/asset_manager.hpp>
+#include <framework/scene/component/camera.h>
 #include <framework/utils/logging.h>
 #include <framework/vk/commands.h>
-#include <framework/scene/component/camera.h>
 
 namespace vk_engine {
 
@@ -43,18 +43,19 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     throw std::runtime_error("Assimp import error:" +
                              std::string(importer.GetErrorString()));
   }
-  //file_directory_ = path.substr(0, path.find_last_of('/'));
-  // add materials and meshes to scene
+  // file_directory_ = path.substr(0, path.find_last_of('/'));
+  //  add materials and meshes to scene
   std::vector<std::shared_ptr<StaticMesh>> meshes =
-      processMeshs(a_scene, scene, cmd_buf);
-  std::vector<std::shared_ptr<Material>> materials =
-      processMaterials(a_scene, scene);
-  std::vector<Camera> cameras = processCameras(a_scene, scene);
+      processMeshs(a_scene, cmd_buf);
+  std::vector<std::shared_ptr<Material>> materials = processMaterials(a_scene);
+  std::vector<Camera> cameras = processCameras(a_scene);
   // process root node's mesh
-  auto root_tr = processNode(nullptr, a_scene->mRootNode, a_scene, scene, meshes, materials);
+  auto root_tr = processNode(nullptr, a_scene->mRootNode, a_scene, scene,
+                             meshes, materials);
   scene.setRootTr(root_tr);
 
-  std::queue<std::pair<std::shared_ptr<TransformRelationship>, aiNode *>> // parent tr, parent node
+  std::queue<std::pair<std::shared_ptr<TransformRelationship>,
+                       aiNode *>> // parent tr, parent node
       process_queue;
   process_queue.push(std::make_pair(root_tr, a_scene->mRootNode));
   while (!process_queue.empty()) {
@@ -79,12 +80,19 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     }
   }
 
+  // main camera to scene if have
+  // if (cameras.size() > 0) {
+  //   auto camera_node = a_scene->mRootNode->FindNode(cameras[0].getName().c_str());
+  //   assert(camera_node != nullptr);
+  //   // camera transform
+  // }
+
   // load the default camera if have
   LOGI("load scene: {}", path.c_str());
 }
 
 std::vector<std::shared_ptr<StaticMesh>>
-AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
+AssimpLoader::processMeshs(const aiScene *a_scene,
                            const std::shared_ptr<CommandBuffer> &cmd_buf) {
   auto a_meshes = a_scene->mMeshes;
   std::vector<std::shared_ptr<StaticMesh>> ret_meshes(a_scene->mNumMeshes);
@@ -104,14 +112,14 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
     static_assert(std::is_same<ai_real, float>::value,
                   "Type should be same while using memory copy.");
     for (auto vi = 0; vi < nv; ++vi) {
-      data[8*vi] = tmp_a_mesh->mVertices[vi].x;
-      data[8*vi+1] = tmp_a_mesh->mVertices[vi].y;
-      data[8*vi+2] = tmp_a_mesh->mVertices[vi].z;
-      data[8*vi+3] = tmp_a_mesh->mNormals[vi].x;
-      data[8*vi+4] = tmp_a_mesh->mNormals[vi].y;
-      data[8*vi+5] = tmp_a_mesh->mNormals[vi].z;
-      data[8*vi+6] = tmp_a_mesh->mTextureCoords[0][vi].x;
-      data[8*vi+7] = tmp_a_mesh->mTextureCoords[0][vi].y;
+      data[8 * vi] = tmp_a_mesh->mVertices[vi].x;
+      data[8 * vi + 1] = tmp_a_mesh->mVertices[vi].y;
+      data[8 * vi + 2] = tmp_a_mesh->mVertices[vi].z;
+      data[8 * vi + 3] = tmp_a_mesh->mNormals[vi].x;
+      data[8 * vi + 4] = tmp_a_mesh->mNormals[vi].y;
+      data[8 * vi + 5] = tmp_a_mesh->mNormals[vi].z;
+      data[8 * vi + 6] = tmp_a_mesh->mTextureCoords[0][vi].x;
+      data[8 * vi + 7] = tmp_a_mesh->mTextureCoords[0][vi].y;
     }
 
     auto stage_pool = getDefaultAppContext().stage_pool;
@@ -157,25 +165,30 @@ AssimpLoader::processMeshs(const aiScene *a_scene, Scene &scene,
   //     VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT | VK_ACCESS_INDEX_READ_BIT;
 
   // vkCmdPipelineBarrier(cmd_buf->getHandle(), VK_PIPELINE_STAGE_TRANSFER_BIT,
-  //                      VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1, &memoryBarrier,
-  //                      0, nullptr, 0, nullptr);
+  //                      VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 0, 1,
+  //                      &memoryBarrier, 0, nullptr, 0, nullptr);
 
   return ret_meshes;
 }
 
-std::vector<Camera> AssimpLoader::processCameras(const aiScene *a_scene, Scene &)
-{
+std::vector<Camera> AssimpLoader::processCameras(const aiScene *a_scene) {
   std::vector<Camera> ret_cameras(a_scene->mNumCameras);
   for (auto i = 0; i < a_scene->mNumCameras; ++i) {
     auto a_camera = a_scene->mCameras[i];
     auto &cur_camera = ret_cameras[i];
+    cur_camera.setName(a_camera->mName.C_Str());
     cur_camera.setClipPlanes(a_camera->mClipPlaneNear, a_camera->mClipPlaneFar);
-    cur_camera.setFovHorizontal(a_camera->mHorizontalFOV);
-    //a_camera->mLookAt;
     float aspect = a_camera->mAspect < 1e-3 ? 1.0f : a_camera->mAspect;
     cur_camera.setAspect(aspect);
+    cur_camera.setFovy(a_camera->mHorizontalFOV / aspect);
+    cur_camera.setLookAt(
+        Eigen::Vector3f(a_camera->mPosition.x, a_camera->mPosition.y,
+                        a_camera->mPosition.z),
+        Eigen::Vector3f(a_camera->mUp.x, a_camera->mUp.y, a_camera->mUp.z),
+        Eigen::Vector3f(a_camera->mLookAt.x, a_camera->mLookAt.y,
+                        a_camera->mLookAt.z));
   }
-  
+
   return ret_cameras;
 }
 
@@ -201,7 +214,7 @@ void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,
 }
 
 std::vector<std::shared_ptr<Material>>
-AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
+AssimpLoader::processMaterials(const aiScene *a_scene) {
   auto num_materials = a_scene->mNumMaterials;
   std::vector<std::shared_ptr<Material>> ret_mats(num_materials);
 
@@ -216,12 +229,13 @@ AssimpLoader::processMaterials(const aiScene *a_scene, Scene &) {
     // diffuse, base color
     loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,
                "base_color_texture", "pbr_mat.base_color", cur_mat);
-/*     loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
-              "specular_color_texture", "pbr_mat.specular_color", cur_mat);
-    loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS, AI_MATKEY_ROUGHNESS_FACTOR,
-              "roughness_texture", "pbr_mat.roughness", cur_mat);
-    loadAndSet(a_mat, aiTextureType_METALNESS, AI_MATKEY_METALLIC_FACTOR,
-              "metallic_texture", "pbr_mat.metallic", cur_mat); */    
+    /*     loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
+                  "specular_color_texture", "pbr_mat.specular_color", cur_mat);
+        loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS,
+       AI_MATKEY_ROUGHNESS_FACTOR, "roughness_texture", "pbr_mat.roughness",
+       cur_mat); loadAndSet(a_mat, aiTextureType_METALNESS,
+       AI_MATKEY_METALLIC_FACTOR, "metallic_texture", "pbr_mat.metallic",
+       cur_mat); */
     cur_mat->compile();
   }
   return ret_mats;

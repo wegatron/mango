@@ -5,18 +5,26 @@
 namespace vk_engine {
 class Camera {
 public:
-    
-    Camera() = default;
+  Camera() = default;
 
-    ~Camera() = default;
+  ~Camera() = default;
 
-    void setPosition(const Eigen::Vector3f &position)
-    {
-        view_mat_(0, 3) = -position.x();
-        view_mat_(1, 3) = -position.y();
-        view_mat_(2, 3) = -position.z();
+  const std::string& getName() const noexcept { return name_; }
+
+  void setName(const std::string &name) { name_ = name; }
+
+  // default z: front, x: right, y: up
+  void setLookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &up,
+                 const Eigen::Vector3f &center) {
+    view_mat_.block<3, 1>(0, 3) = -eye;
+    Eigen::Vector3f ny = up.normalized();
+    Eigen::Vector3f nz = (center - eye).normalized();
+    Eigen::Vector3f nx = ny.cross(nz).normalized();
+    view_mat_.block<3, 1>(0, 0) = nx;
+    view_mat_.block<3, 1>(1, 0) = ny;
+    view_mat_.block<3, 1>(2, 0) = nz;
     }
-    
+
     // default: z: front, x: right, y: up
     void setRotationEuraXYZ(const Eigen::Vector3f &eura_xyz)
     {
@@ -33,16 +41,20 @@ public:
         view_mat_.block<3, 3>(0, 0) = rotation_mat.transpose();
     }
 
+    /**
+     * \param near The near clipping plane distance from the camera > 0
+     * \param far The far clipping plane distance from the camera > 0
+    */
     void setClipPlanes(float near, float far)
     {
-        near_ = near;
-        far_ = far;
+        near_ = -near; // to coordinate system of camera
+        far_ = -far; // to coordinate system of camera
         dirty_proj_ = true;
     }
 
-    void setFovHorizontal(float fov) // width / focalLength
+    void setFovy(float fovy) // width / focalLength
     {
-        fov_horizontal_ = fov;
+        fovy_ = fovy;
         dirty_proj_ = true;
     }
 
@@ -54,23 +66,32 @@ public:
 
     const Eigen::Matrix4f &getViewMatrix() const noexcept { return view_mat_; }
     
+    /**
+     * \brief Get the projection matrix of the camera, right-handed coordinate system
+     * depth: [0, 1]
+     * \return The projection matrix
+    */
     const Eigen::Matrix4f &getProjectionMatrix() { 
         if (!dirty_proj_) return proj_mat_;
-        proj_mat_ << 1.0f / tan(fov_horizontal_ / 2.0f), 0.0f, 0.0f, 0.0f,
-                     0.0f, aspect_ / tan(fov_horizontal_ / 2.0f), 0.0f, 0.0f,
-                     0.0f, 0.0f, far_/(far_-near_), far_*near_/(far_-near_),
-                     0.0f, 0.0f, -1.0f, 0.0f;
+        float f = 1.0 / tan(fovy_ * 0.5);
+        float r = 1.0 / (far_ - near_);
+        proj_mat_ << 
+            f/aspect_, 0.0f, 0.0f, 0.0f,
+            0.0f, f, 0.0f, 0.0f,
+            0.0f, 0.0f, far_ * r, -far_ * near_ * r,
+            0.0f, 0.0f, -1.0f, 0.0f;
         dirty_proj_ = false;
     }
 
 private:
+  std::string name_;
   bool dirty_proj_{true};
   float near_{0.1f};
   float far_{1000.0f};
-  float fov_horizontal_{60.0f};
+  float fovy_{60.0f};
   float aspect_{1.0f};
-  Eigen::Matrix4f proj_mat_;
 
+  Eigen::Matrix4f proj_mat_;
   Eigen::Matrix4f view_mat_{Eigen::Matrix4f::Identity()};
 };
 } // namespace vk_engine

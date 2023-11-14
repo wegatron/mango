@@ -30,13 +30,13 @@ private:
               std::vector<std::shared_ptr<Material>> &materials);
 
   std::vector<std::shared_ptr<StaticMesh>>
-  processMeshs(const aiScene *a_scene, Scene &,
+  processMeshs(const aiScene *a_scene,
                const std::shared_ptr<CommandBuffer> &cmd_buf);
 
   std::vector<std::shared_ptr<Material>>
-  processMaterials(const aiScene *a_scene, Scene &);
+  processMaterials(const aiScene *a_scene);
 
-  std::vector<Camera> processCameras(const aiScene *a_scene, Scene &);
+  std::vector<Camera> processCameras(const aiScene *a_scene);
 
   void loadAndSet(aiMaterial *a_mat, aiTextureType ttype, const char *pKey,
                   unsigned int vtype, unsigned int idx,
