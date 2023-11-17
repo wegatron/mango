@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Geometry>
 #include <framework/vk/buffer.h>
 
 namespace vk_engine {
@@ -25,6 +26,7 @@ struct StaticMesh {
   VertexBuffer normals;
   VertexBuffer texture_coords;
   IndexBuffer faces;
+  Eigen::AlignedBox3f aabb;
 };
 
 } // namespace vk_engine

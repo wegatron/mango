@@ -45,9 +45,15 @@ void Render::beginFrame(const float time_elapse, const uint32_t frame_index,
 void Render::render(Scene *scene, Gui * gui)
 {
   assert(scene != nullptr);
-  // todo update camera
-  
-  scene->update(cur_time_, cmd_buf_);
+  scene->update(cur_time_);
+
+  // update camera  
+  auto &camera_manager = scene->camera_manager();
+  auto view_camera = camera_manager.view<std::shared_ptr<TransformRelationship>,
+                                         Camera>();
+  const auto &cam_tr = camera_manager.get<std::shared_ptr<TransformRelationship>>(*view_camera.begin());
+  auto &cam = camera_manager.get<Camera>(*view_camera.begin());
+  getDefaultAppContext().global_param_set->updateCameraParam(cam_tr->gtransform * cam.getViewMatrix(), cam.getProjMatrix());
 
   auto &rm = scene->renderableManager();
   auto view = rm.view<std::shared_ptr<TransformRelationship>,

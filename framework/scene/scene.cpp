@@ -33,13 +33,14 @@ Scene::createCameraEntity(const std::string &name,
   return entity;
 }
 
-void Scene::update(const float seconds,
-                   const std::shared_ptr<CommandBuffer> &cmd_buf) {
+void Scene::update(const float seconds) {
+  root_tr_->aabb.setEmpty();
   //// update rt
   std::queue<std::shared_ptr<TransformRelationship>> q;
   // add root->node's children
   auto rch = root_tr_->child;
-  rch->gtransform = rch->ltransform;
+  rch->gtransform = rch->ltransform;  
+  root_tr_->aabb.extend(rch->aabb.transformed(Eigen::Affine3f(rch->gtransform)));
   while (rch != nullptr) // add child nodes
   {
     q.emplace(rch);
@@ -49,13 +50,14 @@ void Scene::update(const float seconds,
     auto node = q.front();
     q.pop();
     node->gtransform = node->parent->gtransform * node->ltransform;
+    root_tr_->aabb.extend(node->aabb.transformed(Eigen::Affine3f(node->gtransform)));
     // add child nodes
     auto ch = node->child;
     while (ch != nullptr) {
       q.emplace(ch);
       ch = ch->sibling;
     }
-  }
+  }  
 }
 
 } // namespace vk_engine

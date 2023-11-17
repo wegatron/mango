@@ -29,6 +29,7 @@ AssimpLoader::processNode(const std::shared_ptr<TransformRelationship> &parent,
     auto renderable_entt = scene.createRenderableEntity(
         a_mesh->mName.C_Str(), cur_tr, materials[a_mesh->mMaterialIndex],
         meshes[node->mMeshes[i]]);
+    cur_tr->aabb.extend(meshes[node->mMeshes[i]]->aabb);
   }
   return cur_tr;
 }
@@ -37,7 +38,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
                              const std::shared_ptr<CommandBuffer> &cmd_buf) {
   Assimp::Importer importer;
   const aiScene *a_scene =
-      importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality);
+      importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality | aiProcess_GenBoundingBoxes);
 
   if (!a_scene) {
     throw std::runtime_error("Assimp import error:" +
@@ -58,6 +59,9 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
                        aiNode *>> // parent tr, parent node
       process_queue;
   process_queue.push(std::make_pair(root_tr, a_scene->mRootNode));
+  
+  auto camera_node_name = cameras.empty() ? "vk_engine_default_main_camera" : cameras[0].getName();
+  std::shared_ptr<TransformRelationship> camera_tr_re = nullptr;
   while (!process_queue.empty()) {
     auto e = process_queue.front();
     process_queue.pop();
@@ -70,6 +74,9 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
       auto cur_tr_re = processNode(parent_tr, pnode->mChildren[i], a_scene,
                                    scene, meshes, materials);
 
+      if(!cameras.empty() && pnode->mChildren[i]->mName.C_Str() == camera_node_name)
+        camera_tr_re = cur_tr_re;        
+
       if (i == 0)
         parent_tr->child = cur_tr_re;
       else if (i != 0)
@@ -79,13 +86,18 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
       process_queue.push(std::make_pair(cur_tr_re, pnode->mChildren[i]));
     }
   }
-
-  // main camera to scene if have
-  // if (cameras.size() > 0) {
-  //   auto camera_node = a_scene->mRootNode->FindNode(cameras[0].getName().c_str());
-  //   assert(camera_node != nullptr);
-  //   // camera transform
-  // }
+  
+  if(cameras.empty()) {
+    Camera default_camera;
+    default_camera.setName(camera_node_name);
+    scene.update(0);
+    Eigen::Vector3f center = root_tr->aabb.center();
+    float radius = 0.5f * root_tr->aabb.sizes().norm();
+    Eigen::Vector3f eye = center + Eigen::Vector3f(0, -3.5f * radius, 0);
+    default_camera.setLookAt(eye, Eigen::Vector3f(0,0,1), center);
+    scene.createCameraEntity(camera_node_name, camera_tr_re, default_camera);
+  }
+  else scene.createCameraEntity(camera_node_name, camera_tr_re, cameras[0]);
 
   // load the default camera if have
   LOGI("load scene: {}", path.c_str());
@@ -155,6 +167,12 @@ AssimpLoader::processMeshs(const aiScene *a_scene,
     ret_meshes[i]->faces = {ib, 0, static_cast<uint32_t>(tri_v_inds.size()),
                             VK_INDEX_TYPE_UINT32,
                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
+    ret_meshes[i]->aabb.min() = Eigen::Vector3f(tmp_a_mesh->mAABB.mMin.x,
+                                              tmp_a_mesh->mAABB.mMin.y,
+                                              tmp_a_mesh->mAABB.mMin.z);
+    ret_meshes[i]->aabb.max() = Eigen::Vector3f(tmp_a_mesh->mAABB.mMax.x,
+                                              tmp_a_mesh->mAABB.mMax.y,
+                                              tmp_a_mesh->mAABB.mMax.z);
   }
 
   // // add barrier to make sure transfer is complete before rendering
