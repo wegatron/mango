@@ -61,7 +61,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
   process_queue.push(std::make_pair(root_tr, a_scene->mRootNode));
   
   auto camera_node_name = cameras.empty() ? "vk_engine_default_main_camera" : cameras[0].getName();
-  std::shared_ptr<TransformRelationship> camera_tr_re = nullptr;
+  std::shared_ptr<TransformRelationship> camera_tr_re = root_tr;
   while (!process_queue.empty()) {
     auto e = process_queue.front();
     process_queue.pop();

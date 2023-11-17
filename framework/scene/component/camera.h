@@ -15,14 +15,14 @@ public:
 
   // default z: front, x: right, y: up
   void setLookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &up,
-                 const Eigen::Vector3f &center) {
-    view_mat_.block<3, 1>(0, 3) = -eye;
+                 const Eigen::Vector3f &center) {    
     Eigen::Vector3f ny = up.normalized();
-    Eigen::Vector3f nz = (center - eye).normalized();
+    Eigen::Vector3f nz = (eye - center).normalized();
     Eigen::Vector3f nx = ny.cross(nz).normalized();
     view_mat_.block<1, 3>(0, 0) = nx;
     view_mat_.block<1, 3>(1, 0) = ny;
     view_mat_.block<1, 3>(2, 0) = nz;
+    view_mat_.block<3, 1>(0, 3) = view_mat_.block<3,3>(0,0) * -eye;
   }
 
   // default: z: front, x: right, y: up
@@ -72,8 +72,10 @@ public:
       return proj_mat_;
     float f = 1.0 / tan(fovy_ * 0.5);
     float r = 1.0 / (far_ - near_);
-    proj_mat_ << f / aspect_, 0.0f, 0.0f, 0.0f, 0.0f, f, 0.0f, 0.0f, 0.0f, 0.0f,
-        far_ * r, -far_ * near_ * r, 0.0f, 0.0f, -1.0f, 0.0f;
+    proj_mat_ << f / aspect_, 0.0f, 0.0f, 0.0f,
+                0.0f, f, 0.0f, 0.0f, 0.0f,
+                0.0f, far_ * r, -far_ * near_ * r,
+                0.0f, 0.0f, -1.0f, 0.0f;
     dirty_proj_ = false;
     return proj_mat_;
   }
@@ -81,8 +83,8 @@ public:
 private:
   std::string name_;
   bool dirty_proj_{true};
-  float near_{0.1f};
-  float far_{1000.0f};
+  float near_{-0.1f};
+  float far_{-1000.0f};
   float fovy_{60.0f};
   float aspect_{1.0f};
 
