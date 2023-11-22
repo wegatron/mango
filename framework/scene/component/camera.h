@@ -79,7 +79,7 @@ public:
     float r = 1.0 / (far_ - near_);
     proj_mat_ << f / aspect_, 0.0f, 0.0f, 0.0f,
                 0.0f, f, 0.0f, 0.0f, 0.0f,
-                0.0f, far_ * r, -far_ * near_ * r,
+                0.0f, -far_ * r, far_ * near_ * r,
                 0.0f, 0.0f, -1.0f, 0.0f;
     dirty_proj_ = false;
     return proj_mat_;

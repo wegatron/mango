@@ -17,11 +17,9 @@ Eigen::Vector3f tbc(const Eigen::Vector2f &mouse_pos)
   return Eigen::Vector3f(v.x(), -v.y(), 0);
 }
 
-Trackball::Trackball(Camera *camera) {}
-
 void Trackball::apply(const std::shared_ptr<MouseInputEvent> &mouse_event) {
-  LOGI("mouse_event! {} {} {}", static_cast<uint8_t>(mouse_event->action),
-       static_cast<uint8_t>(mouse_event->button), mouse_event->pos);
+  // LOGI("mouse_event! {} {} {}", static_cast<uint8_t>(mouse_event->action),
+  //      static_cast<uint8_t>(mouse_event->button), mouse_event->pos);
   switch (mouse_event->action) {
   case MouseAction::Down:
     mouse_button_status_ |= (1 << static_cast<uint8_t>(mouse_event->button));
@@ -39,10 +37,13 @@ void Trackball::apply(const std::shared_ptr<MouseInputEvent> &mouse_event) {
       if (xp_len > 0.0f) {
         float angle = asin(xp_len);
         Eigen::Vector3f axis = xp / xp_len;
-        Eigen::AngleAxisf rotate(angle, axis);
+        Eigen::AngleAxisf rotate(-angle, axis);
         // update camera
         Eigen::Matrix3f r = camera_->getViewMatrix().block<3, 3>(0, 0);
         camera_->setRotation(r * rotate);
+        LOGI("prev_mouse_pos {}, cur_mouse_pos {}, angle {} axis {}\n camera view mat:\n{}",
+            prev_mouse_pos_.transpose(), mouse_event->pos.transpose(), angle,
+            axis.transpose(), camera_->getViewMatrix());         
       }
     } else if (mouse_button_status_ >>
                    static_cast<uint8_t>(MouseButton::Middle) &

@@ -6,7 +6,7 @@ namespace vk_engine {
 class Camera;
 class Trackball : public EventHandler {
 public:
-  Trackball(Camera *camera);
+  Trackball(Camera *camera) : camera_(camera) {}
 
   void apply(const std::shared_ptr<MouseInputEvent> &mouse_event) override;
 

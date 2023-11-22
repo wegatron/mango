@@ -27,7 +27,10 @@ MouseAction translateMouseAction(int action) {
 void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
   if (auto *app =
           reinterpret_cast<AppBase *>(glfwGetWindowUserPointer(window))) {
-    
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    xpos /= width;
+    ypos /= height;    
     app->inputMouseEvent(std::make_shared<MouseInputEvent>(false,
         MouseButton::Unknown, MouseAction::Move, static_cast<float>(xpos),
         static_cast<float>(ypos)));
