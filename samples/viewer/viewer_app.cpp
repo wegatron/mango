@@ -34,12 +34,20 @@ void ViewerApp::init(Window * window, const std::shared_ptr<VkDriver> &driver,
   auto view_camera = camera_manager.view<std::shared_ptr<TransformRelationship>,
                                          Camera>();
   const auto &cam_tr = camera_manager.get<std::shared_ptr<TransformRelationship>>(*view_camera.begin());
-  auto &cam = camera_manager.get<Camera>(*view_camera.begin());  
+  auto &cam = camera_manager.get<Camera>(*view_camera.begin());
+  cam.setAspect(static_cast<float>(rts[0]->getWidth()) / rts[0]->getHeight());
   event_manager_.registHandler(std::make_shared<Trackball>(&cam));
 }
 
 void ViewerApp::updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts)
 {
+  auto& camera_manager = scene_->camera_manager();
+  auto view_camera = camera_manager.view<std::shared_ptr<TransformRelationship>,
+                                         Camera>();  
+  const auto &cam_tr = camera_manager.get<std::shared_ptr<TransformRelationship>>(*view_camera.begin());
+  auto &cam = camera_manager.get<Camera>(*view_camera.begin());
+  cam.setAspect(static_cast<float>(rts[0]->getWidth()) / rts[0]->getHeight());
+
   // update rts in app context
   updateRtsInContext(rts);
   // update render

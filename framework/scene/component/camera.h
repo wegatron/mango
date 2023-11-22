@@ -90,7 +90,7 @@ private:
   bool dirty_proj_{true};
   float near_{-0.1f};
   float far_{-1000.0f};
-  float fovy_{60.0f};
+  float fovy_{M_PI*0.333f};
   float aspect_{1.0f};
 
   Eigen::Matrix4f proj_mat_;
