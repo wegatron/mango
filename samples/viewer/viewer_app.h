@@ -28,12 +28,14 @@ public:
   void
   updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) override;
 
-  void inputEvent(const InputEvent &event) override;
+  void
+  inputMouseEvent(const std::shared_ptr<MouseInputEvent> &mouse_event) override;
 
 private:
   std::string scene_path_;
   std::unique_ptr<Render> render_;
   std::unique_ptr<Scene> scene_;
   std::unique_ptr<Gui> gui_;
+  EventManager event_manager_;  
 };
 } // namespace vk_engine

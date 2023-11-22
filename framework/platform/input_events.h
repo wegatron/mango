@@ -2,47 +2,30 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <cassert>
+#include <vector>
+#include <Eigen/Dense>
 
 namespace vk_engine {
 enum class EventSource : uint8_t { Keyboard, Mouse, Touchscreen };
-
-class InputEvent {
-public:
-  InputEvent(EventSource source) : source(source) {}
-
-  EventSource get_source() const { return source; }
-
-private:
-  EventSource source;
-};
 
 enum class MouseButton : uint8_t { Left, Right, Middle, Back, Forward, Unknown };
 
 enum class MouseAction : uint8_t { Down, Up, Move, Unknown };
 
-class MouseButtonInputEvent : public InputEvent {
-public:
-  MouseButtonInputEvent(MouseButton button, MouseAction action, float pos_x,
-                        float pos_y) : InputEvent(EventSource::Mouse),
-                                       button(button), action(action),
-                                       pos_x(pos_x), pos_y(pos_y) {}
+struct MouseInputEvent {
+  MouseInputEvent(bool h, MouseButton b, MouseAction a, float px, float py)
+    : handled(h), button(b), action(a), pos(px, py)
+  {}
+  
+  bool handled;
 
-  MouseButton get_button() const { return button; }
-
-  MouseAction get_action() const { return action; }
-
-  float get_pos_x() const { return pos_x; }
-
-  float get_pos_y() const  { return pos_y; }
-
-private:
   MouseButton button;
 
   MouseAction action;
 
-  float pos_x;
-
-  float pos_y;
+  Eigen::Vector2f pos;
 };
 
 enum class TouchAction {
@@ -55,34 +38,42 @@ enum class TouchAction {
   Unknown
 };
 
-class TouchInputEvent : public InputEvent {
-public:
-  TouchInputEvent(int32_t pointer_id, size_t pointer_count, TouchAction action,
-                  float pos_x, float pos_y) : InputEvent(EventSource::Touchscreen),
-                                              pointer_id(pointer_id),
-                                              touch_points(pointer_count),
-                                              action(action), pos_x(pos_x),
-                                              pos_y(pos_y) {}
+struct TouchInputEvent {
 
-  TouchAction get_action() const { return action; }
+  bool handled{false};
 
-  int32_t get_pointer_id() const { return pointer_id; }
-
-  size_t get_touch_points() const { return touch_points; }
-
-  float get_pos_x() const { return pos_x; }
-
-  float get_pos_y() const { return pos_y; }
-
-private:
   TouchAction action;
 
   int32_t pointer_id;
 
   size_t touch_points;
 
-  float pos_x;
+  Eigen::Vector2f pos;
+};
 
-  float pos_y;
+class EventHandler {
+public:
+  virtual void apply(const std::shared_ptr<MouseInputEvent> &mouse_event) {}  
+};
+
+class EventManager {
+public:
+  EventManager() = default;
+  void registHandler(const std::shared_ptr<EventHandler> &event_handler)
+  {
+    assert(event_handler != nullptr);
+    event_handlers_.emplace_back(event_handler);
+  }
+
+  void handle(const std::shared_ptr<MouseInputEvent> &event) {
+    for(auto h : event_handlers_)
+    {
+      h->apply(event);
+      if(event->handled)
+        break;
+    }
+  }
+private:
+  std::vector<std::shared_ptr<EventHandler>> event_handlers_;
 };
 } // namespace vk_engine

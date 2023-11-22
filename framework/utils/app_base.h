@@ -33,7 +33,8 @@ public:
 
   virtual void updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
-  virtual void inputEvent(const InputEvent &event) = 0;
+  virtual void
+  inputMouseEvent(const std::shared_ptr<MouseInputEvent> &mouse_event) {}
 
 protected:
   std::string name_;

@@ -39,6 +39,11 @@ public:
     view_mat_.block<3, 3>(0, 0) = rotation_mat.transpose();
   }
 
+  void setRotation(const Eigen::Matrix3f &r)
+  {
+    view_mat_.block<3, 3>(0, 0) = r;
+  }
+
   /**
    * \param near The near clipping plane distance from the camera > 0
    * \param far The far clipping plane distance from the camera > 0

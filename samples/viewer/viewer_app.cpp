@@ -6,6 +6,7 @@
 #include <framework/vk/queue.h>
 #include <framework/vk/frame_buffer.h>
 #include <framework/utils/logging.h>
+#include <framework/utils/trackball.h>
 
 namespace vk_engine {
 
@@ -28,6 +29,13 @@ void ViewerApp::init(Window * window, const std::shared_ptr<VkDriver> &driver,
   cmd_queue->submit(cmd_buf, render_output_syncs[0].render_fence->getHandle());
   render_output_syncs[0].render_fence->wait();
   gui_->init(window);
+  auto& camera_manager = scene_->camera_manager();
+
+  auto view_camera = camera_manager.view<std::shared_ptr<TransformRelationship>,
+                                         Camera>();
+  const auto &cam_tr = camera_manager.get<std::shared_ptr<TransformRelationship>>(*view_camera.begin());
+  auto &cam = camera_manager.get<Camera>(*view_camera.begin());  
+  event_manager_.registHandler(std::make_shared<Trackball>(&cam));
 }
 
 void ViewerApp::updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts)
@@ -36,7 +44,7 @@ void ViewerApp::updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts)
   updateRtsInContext(rts);
   // update render
   render_->initRts();
-  gui_->initRts();
+  gui_->initRts();  
 }
 
 void ViewerApp::setScene(const std::string &path) { scene_path_ = path; }
@@ -51,10 +59,12 @@ void ViewerApp::tick(const float seconds, const uint32_t rt_index,
   render_->endFrame();
 }
 
-void ViewerApp::inputEvent(const InputEvent &event)
+void
+ViewerApp::inputMouseEvent(const std::shared_ptr<MouseInputEvent> &mouse_event)
 {
-  LOGI("ViewerApp::inputEvent {}", static_cast<uint8_t>(event.get_source()));
-  // for mouse event, we need to update camera
-  
+  event_manager_.handle(mouse_event);
+  // LOGI("ViewerApp::inputEvent {}",
+  // static_cast<uint8_t>(mouse_event.get_source()));
 }
+
 } // namespace vk_engine

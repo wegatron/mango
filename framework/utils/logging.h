@@ -1,6 +1,7 @@
 #pragma once
 
 #include <spdlog/fmt/fmt.h>
+#include <spdlog/fmt/ostr.h>
 #include <spdlog/spdlog.h>
 
 #define LOGI(...) spdlog::info(__VA_ARGS__);

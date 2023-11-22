@@ -27,9 +27,10 @@ MouseAction translateMouseAction(int action) {
 void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
   if (auto *app =
           reinterpret_cast<AppBase *>(glfwGetWindowUserPointer(window))) {
-    app->inputEvent(MouseButtonInputEvent{
+    
+    app->inputMouseEvent(std::make_shared<MouseInputEvent>(false,
         MouseButton::Unknown, MouseAction::Move, static_cast<float>(xpos),
-        static_cast<float>(ypos)});
+        static_cast<float>(ypos)));
   }
 }
 
@@ -41,10 +42,13 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action,
           reinterpret_cast<AppBase *>(glfwGetWindowUserPointer(window))) {
     double xpos, ypos;
     glfwGetCursorPos(window, &xpos, &ypos);
-
-    app->inputEvent(MouseButtonInputEvent{
-        translateMouseButton(button), mouse_action, static_cast<float>(xpos),
-        static_cast<float>(ypos)});
+    int width, height;
+    glfwGetWindowSize(window, &width, &height);
+    xpos /= width;
+    ypos /= height;
+    app->inputMouseEvent(std::make_shared<MouseInputEvent>(
+        false, translateMouseButton(button), mouse_action,
+        static_cast<float>(xpos), static_cast<float>(ypos)));
   }
 }
 

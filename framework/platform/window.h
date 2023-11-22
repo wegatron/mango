@@ -40,8 +40,5 @@ public:
 
   // setup callback function
   virtual void setupCallback(AppBase * app) = 0;
-
-protected:
-  std::function<void (const InputEvent &, AppBase * app)> input_event_callback_;
 };
 } // namespace vk_engine
