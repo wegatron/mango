@@ -6,15 +6,14 @@
 
 namespace vk_engine {
 
+// according to https://www.khronos.org/opengl/wiki/Object_Mouse_Trackball
 Eigen::Vector3f tbc(const Eigen::Vector2f &mouse_pos) 
 {
-  Eigen::Vector2f v = mouse_pos * 2.0f - Eigen::Vector2f(1.0f, 1.0f);
+  Eigen::Vector2f v = mouse_pos * 2.0f - Eigen::Vector2f(1.0f, 1.0f); // normalize to [-1,1]
+  // r = 1.0f
   float l = v.norm();
-  if (l < 1.0f) {
-    float h = 0.5f + cos(l * M_PI) * 0.5f;
-    return Eigen::Vector3f(v.x(), -v.y(), h);
-  }
-  return Eigen::Vector3f(v.x(), -v.y(), 0);
+  float z = l<0.5f ? sqrt(1.0f - l * l) : 0.5f/l;
+  return Eigen::Vector3f(v.x(), v.y(), z);
 }
 
 void Trackball::apply(const std::shared_ptr<MouseInputEvent> &mouse_event) {
@@ -32,24 +31,24 @@ void Trackball::apply(const std::shared_ptr<MouseInputEvent> &mouse_event) {
     if (mouse_button_status_ >> static_cast<uint8_t>(MouseButton::Left) & 1) {
       Eigen::Vector3f prev_tbc = tbc(prev_mouse_pos_);
       Eigen::Vector3f cur_tbc = tbc(Eigen::Vector2f(mouse_event->pos));
-      Eigen::Vector3f xp = cur_tbc.cross(prev_tbc);
+      Eigen::Vector3f xp = prev_tbc.cross(cur_tbc);
       float xp_len = xp.norm();
       if (xp_len > 0.0f) {
         float angle = asin(xp_len);
         Eigen::Vector3f axis = xp / xp_len;
-        Eigen::AngleAxisf rotate(-angle, axis);
+        Eigen::AngleAxisf rotate(angle, axis);
         // update camera
         Eigen::Matrix3f r = camera_->getViewMatrix().block<3, 3>(0, 0);
-        camera_->setRotation(r * rotate);
+        camera_->setRotation(rotate * r);
         LOGI("prev_mouse_pos {}, cur_mouse_pos {}, angle {} axis {}\n camera view mat:\n{}",
             prev_mouse_pos_.transpose(), mouse_event->pos.transpose(), angle,
-            axis.transpose(), camera_->getViewMatrix());         
+            axis.transpose(), camera_->getViewMatrix());
       }
     } else if (mouse_button_status_ >>
                    static_cast<uint8_t>(MouseButton::Middle) &
                1) {
       // todo calc move
-    }
+    } // strol
     prev_mouse_pos_ = mouse_event->pos;
     break;
   default:

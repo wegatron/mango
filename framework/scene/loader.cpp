@@ -93,8 +93,9 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     scene.update(0);
     Eigen::Vector3f center = root_tr->aabb.center();
     float radius = 0.5f * root_tr->aabb.sizes().norm();
-    Eigen::Vector3f eye = center + Eigen::Vector3f(0, 0, 2.0f * radius);
+    Eigen::Vector3f eye = center + Eigen::Vector3f(0, 0, 5.0f * radius);
     default_camera.setLookAt(eye, Eigen::Vector3f(0,1,0), center);
+    default_camera.setFovy(0.6f);
     scene.createCameraEntity(camera_node_name, camera_tr_re, default_camera);
   }
   else scene.createCameraEntity(camera_node_name, camera_tr_re, cameras[0]);

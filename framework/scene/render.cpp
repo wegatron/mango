@@ -68,6 +68,13 @@ void Render::render(Scene *scene, Gui * gui)
                             const std::shared_ptr<StaticMesh> &mesh) {
         // update materials
         mat->updateParams();
+
+        // // debug
+        // static float total_time = 0.0f;
+        // total_time += cur_time_;
+        // tr->gtransform.block<3, 3>(0, 0) =
+        //     Eigen::AngleAxisf(total_time, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(3.1415926f*0.5f, Eigen::Vector3f::UnitY())
+        //         .toRotationMatrix();
         rpass_.draw(mat, tr->gtransform, mesh, cmd_buf_, width, height);
       });  
   cmd_buf_->endRenderPass();
