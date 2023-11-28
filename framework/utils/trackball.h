@@ -10,13 +10,13 @@ public:
 
   void apply(const std::shared_ptr<MouseInputEvent> &mouse_event) override;
 
-  void rotate(double angle, const Eigen::Vector3f &axis);
-
-  void zoom(double ratio);
-
-  void pan(const Eigen::Vector3f &delta);
-
 private:
+
+  void rotate(const Eigen::Vector2f &prev_mouse_pos, const Eigen::Vector2f &cur_mouse_pos);
+  
+  void pan(const Eigen::Vector2f &prev_mouse_pos, const Eigen::Vector2f &cur_mouse_pos);
+  
+  void zoom(const float delta_y);  
   
   enum UpdateMode { INACTIVE = 0, ROTATE, PAN, ZOOM };
   

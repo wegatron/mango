@@ -15,7 +15,8 @@ public:
 
   // default z: front, x: right, y: up
   void setLookAt(const Eigen::Vector3f &eye, const Eigen::Vector3f &up,
-                 const Eigen::Vector3f &center) {    
+                 const Eigen::Vector3f &center) {
+    dis_ = (eye - center).norm(); 
     Eigen::Vector3f ny = up.normalized();
     Eigen::Vector3f nz = (eye - center).normalized();
     Eigen::Vector3f nx = ny.cross(nz).normalized();
@@ -68,6 +69,8 @@ public:
 
   const Eigen::Matrix4f &getViewMatrix() const noexcept { return view_mat_; }
 
+  Eigen::Matrix4f &getViewMatrix() noexcept { return view_mat_; }
+
   /**
    * \brief Get the projection matrix of the camera, right-handed coordinate
    * system depth: [0, 1] \return The projection matrix
@@ -85,6 +88,8 @@ public:
     return proj_mat_;
   }
 
+  const float getDis() const noexcept { return dis_; }
+
 private:
   std::string name_;
   bool dirty_proj_{true};
@@ -92,6 +97,7 @@ private:
   float far_{-1000.0f};
   float fovy_{M_PI*0.333f};
   float aspect_{1.0f};
+  float dis_{1.0f};
 
   Eigen::Matrix4f proj_mat_;
   Eigen::Matrix4f view_mat_{Eigen::Matrix4f::Identity()};

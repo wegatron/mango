@@ -12,7 +12,7 @@ enum class EventSource : uint8_t { Keyboard, Mouse, Touchscreen };
 
 enum class MouseButton : uint8_t { Left, Right, Middle, Back, Forward, Unknown };
 
-enum class MouseAction : uint8_t { Down, Up, Move, Unknown };
+enum class MouseAction : uint8_t { Down, Up, Move, Scroll, Unknown };
 
 struct MouseInputEvent {
   MouseInputEvent(bool h, MouseButton b, MouseAction a, float px, float py)

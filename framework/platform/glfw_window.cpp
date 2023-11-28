@@ -6,7 +6,7 @@
 
 namespace vk_engine {
 
-MouseButton translateMouseButton(int button) {
+static MouseButton translateMouseButton(int button) {
   if (button < GLFW_MOUSE_BUTTON_6) {
     return static_cast<MouseButton>(button);
   }
@@ -14,7 +14,7 @@ MouseButton translateMouseButton(int button) {
   return MouseButton::Unknown;
 }
 
-MouseAction translateMouseAction(int action) {
+static MouseAction translateMouseAction(int action) {
   if (action == GLFW_PRESS) {
     return MouseAction::Down;
   } else if (action == GLFW_RELEASE) {
@@ -24,7 +24,7 @@ MouseAction translateMouseAction(int action) {
   return MouseAction::Unknown;
 }
 
-void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
+static void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
   if (auto *app =
           reinterpret_cast<AppBase *>(glfwGetWindowUserPointer(window))) {
     int width, height;
@@ -37,7 +37,7 @@ void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
   }
 }
 
-void mouseButtonCallback(GLFWwindow *window, int button, int action,
+static void mouseButtonCallback(GLFWwindow *window, int button, int action,
                          int /*mods*/) {
   MouseAction mouse_action = translateMouseAction(action);
 
@@ -52,6 +52,14 @@ void mouseButtonCallback(GLFWwindow *window, int button, int action,
     app->inputMouseEvent(std::make_shared<MouseInputEvent>(
         false, translateMouseButton(button), mouse_action,
         static_cast<float>(xpos), static_cast<float>(ypos)));
+  }
+}
+
+static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {  
+  if (AppBase* app = reinterpret_cast<AppBase*>(glfwGetWindowUserPointer(window))) {
+    app->inputMouseEvent(std::make_shared<MouseInputEvent>(false,
+        MouseButton::Unknown, MouseAction::Scroll, static_cast<float>(xoffset),
+        static_cast<float>(yoffset)));    
   }
 }
 
@@ -103,6 +111,7 @@ void GlfwWindow::setupCallback(AppBase *app) {
   glfwSetWindowUserPointer(window_, app);
   glfwSetCursorPosCallback(window_, cursorPositionCallback);
   glfwSetMouseButtonCallback(window_, mouseButtonCallback);
+  glfwSetScrollCallback(window_, scrollCallback);
 }
 
 GlfwWindow::~GlfwWindow() {
