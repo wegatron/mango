@@ -18,7 +18,7 @@ class DescriptorSetLayout;
 class RenderPass;
 
 constexpr uint32_t MESH_UBO_SIZE=sizeof(float)*16;
-constexpr uint32_t MAX_MESH_DESC_SET=90;
+constexpr uint32_t MAX_MESH_DESC_SET=90 * TIME_BEFORE_EVICTION;
 struct MeshParamsSet
 {
     std::unique_ptr<Buffer> ubo;

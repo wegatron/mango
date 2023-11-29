@@ -31,6 +31,8 @@ public:
   
   void setRootTr(const std::shared_ptr<TransformRelationship> &root_tr) { root_tr_ = root_tr; }
 
+  const Eigen::AlignedBox3f & getSceneAabb() const { return scene_aabb_; }
+
   // disable copy/move
   Scene(const Scene &) = delete;
   Scene(Scene &&) = delete;
@@ -42,6 +44,7 @@ private:
   entt::registry light_manager_;
   entt::registry renderable_manager_;
   std::shared_ptr<TransformRelationship> root_tr_; // root transform relationship node
+  Eigen::AlignedBox3f scene_aabb_;
 };
 
 } // namespace vk_engine

@@ -91,8 +91,9 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     Camera default_camera;
     default_camera.setName(camera_node_name);
     scene.update(0);
-    Eigen::Vector3f center = root_tr->aabb.center();
-    float radius = 0.5f * root_tr->aabb.sizes().norm();
+    const auto &scene_aabb = scene.getSceneAabb();
+    Eigen::Vector3f center = scene_aabb.center();
+    float radius = 0.5f * scene_aabb.sizes().norm();
     Eigen::Vector3f eye = center + Eigen::Vector3f(0, 0, 5.0f * radius);
     default_camera.setLookAt(eye, Eigen::Vector3f(0,1,0), center);
     default_camera.setFovy(0.6f);

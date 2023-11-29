@@ -10,6 +10,11 @@
 
 int main(int argc, char const *argv[])
 {
+  if(argc < 2) {
+    LOGE("Usage: {} <scene_path>", argv[0]);
+    return -1;
+  }
+  
   #if !NDEBUG
   spdlog::set_level(spdlog::level::debug);
   #endif
@@ -18,8 +23,8 @@ int main(int argc, char const *argv[])
   VkFormat depth_stencil_format = VK_FORMAT_D24_UNORM_S8_UINT;
   auto app = std::make_shared<vk_engine::ViewerApp>("viewer");
 
-  //app->setScene("data/buster_drone/scene.gltf");
-  app->setScene("data/plane/plane0.obj");
+  //app->setScene("data/buster_drone/scene.gltf");  
+  app->setScene(argv[1]);
 
   auto window_app =
       std::make_shared<vk_engine::WindowApp>("viewer", 800, 600);

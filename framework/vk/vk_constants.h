@@ -20,4 +20,4 @@ constexpr uint32_t MAX_MAT_DESC_SET = 100;
 constexpr uint32_t MAX_GLOBAL_DESC_SET = 100;
 constexpr uint32_t MAX_TEXTURE_NUM_COUNT = 4; // average max texture number for one descriptor set
 
-static constexpr uint32_t TIME_BEFORE_EVICTION = VK_MAX_COMMAND_BUFFERS;
+static constexpr uint32_t TIME_BEFORE_EVICTION = 4;

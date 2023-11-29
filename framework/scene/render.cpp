@@ -6,7 +6,7 @@
 #include <framework/vk/commands.h>
 #include <framework/vk/frame_buffer.h>
 #include <framework/vk/queue.h>
-#include<framework/utils/gui.h>
+#include <framework/utils/gui.h>
 
 namespace vk_engine {
 Render::Render(VkFormat color_format, VkFormat ds_format)
