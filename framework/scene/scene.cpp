@@ -34,15 +34,15 @@ Scene::createCameraEntity(const std::string &name,
 }
 
 void Scene::update(const float seconds) {
-  scene_aabb_.setEmpty();
-  scene_aabb_.extend(root_tr_->aabb.transformed(Eigen::Affine3f(root_tr_->gtransform)));
+  auto &scene_aabb = root_tr_->aabb;
+  scene_aabb.setEmpty();
   //// update rt
   std::queue<std::shared_ptr<TransformRelationship>> q;
   // add root->node's children
   auto rch = root_tr_->child;
   if(rch != nullptr) {
     rch->gtransform = rch->ltransform;  
-    scene_aabb_.extend(rch->aabb.transformed(Eigen::Affine3f(rch->gtransform)));
+    scene_aabb.extend(rch->aabb.transformed(Eigen::Affine3f(rch->gtransform)));
   }
   while (rch != nullptr) // add child nodes
   {
@@ -53,7 +53,7 @@ void Scene::update(const float seconds) {
     auto node = q.front();
     q.pop();
     node->gtransform = node->parent->gtransform * node->ltransform;
-    scene_aabb_.extend(node->aabb.transformed(Eigen::Affine3f(node->gtransform)));
+    scene_aabb.extend(node->aabb.transformed(Eigen::Affine3f(node->gtransform)));
     // add child nodes
     auto ch = node->child;
     while (ch != nullptr) {

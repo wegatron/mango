@@ -51,14 +51,16 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
   std::vector<std::shared_ptr<Material>> materials = processMaterials(a_scene);
   std::vector<Camera> cameras = processCameras(a_scene);
   // process root node's mesh
-  auto root_tr = processNode(nullptr, a_scene->mRootNode, a_scene, scene,
-                             meshes, materials);
+  auto root_tr = std::make_shared<TransformRelationship>();
   scene.setRootTr(root_tr);
+  auto scene_root = processNode(nullptr, a_scene->mRootNode, a_scene, scene,
+                             meshes, materials);
+  root_tr->child = scene_root; scene_root->parent = root_tr;
 
   std::queue<std::pair<std::shared_ptr<TransformRelationship>,
                        aiNode *>> // parent tr, parent node
       process_queue;
-  process_queue.push(std::make_pair(root_tr, a_scene->mRootNode));
+  process_queue.push(std::make_pair(scene_root, a_scene->mRootNode));
   
   auto camera_node_name = cameras.empty() ? "vk_engine_default_main_camera" : cameras[0].getName();
   std::shared_ptr<TransformRelationship> camera_tr_re = root_tr;
@@ -91,7 +93,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     Camera default_camera;
     default_camera.setName(camera_node_name);
     scene.update(0);
-    const auto &scene_aabb = scene.getSceneAabb();
+    const auto &scene_aabb = root_tr->aabb;
     Eigen::Vector3f center = scene_aabb.center();
     float radius = 0.5f * scene_aabb.sizes().norm();
     Eigen::Vector3f eye = center + Eigen::Vector3f(0, 0, 5.0f * radius);
@@ -219,6 +221,11 @@ void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,
                               std::shared_ptr<PbrMaterial> &mat) {
   aiString texture_path;
   if (AI_SUCCESS == a_mat->GetTexture(ttype, 0, &texture_path)) {
+
+    aiColor3D diffuse_color(0.8f, 0.8f, 0.0f);    
+    mat->setUboParamValue(
+        shader_color_name,
+        glm::vec4(diffuse_color.r, diffuse_color.g, diffuse_color.b, 1.0));    
     // mat->setTextureParamValue(shader_texture_name,
     //                           file_directory_ +
     //                               std::string(texture_path.C_Str()));
