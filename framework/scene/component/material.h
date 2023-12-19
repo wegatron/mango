@@ -107,6 +107,15 @@ public:
     throw std::runtime_error("invalid ubo param name or type");
   }
 
+  void setTexture(const std::string &name, const std::shared_ptr<ImageView> &img_view, uint32_t index = 0)
+  {
+    
+  }
+
+  std::vector<MaterialTextureParam> &textureParams() {
+    return texture_params_;
+  }
+
   void updateParams();
 
   /**
@@ -132,6 +141,7 @@ protected:
   // std::vector<ShaderResource> shader_resources_;
 
   MaterialUboInfo ubo_info_;
+  std::vector<MaterialTextureParam> texture_params_;
   
   std::shared_ptr<MatParamsSet> mat_param_set_;
   std::unique_ptr<DescriptorSetLayout> desc_set_layout_;
@@ -157,14 +167,5 @@ protected:
         const std::shared_ptr<VkDriver> &driver,
         DescriptorPool &desc_pool) override;
 };
-
-// struct GlobalMVP {
-//   glm::mat4 model;
-//   glm::mat4 view_proj;
-//   glm::vec3 camera_position;
-// };
-
-// set 0, binding 0
-// MaterialUbo globalMVPUbo();
 
 } // namespace vk_engine

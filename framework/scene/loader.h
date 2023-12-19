@@ -34,13 +34,14 @@ private:
                const std::shared_ptr<CommandBuffer> &cmd_buf);
 
   std::vector<std::shared_ptr<Material>>
-  processMaterials(const aiScene *a_scene);
+  processMaterials(const aiScene *a_scene, const std::string &dir, const std::shared_ptr<CommandBuffer> &cmd_buf);
 
   std::vector<Camera> processCameras(const aiScene *a_scene);
 
-  void loadAndSet(aiMaterial *a_mat, aiTextureType ttype, const char *pKey,
-                  unsigned int vtype, unsigned int idx,
-                  const char *shader_texture_name,
+  void loadAndSet(const std::string &dir, const aiScene *a_scene, aiMaterial *a_mat,
+                  const std::shared_ptr<CommandBuffer> &cmd_buf,
+                  aiTextureType ttype, const char *pKey, unsigned int vtype,
+                  unsigned int idx, const char *shader_texture_name,
                   const char *shader_color_name,
                   std::shared_ptr<PbrMaterial> &mat);
 };

@@ -68,7 +68,7 @@ public:
 
   VkImageView getHandle() const { return image_view_; }
 
-  VkImage getVkImage() const { return image_; }
+  VkImage getVkImage() const { return vk_image_; }
 
   VkImageSubresourceRange getSubresourceRange() const {
     return subresource_range_;
@@ -82,10 +82,10 @@ private:
   VkFormat format_;
   VkImageSubresourceRange subresource_range_;
 #endif
-  VkImage image_{VK_NULL_HANDLE};
+  VkImage vk_image_{VK_NULL_HANDLE};
   VkImageView image_view_{VK_NULL_HANDLE};
 
   std::shared_ptr<VkDriver> driver_;
+  std::shared_ptr<Image> image_ptr_;
 };
-
 } // namespace vk_engine

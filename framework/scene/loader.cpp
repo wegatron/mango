@@ -2,6 +2,7 @@
 
 #include <Eigen/Dense>
 #include <queue>
+#include <stbi/stb_image.h>
 
 #include <framework/scene/asset_manager.hpp>
 #include <framework/scene/component/camera.h>
@@ -38,7 +39,11 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
                              const std::shared_ptr<CommandBuffer> &cmd_buf) {
   Assimp::Importer importer;
   const aiScene *a_scene =
-      importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality | aiProcess_GenBoundingBoxes);
+      importer.ReadFile(path, aiProcessPreset_TargetRealtime_Quality |
+                                  aiProcess_GenBoundingBoxes);
+
+  std::size_t found = path.find_last_of("/\\");
+  std::string dir = (found == std::string::npos) ? "./" : path.substr(0, found);
 
   if (!a_scene) {
     throw std::runtime_error("Assimp import error:" +
@@ -48,21 +53,25 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
   //  add materials and meshes to scene
   std::vector<std::shared_ptr<StaticMesh>> meshes =
       processMeshs(a_scene, cmd_buf);
-  std::vector<std::shared_ptr<Material>> materials = processMaterials(a_scene);
+  std::vector<std::shared_ptr<Material>> materials =
+      processMaterials(a_scene, dir, cmd_buf);
   std::vector<Camera> cameras = processCameras(a_scene);
+
   // process root node's mesh
   auto root_tr = std::make_shared<TransformRelationship>();
   scene.setRootTr(root_tr);
   auto scene_root = processNode(nullptr, a_scene->mRootNode, a_scene, scene,
-                             meshes, materials);
-  root_tr->child = scene_root; scene_root->parent = root_tr;
+                                meshes, materials);
+  root_tr->child = scene_root;
+  scene_root->parent = root_tr;
 
   std::queue<std::pair<std::shared_ptr<TransformRelationship>,
                        aiNode *>> // parent tr, parent node
       process_queue;
   process_queue.push(std::make_pair(scene_root, a_scene->mRootNode));
-  
-  auto camera_node_name = cameras.empty() ? "vk_engine_default_main_camera" : cameras[0].getName();
+
+  auto camera_node_name =
+      cameras.empty() ? "vk_engine_default_main_camera" : cameras[0].getName();
   std::shared_ptr<TransformRelationship> camera_tr_re = root_tr;
   while (!process_queue.empty()) {
     auto e = process_queue.front();
@@ -76,8 +85,9 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
       auto cur_tr_re = processNode(parent_tr, pnode->mChildren[i], a_scene,
                                    scene, meshes, materials);
 
-      if(!cameras.empty() && pnode->mChildren[i]->mName.C_Str() == camera_node_name)
-        camera_tr_re = cur_tr_re;        
+      if (!cameras.empty() &&
+          pnode->mChildren[i]->mName.C_Str() == camera_node_name)
+        camera_tr_re = cur_tr_re;
 
       if (i == 0)
         parent_tr->child = cur_tr_re;
@@ -88,8 +98,8 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
       process_queue.push(std::make_pair(cur_tr_re, pnode->mChildren[i]));
     }
   }
-  
-  if(cameras.empty()) {
+
+  if (cameras.empty()) {
     Camera default_camera;
     default_camera.setName(camera_node_name);
     scene.update(0);
@@ -97,11 +107,11 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     Eigen::Vector3f center = scene_aabb.center();
     float radius = 0.5f * scene_aabb.sizes().norm();
     Eigen::Vector3f eye = center + Eigen::Vector3f(0, 0, 5.0f * radius);
-    default_camera.setLookAt(eye, Eigen::Vector3f(0,1,0), center);
+    default_camera.setLookAt(eye, Eigen::Vector3f(0, 1, 0), center);
     default_camera.setFovy(0.6f);
     scene.createCameraEntity(camera_node_name, camera_tr_re, default_camera);
-  }
-  else scene.createCameraEntity(camera_node_name, camera_tr_re, cameras[0]);
+  } else
+    scene.createCameraEntity(camera_node_name, camera_tr_re, cameras[0]);
 
   // load the default camera if have
   LOGI("load scene: {}", path.c_str());
@@ -171,12 +181,12 @@ AssimpLoader::processMeshs(const aiScene *a_scene,
     ret_meshes[i]->faces = {ib, 0, static_cast<uint32_t>(tri_v_inds.size()),
                             VK_INDEX_TYPE_UINT32,
                             VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST};
-    ret_meshes[i]->aabb.min() = Eigen::Vector3f(tmp_a_mesh->mAABB.mMin.x,
-                                              tmp_a_mesh->mAABB.mMin.y,
-                                              tmp_a_mesh->mAABB.mMin.z);
-    ret_meshes[i]->aabb.max() = Eigen::Vector3f(tmp_a_mesh->mAABB.mMax.x,
-                                              tmp_a_mesh->mAABB.mMax.y,
-                                              tmp_a_mesh->mAABB.mMax.z);
+    ret_meshes[i]->aabb.min() =
+        Eigen::Vector3f(tmp_a_mesh->mAABB.mMin.x, tmp_a_mesh->mAABB.mMin.y,
+                        tmp_a_mesh->mAABB.mMin.z);
+    ret_meshes[i]->aabb.max() =
+        Eigen::Vector3f(tmp_a_mesh->mAABB.mMax.x, tmp_a_mesh->mAABB.mMax.y,
+                        tmp_a_mesh->mAABB.mMax.z);
   }
 
   // // add barrier to make sure transfer is complete before rendering
@@ -214,23 +224,24 @@ std::vector<Camera> AssimpLoader::processCameras(const aiScene *a_scene) {
   return ret_cameras;
 }
 
-void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,
-                              const char *pKey, unsigned int vtype,
-                              unsigned int idx, const char *shader_texture_name,
+void AssimpLoader::loadAndSet(const std::string &dir, const aiScene *a_scene,
+                              aiMaterial *a_mat,
+                              const std::shared_ptr<CommandBuffer> &cmd_buf,
+                              aiTextureType ttype, const char *pKey,
+                              unsigned int vtype, unsigned int idx,
+                              const char *shader_texture_name,
                               const char *shader_color_name,
                               std::shared_ptr<PbrMaterial> &mat) {
   aiString texture_path;
   if (AI_SUCCESS == a_mat->GetTexture(ttype, 0, &texture_path)) {
+    auto a_texture = a_scene->GetEmbeddedTexture(texture_path.C_Str());
 
-    aiColor3D diffuse_color(0.8f, 0.8f, 0.0f);    
-    mat->setUboParamValue(
-        shader_color_name,
-        glm::vec4(diffuse_color.r, diffuse_color.g, diffuse_color.b, 1.0));    
-    // mat->setTextureParamValue(shader_texture_name,
-    //                           file_directory_ +
-    //                               std::string(texture_path.C_Str()));
-    // getDefaultAppContext().gpu_asset_manager->requestImage<vk_engine::Image>(file_directory_
-    // + std::string(texture_path.C_Str()));
+    auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+    std::shared_ptr<ImageView> img_view = (a_texture != nullptr) ? asset_manager->request<ImageView>(
+          reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
+          cmd_buf) : asset_manager->request<ImageView>(dir + texture_path.C_Str(),
+                                            cmd_buf);
+    //mat->set
   } else {
     aiColor3D diffuse_color(0.0f, 0.0f, 0.0f);
     a_mat->Get(pKey, vtype, idx, diffuse_color);
@@ -241,7 +252,8 @@ void AssimpLoader::loadAndSet(aiMaterial *a_mat, aiTextureType ttype,
 }
 
 std::vector<std::shared_ptr<Material>>
-AssimpLoader::processMaterials(const aiScene *a_scene) {
+AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
+                               const std::shared_ptr<CommandBuffer> &cmd_buf) {
   auto num_materials = a_scene->mNumMaterials;
   std::vector<std::shared_ptr<Material>> ret_mats(num_materials);
 
@@ -252,17 +264,19 @@ AssimpLoader::processMaterials(const aiScene *a_scene) {
     auto a_mat = a_scene->mMaterials[i];
     auto cur_mat = std::make_shared<PbrMaterial>();
     ret_mats[i] = cur_mat;
-
-    // diffuse, base color
-    loadAndSet(a_mat, aiTextureType_DIFFUSE, AI_MATKEY_COLOR_DIFFUSE,
-               "base_color_texture", "pbr_mat.base_color", cur_mat);
-    /*     loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
-                  "specular_color_texture", "pbr_mat.specular_color", cur_mat);
-        loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS,
-       AI_MATKEY_ROUGHNESS_FACTOR, "roughness_texture", "pbr_mat.roughness",
-       cur_mat); loadAndSet(a_mat, aiTextureType_METALNESS,
-       AI_MATKEY_METALLIC_FACTOR, "metallic_texture", "pbr_mat.metallic",
-       cur_mat); */
+    // aiTextureType_DIFFUSE is same as aiTextureType_BASE_COLOR
+    // diffuse is used for old specular-glossiness workflow
+    // and base color is used for metallic-roughness workflow
+    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_BASE_COLOR,
+               AI_MATKEY_COLOR_DIFFUSE, "base_color_texture",
+               "pbr_mat.base_color", cur_mat);
+    // loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
+    //            "specular_color_texture", "pbr_mat.specular_color", cur_mat);
+    // loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS,
+    //            AI_MATKEY_ROUGHNESS_FACTOR, "roughness_texture",
+    //            "pbr_mat.roughness", cur_mat);
+    // loadAndSet(a_mat, aiTextureType_METALNESS, AI_MATKEY_METALLIC_FACTOR,
+    //            "metallic_texture", "pbr_mat.metallic", cur_mat);
     cur_mat->compile();
   }
   return ret_mats;
