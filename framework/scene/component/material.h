@@ -2,6 +2,8 @@
 #include <map>
 #include <stdexcept>
 #include <list>
+#include <algorithm>
+#include <string_view>
 #include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
@@ -14,6 +16,15 @@
 
 
 namespace vk_engine {
+
+constexpr char const * BASE_COLOR_NAME = "mat.base_color";
+constexpr char const * METALLIC_NAME = "mat.metallic";
+constexpr char const * ROUGHNESS_NAME = "mat.roughness";
+constexpr char const * NORMAL_NAME = "mat.normal";
+
+constexpr char const * BASE_COLOR_TEXTURE_NAME = "base_color_tex";
+constexpr char const * METALLIC_TEXTURE_NAME = "metallic_tex";
+constexpr char const * NORMAL_TEXTURE_NAME = "normal_tex";
 
 class GraphicsPipeline;
 class ImageView;
@@ -47,12 +58,17 @@ struct MaterialTextureParam {
 struct MatParamsSet {
   size_t mat_hash_id{0};
   std::unique_ptr<Buffer> ubo;
-  // textures
   std::shared_ptr<DescriptorSet> desc_set;
 };
 
 class Material;
 
+/**
+ * \brief MatGpuResourcePool is a gpu resource pool for material.
+ * It manages GraphicsPipeline, MatParamsSet(uniform buffer + DescriptorSet)
+ * 
+ * the gc function should be called onece per frame
+*/
 class MatGpuResourcePool {
 public:
   MatGpuResourcePool(VkFormat color_format, VkFormat ds_format);
@@ -109,7 +125,13 @@ public:
 
   void setTexture(const std::string &name, const std::shared_ptr<ImageView> &img_view, uint32_t index = 0)
   {
-    
+    auto itr = std::find_if(texture_params_.begin(), texture_params_.end(),
+                 [&name, &index](const MaterialTextureParam &param) {
+                   return param.name == name && param.index == index;
+                 });
+    assert(itr != texture_params_.end());
+    itr->img_view = img_view;
+    itr->dirty = true;
   }
 
   std::vector<MaterialTextureParam> &textureParams() {
@@ -140,8 +162,9 @@ protected:
   // std::shared_ptr<PipelineState> pipeline_state_;
   // std::vector<ShaderResource> shader_resources_;
 
-  MaterialUboInfo ubo_info_;
-  std::vector<MaterialTextureParam> texture_params_;
+  MaterialUboInfo ubo_info_; //!< params info(specification、cpu data) of material store in uniform buffer
+
+  std::vector<MaterialTextureParam> texture_params_; //!< texture params of material
   
   std::shared_ptr<MatParamsSet> mat_param_set_;
   std::unique_ptr<DescriptorSetLayout> desc_set_layout_;

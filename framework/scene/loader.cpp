@@ -43,7 +43,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
                                   aiProcess_GenBoundingBoxes);
 
   std::size_t found = path.find_last_of("/\\");
-  std::string dir = (found == std::string::npos) ? "./" : path.substr(0, found);
+  std::string dir = (found == std::string::npos) ? "./" : path.substr(0, found+1);
 
   if (!a_scene) {
     throw std::runtime_error("Assimp import error:" +
@@ -241,7 +241,7 @@ void AssimpLoader::loadAndSet(const std::string &dir, const aiScene *a_scene,
           reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
           cmd_buf) : asset_manager->request<ImageView>(dir + texture_path.C_Str(),
                                             cmd_buf);
-    //mat->set
+    mat->setTexture(shader_texture_name, img_view);
   } else {
     aiColor3D diffuse_color(0.0f, 0.0f, 0.0f);
     a_mat->Get(pKey, vtype, idx, diffuse_color);
@@ -268,8 +268,8 @@ AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
     // diffuse is used for old specular-glossiness workflow
     // and base color is used for metallic-roughness workflow
     loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_BASE_COLOR,
-               AI_MATKEY_COLOR_DIFFUSE, "base_color_texture",
-               "pbr_mat.base_color", cur_mat);
+               AI_MATKEY_COLOR_DIFFUSE, BASE_COLOR_TEXTURE_NAME,
+               BASE_COLOR_NAME, cur_mat);
     // loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
     //            "specular_color_texture", "pbr_mat.specular_color", cur_mat);
     // loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS,

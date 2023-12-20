@@ -13,10 +13,6 @@ namespace vk_engine {
 #define HAS_ROUGHNESS_TEXTURE "HAS_ROUGHNESS_TEXTURE"
 #define HAS_NORMAL_TEXTURE "HAS_NORMAL_TEXTURE"
 
-#define BASE_COLOR_TEXTURE_NAME "base_color_texture"
-#define METALLIC_TEXTURE_NAME "metallic_texture"
-#define NORMAL_TEXTURE_NAME "normal_texture"
-
 enum PbrTextureParamIndex {
   BASE_COLOR_TEXTURE_INDEX = 0,
   METALLIC_TEXTURE_INDEX = 1,
@@ -130,6 +126,16 @@ PbrMaterial::PbrMaterial() {
                                   {0, typeid(glm::vec2), sizeof(glm::vec4),
                                    "pbr_mat.metallic_roughness"},
                               }};
+  texture_params_ = {
+    {
+      .set = MATERIAL_SET_INDEX,
+      .binding = 0,
+      .index = 0,
+      .name = BASE_COLOR_TEXTURE_NAME,
+      .img_view = nullptr,
+      .dirty = false
+    }
+  };
   ShaderResource sr[] = {{
       .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
       .type = ShaderResourceType::BufferUniform,

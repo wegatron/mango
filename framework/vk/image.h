@@ -86,6 +86,6 @@ private:
   VkImageView image_view_{VK_NULL_HANDLE};
 
   std::shared_ptr<VkDriver> driver_;
-  std::shared_ptr<Image> image_ptr_;
+  std::shared_ptr<Image> image_ptr_; //!< used to keep image alive
 };
 } // namespace vk_engine
