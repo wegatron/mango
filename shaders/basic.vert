@@ -3,7 +3,9 @@
 // vertex data binding = 0
 layout(location=0) in vec4 vpos;
 layout(location=1) in vec3 normal;
-layout(location=2) in vec2 uv;
+layout(location=2) in vec2 out_uv;
+
+layout(location=0) out vec2 uv;
 
 layout(set=0, binding = 0) uniform GlobalUniform
 {
@@ -20,4 +22,5 @@ layout(set=2, binding = 0) uniform MeshUniform
 void main(void)
 {
     gl_Position = global_uniform.proj * global_uniform.view * mesh_uniform.model * vpos;
+    out_uv = uv;
 }

@@ -3,6 +3,7 @@
 #include <framework/vk/buffer.h>
 #include <framework/vk/pipeline.h>
 #include <framework/vk/resource_cache.h>
+#include <framework/vk/image.h>
 
 namespace vk_engine {
 
@@ -129,7 +130,7 @@ PbrMaterial::PbrMaterial() {
   texture_params_ = {
     {
       .set = MATERIAL_SET_INDEX,
-      .binding = 0,
+      .binding = 1,
       .index = 0,
       .name = BASE_COLOR_TEXTURE_NAME,
       .img_view = nullptr,
@@ -211,7 +212,19 @@ void Material::updateParams() {
   }
 
   // todo update textures... descriptor set
-  // add memory barrier for image
+  assert(mat_param_set_->desc_set != nullptr);
+  for(auto &tp : texture_params_)
+  {
+    if(!tp.dirty)
+      continue;
+    tp.dirty = false;
+    // update descriptor set
+    VkDescriptorImageInfo desc_image_info{
+      .sampler = nullptr,
+      .imageView = tp.img_view->getHandle(),
+      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+  }
 }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
