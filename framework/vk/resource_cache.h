@@ -8,9 +8,9 @@
 #include <cassert>
 
 namespace vk_engine {
+class Sampler;
 
-class VkPipelineCacheWraper
-{
+class VkPipelineCacheWraper {
 public:
   VkPipelineCacheWraper(VkDevice device);
 
@@ -48,6 +48,9 @@ struct ResourceCacheState {
 
   std::mutex render_pass_mtx;
   std::unordered_map<size_t, std::shared_ptr<RenderPass>> render_passes;
+
+  std::mutex samples_mtx;
+  std::unordered_map<size_t, std::shared_ptr<Sampler>> samplers;
 
   std::unique_ptr<VkPipelineCacheWraper> pipeline_cache;
 };
@@ -89,10 +92,15 @@ public:
                     const std::vector<LoadStoreInfo> &load_store_infos,
                     const std::vector<SubpassInfo> &subpasses);
 
+  std::shared_ptr<Sampler>
+  requestSampler(const std::shared_ptr<VkDriver> &driver,
+    VkFilter mag_filter, VkFilter min_filter, VkSamplerMipmapMode mipmap_mode,
+    VkSamplerAddressMode address_mode_u, VkSamplerAddressMode address_mode_v);
+
   VkPipelineCache getPipelineCache() const {
     return (state_.pipeline_cache == nullptr) ? VK_NULL_HANDLE : state_.pipeline_cache->getHandle();
   }
-  
+
   void setPipelineCache(std::unique_ptr<VkPipelineCacheWraper> &&pipeline_cache)
   {
     state_.pipeline_cache = std::move(pipeline_cache);

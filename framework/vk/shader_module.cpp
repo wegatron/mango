@@ -59,10 +59,10 @@ void ShaderModule::load(const std::string &file_path) {
 void ShaderModule::setGlsl(const std::string &glsl_code,
                            VkShaderStageFlagBits stage) {
 
-  glsl_code_ = variant_.getPreamble() + glsl_code;
+  glsl_code_ = glsl_code;
   stage_ = stage;
 
-  compile2spirv(glsl_code_, stage_, spirv_code_);
+  compile2spirv(glsl_code_, variant_.getPreamble(), stage_, spirv_code_);
 
   // update shader resources
   SPIRVReflection spirv_reflection;
@@ -80,6 +80,7 @@ void ShaderModule::setGlsl(const std::string &glsl_code,
 EShLanguage findShaderLanguage(VkShaderStageFlagBits stage);
 
 void ShaderModule::compile2spirv(const std::string &glsl_code,
+                                 const std::string &preamble,
                                  VkShaderStageFlagBits stage,
                                  std::vector<uint32_t> &spirv_code) {
   // Initialize glslang library.
@@ -94,6 +95,7 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
                                        1);
   shader.setEntryPoint("main");
   shader.setSourceEntryPoint("main");
+  shader.setPreamble(preamble.c_str());
   EShMessages messages = static_cast<EShMessages>(
       EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);
 

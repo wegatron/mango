@@ -3,18 +3,18 @@
 // vertex data binding = 0
 layout(location=0) in vec4 vpos;
 layout(location=1) in vec3 normal;
-layout(location=2) in vec2 out_uv;
+layout(location=2) in vec2 uv;
 
-layout(location=0) out vec2 uv;
+layout(location=0) out vec2 out_uv;
 
-layout(set=0, binding = 0) uniform GlobalUniform
+layout(set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 {
     // camera
     mat4 view;
     mat4 proj;
 } global_uniform;
 
-layout(set=2, binding = 0) uniform MeshUniform
+layout(set=PER_OBJECT_SET_INDEX, binding = 0) uniform MeshUniform
 {
     mat4 model;
 } mesh_uniform;

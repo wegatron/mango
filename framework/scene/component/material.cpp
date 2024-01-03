@@ -4,6 +4,7 @@
 #include <framework/vk/pipeline.h>
 #include <framework/vk/resource_cache.h>
 #include <framework/vk/image.h>
+#include <framework/vk/sampler.h>
 
 namespace vk_engine {
 
@@ -13,6 +14,11 @@ namespace vk_engine {
 #define HAS_METALLIC_TEXTURE "HAS_METALLIC_TEXTURE"
 #define HAS_ROUGHNESS_TEXTURE "HAS_ROUGHNESS_TEXTURE"
 #define HAS_NORMAL_TEXTURE "HAS_NORMAL_TEXTURE"
+
+#define HAS_BASE_COLOR_TEXTURE_VARIANT 1
+#define HAS_METALLIC_TEXTURE_VARIANT 1<<1
+#define HAS_ROUGHNESS_TEXTURE_VARIANT 1<<2
+#define HAS_NORMAL_TEXTURE_VARIANT 1<<3
 
 enum PbrTextureParamIndex {
   BASE_COLOR_TEXTURE_INDEX = 0,
@@ -64,7 +70,7 @@ void MatGpuResourcePool::gc() {
 
 std::shared_ptr<GraphicsPipeline> MatGpuResourcePool::requestGraphicsPipeline(
     const std::shared_ptr<Material> &mat) {
-  auto itr = mat_pipelines_.find(mat->hashId());
+  auto itr = mat_pipelines_.find(mat->materialTypeId());
   if (itr != mat_pipelines_.end()) {
     return itr->second;
   }
@@ -78,7 +84,7 @@ std::shared_ptr<GraphicsPipeline> MatGpuResourcePool::requestGraphicsPipeline(
 
   auto pipeline = std::make_shared<GraphicsPipeline>(
       driver, rs_cache, default_render_pass_, std::move(pipeline_state));
-  mat_pipelines_.emplace(mat->hashId(), pipeline);
+  mat_pipelines_.emplace(mat->materialTypeId(), pipeline);
   return pipeline;
 }
 
@@ -88,11 +94,11 @@ std::shared_ptr<DescriptorSet> MatGpuResourcePool::requestMatDescriptorSet(
     return mat->mat_param_set_->desc_set;
 
   // find a free mat param set
-  auto mat_id = mat->hashId();
+  auto mat_id = mat->materialTypeId();
   auto itr =
       std::find_if(free_mat_params_set_.begin(), free_mat_params_set_.end(),
                    [mat_id](const std::shared_ptr<MatParamsSet> &ps) {
-                     return ps->mat_hash_id == mat_id;
+                     return ps->mat_type_id == mat_id;
                    });
 
   if (itr != free_mat_params_set_.end()) {
@@ -114,7 +120,7 @@ std::shared_ptr<DescriptorSet> MatGpuResourcePool::requestMatDescriptorSet(
 }
 
 PbrMaterial::PbrMaterial() {
-  hash_id_ = typeid(PbrMaterial).hash_code();
+  // all candidate inputs
   ubo_info_ = MaterialUboInfo{.set = MATERIAL_SET_INDEX,
                               .binding = 0,
                               .size = 32,
@@ -137,7 +143,16 @@ PbrMaterial::PbrMaterial() {
       .dirty = false
     }
   };
-  ShaderResource sr[] = {{
+}
+
+void PbrMaterial::compile() {
+  ShaderVariant variant;  
+
+  material_type_id_ = PBR_MATERIAL;
+
+  uint32_t sr_cnt = 0;
+  ShaderResource sr[2];
+  sr[sr_cnt++] = {
       .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
       .type = ShaderResourceType::BufferUniform,
       .mode = ShaderResourceMode::Static,
@@ -145,19 +160,25 @@ PbrMaterial::PbrMaterial() {
       .binding = 0,
       .array_size = 1,
       .size = ubo_info_.size,
-  }};
+  };
+
+  // shader variance
+  if(texture_params_[BASE_COLOR_TEXTURE_INDEX].img_view != nullptr)
+  {
+    variant.addDefine(HAS_BASE_COLOR_TEXTURE);
+    material_type_id_ |= HAS_BASE_COLOR_TEXTURE_VARIANT;
+    sr[sr_cnt++] = {
+      .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .type = ShaderResourceType::ImageSampler,
+      .mode = ShaderResourceMode::Static,
+      .set = MATERIAL_SET_INDEX,
+      .binding = 1,
+      .array_size = 1
+    };
+  }
+
   desc_set_layout_ = std::make_unique<DescriptorSetLayout>(
-      getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr, 1);
-}
-
-void PbrMaterial::compile() {
-  ShaderVariant variant;
-
-  // // shader variance
-  // if(!texture_params_[BASE_COLOR_TEXTURE_INDEX].img_file_path.empty())
-  // {
-  //   variant.addDefine(HAS_BASE_COLOR_TEXTURE);
-  // }
+      getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr, sr_cnt);
 
   vs_ = std::make_shared<ShaderModule>(variant);
   vs_->load("shaders/basic.vert");
@@ -174,7 +195,7 @@ std::shared_ptr<MatParamsSet>
 PbrMaterial::createMatParamsSet(const std::shared_ptr<VkDriver> &driver,
                                 DescriptorPool &desc_pool) {
   auto ret = std::make_shared<MatParamsSet>();
-  ret->mat_hash_id = hash_id_;
+  ret->mat_type_id = material_type_id_;
   // create uniform buffer
   ret->ubo = std::make_unique<Buffer>(
       driver, 0, ubo_info_.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -211,20 +232,38 @@ void Material::updateParams() {
     ubo_info_.dirty = false;
   }
 
-  // todo update textures... descriptor set
+  // update textures... descriptor set
   assert(mat_param_set_->desc_set != nullptr);
-  for(auto &tp : texture_params_)
-  {
-    if(!tp.dirty)
-      continue;
+
+  std::vector<VkDescriptorImageInfo> desc_img_infos;
+  desc_img_infos.reserve(texture_params_.size());
+
+  std::vector<VkWriteDescriptorSet> wds;
+  wds.reserve(texture_params_.size());
+  for (auto &tp : texture_params_) {
+    if(!tp.dirty) continue;
     tp.dirty = false;
     // update descriptor set
-    VkDescriptorImageInfo desc_image_info{
-      .sampler = nullptr,
-      .imageView = tp.img_view->getHandle(),
-      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-    };
+    auto driver = getDefaultAppContext().driver;
+    // save sampler to texture params. to make sure sampler not deconstruct when use
+    tp.sampler = getDefaultAppContext().resource_cache->requestSampler(driver, 
+      VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR,
+      VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    
+    desc_img_infos.emplace_back(VkDescriptorImageInfo{
+        .sampler = tp.sampler->getHandle(),
+        .imageView = tp.img_view->getHandle(),
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    });
+    wds.emplace_back(VkWriteDescriptorSet{
+      .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+      .dstSet = mat_param_set_->desc_set->getHandle(),
+      .dstBinding = tp.binding,
+      .descriptorCount = 1,
+      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+      .pImageInfo = &desc_img_infos.back()});
   }
+  getDefaultAppContext().driver->update(wds);  
 }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {

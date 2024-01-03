@@ -1,9 +1,11 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
+
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/vk_constants.h>
 
 namespace vk_engine {
 
@@ -70,42 +72,42 @@ struct ShaderResource {
   static size_t hash(const ShaderResource &resource) noexcept;
 };
 
-class ShaderVariant
-{
-  public:
-	ShaderVariant() = default;
-
-	ShaderVariant(std::string &&preamble) : preamble_(std::move(preamble)) {}	
-
-	/**
-	 * @brief Add definitions to shader variant
-	 * @param definitions Vector of definitions to add to the variant
-	 */
-	void addDefinitions(const std::vector<std::string> &definitions);
-
-	/**
-	 * @brief Adds a define macro to the shader
-	 * @param def String which should go to the right of a define directive
-	 */
-	void addDefine(const std::string &def);
-
-	/**
-	 * @brief Adds an undef macro to the shader
-	 * @param undef String which should go to the right of an undef directive
-	 */
-	void addUndefine(const std::string &undef);
-  
-  const std::string &getPreamble() const
-  {
-    return preamble_;
+class ShaderVariant {
+public:
+  ShaderVariant() {
+    addDefine("GLOBAL_SET_INDEX " + std::to_string(GLOBAL_SET_INDEX));
+    addDefine("MATERIAL_SET_INDEX " + std::to_string(MATERIAL_SET_INDEX));
+    addDefine("PER_OBJECT_SET_INDEX " + std::to_string(PER_OBJECT_SET_INDEX));
   }
+
+  ShaderVariant(std::string &&preamble) : preamble_(std::move(preamble)) {}
+
+  /**
+   * @brief Add definitions to shader variant
+   * @param definitions Vector of definitions to add to the variant
+   */
+  void addDefinitions(const std::vector<std::string> &definitions);
+
+  /**
+   * @brief Adds a define macro to the shader
+   * @param def String which should go to the right of a define directive
+   */
+  void addDefine(const std::string &def);
+
+  /**
+   * @brief Adds an undef macro to the shader
+   * @param undef String which should go to the right of an undef directive
+   */
+  void addUndefine(const std::string &undef);
+
+  const std::string &getPreamble() const { return preamble_; }
+
 private:
-  std::string preamble_;  
+  std::string preamble_;
 };
 
 class ShaderModule final {
 public:
-  
   ShaderModule(const ShaderVariant &variant) : variant_(variant) {}
 
   /**
@@ -138,9 +140,11 @@ public:
                      VkShaderStageFlagBits stage) noexcept;
 
   static void compile2spirv(const std::string &glsl_code,
+                            const std::string &preamble,
                             VkShaderStageFlagBits stage,
                             std::vector<uint32_t> &spirv_code);
-  static void readGlsl(const std::string &file_path, VkShaderStageFlagBits &stage, std::string &glsl_code);
+  static void readGlsl(const std::string &file_path,
+                       VkShaderStageFlagBits &stage, std::string &glsl_code);
 
 private:
   size_t hash_code_{0};
@@ -152,10 +156,10 @@ private:
   ShaderVariant variant_;
 };
 
-class Shader final
-{
+class Shader final {
 public:
-  Shader(const std::shared_ptr<VkDriver> &driver, const std::shared_ptr<ShaderModule> &shader_module);
+  Shader(const std::shared_ptr<VkDriver> &driver,
+         const std::shared_ptr<ShaderModule> &shader_module);
 
   ~Shader();
 
@@ -167,7 +171,9 @@ private:
 };
 
 /*
- * @brief parse shader resources, return a vector of ShaderResource, sorted by set index
+ * @brief parse shader resources, return a vector of ShaderResource, sorted by
+ * set index
  */
-std::vector<ShaderResource> parseShaderResources(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
+std::vector<ShaderResource> parseShaderResources(
+    const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 } // namespace vk_engine

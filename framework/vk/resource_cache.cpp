@@ -1,12 +1,14 @@
 #include <framework/vk/resource_cache.h>
+#include <framework/vk/sampler.h>
 #include <glm/gtx/hash.hpp>
 
 namespace vk_engine {
 
 std::shared_ptr<ShaderModule>
 ResourceCache::requestShaderModule(VkShaderStageFlagBits stage,
-                                   const std::string &glsl_source, const ShaderVariant &variant) {
-  std::unique_lock<std::mutex> lock(state_.shader_modules_mtx);                                    
+                                   const std::string &glsl_source,
+                                   const ShaderVariant &variant) {
+  std::unique_lock<std::mutex> lock(state_.shader_modules_mtx);
   auto hash_code = ShaderModule::hash(glsl_source, stage);
   auto iter = state_.shader_modules.find(hash_code);
   if (iter != state_.shader_modules.end())
@@ -19,17 +21,18 @@ ResourceCache::requestShaderModule(VkShaderStageFlagBits stage,
 }
 
 std::shared_ptr<ShaderModule>
-ResourceCache::requestShaderModule(const std::string &file_path, const ShaderVariant& variant) {
+ResourceCache::requestShaderModule(const std::string &file_path,
+                                   const ShaderVariant &variant) {
   VkShaderStageFlagBits stage{};
   std::string glsl_code;
   ShaderModule::readGlsl(file_path, stage, glsl_code);
   return requestShaderModule(stage, glsl_code, variant);
 }
 
-std::shared_ptr<Shader>
-ResourceCache::requestShader(const std::shared_ptr<VkDriver> &driver,
-                             const std::shared_ptr<ShaderModule> &shader_module) {
-  std::unique_lock<std::mutex> lock(state_.shaders_mtx);                           
+std::shared_ptr<Shader> ResourceCache::requestShader(
+    const std::shared_ptr<VkDriver> &driver,
+    const std::shared_ptr<ShaderModule> &shader_module) {
+  std::unique_lock<std::mutex> lock(state_.shaders_mtx);
   auto hash_code = shader_module->getHash();
   auto iter = state_.shaders.find(hash_code);
   if (iter != state_.shaders.end())
@@ -53,8 +56,8 @@ std::shared_ptr<DescriptorSetLayout> ResourceCache::requestDescriptorSetLayout(
   if (itr != state_.descriptor_set_layouts.end())
     return itr->second;
 
-  auto descriptor_set_layout =
-      std::make_shared<DescriptorSetLayout>(driver, set_index, resources.data(), resources.size());
+  auto descriptor_set_layout = std::make_shared<DescriptorSetLayout>(
+      driver, set_index, resources.data(), resources.size());
   state_.descriptor_set_layouts[hash_code] = descriptor_set_layout;
   return descriptor_set_layout;
 }
@@ -77,12 +80,11 @@ std::shared_ptr<PipelineLayout> ResourceCache::requestPipelineLayout(
   return pipeline_layout;
 }
 
-std::shared_ptr<RenderPass>
-ResourceCache::requestRenderPass(const std::shared_ptr<VkDriver> &driver,
-                  const std::vector<Attachment> &attachments,
-                  const std::vector<LoadStoreInfo> &load_store_infos,
-                  const std::vector<SubpassInfo> &subpasses)
-{
+std::shared_ptr<RenderPass> ResourceCache::requestRenderPass(
+    const std::shared_ptr<VkDriver> &driver,
+    const std::vector<Attachment> &attachments,
+    const std::vector<LoadStoreInfo> &load_store_infos,
+    const std::vector<SubpassInfo> &subpasses) {
   size_t hash_code = 0;
   for (const auto &attachment : attachments) {
     glm::detail::hash_combine(hash_code, attachment.getHash());
@@ -98,11 +100,36 @@ ResourceCache::requestRenderPass(const std::shared_ptr<VkDriver> &driver,
   if (itr != state_.render_passes.end())
     return itr->second;
 
-  auto render_pass = std::make_shared<RenderPass>(driver, attachments, load_store_infos, subpasses);
+  auto render_pass = std::make_shared<RenderPass>(driver, attachments,
+                                                  load_store_infos, subpasses);
   state_.render_passes[hash_code] = render_pass;
   return render_pass;
 }
 
+std::shared_ptr<Sampler> ResourceCache::requestSampler(const std::shared_ptr<VkDriver> &driver,
+                                        VkFilter mag_filter,
+                                        VkFilter min_filter,
+                                        VkSamplerMipmapMode mipmap_mode,
+                                        VkSamplerAddressMode address_mode_u,
+                                        VkSamplerAddressMode address_mode_v) {
+  size_t hash_code = 0;
+  glm::detail::hash_combine(hash_code, static_cast<size_t>(mag_filter));
+  glm::detail::hash_combine(hash_code, static_cast<size_t>(min_filter));
+  glm::detail::hash_combine(hash_code, static_cast<size_t>(mipmap_mode));
+  glm::detail::hash_combine(hash_code, static_cast<size_t>(address_mode_u));
+  glm::detail::hash_combine(hash_code, static_cast<size_t>(address_mode_v));
+
+  std::unique_lock<std::mutex> lock(state_.samples_mtx);
+  auto itr = state_.samplers.find(hash_code);
+  if(itr!=state_.samplers.end())
+  {
+    return itr->second;
+  }
+  auto s = std::make_shared<Sampler>(driver, mag_filter, min_filter, mipmap_mode,
+                                     address_mode_u, address_mode_v);
+  state_.samplers[hash_code] = s;
+  return s;
+}
 
 void ResourceCache::clear() {
   std::unique_lock<std::mutex> lock(state_.shaders_mtx);
@@ -114,16 +141,20 @@ void ResourceCache::clear() {
   std::unique_lock<std::mutex> lock3(state_.descriptor_set_layouts_mtx);
   state_.descriptor_set_layouts.clear();
 
-  std::unique_lock<std::mutex> lock4(state_.pipeline_layouts_mtx);  
+  std::unique_lock<std::mutex> lock4(state_.pipeline_layouts_mtx);
   state_.pipeline_layouts.clear();
 
   std::unique_lock<std::mutex> lock5(state_.render_pass_mtx);
   state_.render_passes.clear();
+
+  std::unique_lock<std::mutex> lock6(state_.samples_mtx);
+  state_.samplers.clear();
 }
 
-VkPipelineCacheWraper::VkPipelineCacheWraper(VkDevice device) : device_(device)
-{
-	VkPipelineCacheCreateInfo create_info{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};  
+VkPipelineCacheWraper::VkPipelineCacheWraper(VkDevice device)
+    : device_(device) {
+  VkPipelineCacheCreateInfo create_info{
+      VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
   vkCreatePipelineCache(device, &create_info, nullptr, &handle_);
 }
 

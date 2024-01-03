@@ -17,6 +17,9 @@
 
 namespace vk_engine {
 
+// using uint64_t to define a material type code, the higher 16 bit for Basic Material type, and the lower 16 bits for variant input.
+#define PBR_MATERIAL 1u<<16
+
 constexpr char const * BASE_COLOR_NAME = "mat.base_color";
 constexpr char const * METALLIC_NAME = "mat.metallic";
 constexpr char const * ROUGHNESS_NAME = "mat.roughness";
@@ -29,6 +32,7 @@ constexpr char const * NORMAL_TEXTURE_NAME = "normal_tex";
 class GraphicsPipeline;
 class ImageView;
 class RenderPass;
+class Sampler;
 
 struct MaterialUboParam {
   uint32_t stride{0}; // for array element in uniform buffer
@@ -52,11 +56,12 @@ struct MaterialTextureParam {
   uint32_t index; // for array texture
   std::string name;
   std::shared_ptr<vk_engine::ImageView> img_view;
+  std::shared_ptr<vk_engine::Sampler> sampler;
   bool dirty;
 };
 
 struct MatParamsSet {
-  size_t mat_hash_id{0};
+  uint32_t mat_type_id{0};
   std::unique_ptr<Buffer> ubo;
   std::shared_ptr<DescriptorSet> desc_set;
 };
@@ -148,7 +153,7 @@ public:
 
   virtual void compile() = 0;
 
-  uint32_t hashId() const { return hash_id_; }
+  uint32_t materialTypeId() const { return material_type_id_; }
 
 protected:
 
@@ -169,7 +174,7 @@ protected:
   std::shared_ptr<MatParamsSet> mat_param_set_;
   std::unique_ptr<DescriptorSetLayout> desc_set_layout_;
     
-  uint32_t hash_id_{0};
+  uint32_t material_type_id_{0};
 
   friend class MatGpuResourcePool;  
   // uint32_t variance_; // material variance bit flags, check by value
@@ -177,6 +182,11 @@ protected:
 
 class PbrMaterial : public Material {
 public:
+
+  /**
+   * \brief Constructor of PBR material defines all possible input parameters/textures during construction.
+   * During compilation, the corresponding descriptor layout is set based on the configured inputs.
+  */
   PbrMaterial();
 
   ~PbrMaterial() override = default;
@@ -186,6 +196,14 @@ public:
   void compile() override;
 
 protected:
+
+  /**
+   * \brief Create paramset including material's uniform buffer and material's descriptor.
+   * 
+   * This will invoke when requestDescriptor for rendering.
+   * For different variations, we keep the uniform buffer of the material unchanged, even though some parameters may not be used.
+   * An image is considered an external input parameter for textures, unlike the uniform buffer, and is not created by the Material.
+  */
   std::shared_ptr<MatParamsSet> createMatParamsSet(
         const std::shared_ptr<VkDriver> &driver,
         DescriptorPool &desc_pool) override;

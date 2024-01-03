@@ -64,6 +64,11 @@ if (NOT WIN32)
 set(THREAD "-lpthread")
 endif()
 
+# include(macros.cmake)
+
+# set(GLSL_C)
+# data_to_c_simple(shaders/basic.frag GLSL_C)
+
 add_subdirectory(framework)
 #add_subdirectory(samples/triangle)
 add_subdirectory(samples/viewer)

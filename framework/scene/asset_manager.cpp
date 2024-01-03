@@ -23,8 +23,9 @@ namespace vk_engine
         // if channel is not 4 need to add channel to it
         void *data_ptr = img_data;
         if (channel != 4) {
-            data_ptr = new uint8_t[width * height * 4];
-            reshapeImageData<uint8_t>(img_data, data_ptr, width * height * channel, channel, 4);    
+            data_ptr = new uint8_t[width * height * 4];            
+            reshapeImageData<uint8_t>(img_data, data_ptr,
+                                      width * height * channel, channel, 4);
         }
 
         auto driver = getDefaultAppContext().driver;
