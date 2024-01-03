@@ -6,20 +6,18 @@
 #include <framework/utils/app_context.h>
 #include <framework/vk/image.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/vk/commands.h>
 
 
 namespace vk_engine
 {
     static constexpr uint32_t ASSET_TIME_BEFORE_EVICTION = 100;   
 
-    template <>
-    std::shared_ptr<ImageView> load(const std::string &path, const std::shared_ptr<CommandBuffer> &cmd_buf) {
-        int width = 0;
-        int height = 0;
-        int channel = 0;
-        stbi_uc *img_data = stbi_load(path.c_str(), &width, &height, &channel, 0);
+    std::shared_ptr<ImageView> createImageView(void * img_data, int width, int height, int channel,
+        const std::shared_ptr<CommandBuffer> &cmd_buf)
+    {
         VkExtent3D extent{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
-
+        
         // if channel is not 4 need to add channel to it
         void *data_ptr = img_data;
         if (channel != 4) {
@@ -32,14 +30,32 @@ namespace vk_engine
         auto image = std::make_shared<Image>(
             driver, 0, VK_FORMAT_R8G8B8A8_SRGB, extent, VK_SAMPLE_COUNT_1_BIT,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
-        image->updateByStaging(data_ptr, getDefaultAppContext().stage_pool, cmd_buf); 
-        if(data_ptr != img_data) delete[] static_cast<uint8_t *>(data_ptr);
-        stbi_image_free(img_data);        
+        image->updateByStaging(data_ptr, getDefaultAppContext().stage_pool, cmd_buf);
+        
+        // add memory barrier
+        ImageMemoryBarrier barrier{
+        .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .dst_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .src_queue_family_index = VK_QUEUE_FAMILY_IGNORED,
+        .dst_queue_family_index = VK_QUEUE_FAMILY_IGNORED};        
+        cmd_buf->imageMemoryBarrier();
+        if (data_ptr != img_data)
+          delete[] static_cast<uint8_t *>(data_ptr);
+    }
 
-        // image view
-        return std::make_shared<ImageView>(
-            image, VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB,
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1, 1);
+    template <>
+    std::shared_ptr<ImageView> load(const std::string &path, const std::shared_ptr<CommandBuffer> &cmd_buf) {
+        int width = 0;
+        int height = 0;
+        int channel = 0;
+        stbi_uc *img_data = stbi_load(path.c_str(), &width, &height, &channel, 0);
+        auto ret = createImageView(img_data, width, height, channel, cmd_buf);
+        stbi_image_free(img_data);
+        return ret;
     }
 
     template <>
@@ -49,19 +65,9 @@ namespace vk_engine
         int height = 0;
         int channel = 0;
         stbi_uc *img_data = stbi_load_from_memory(data, size, &width, &height, &channel, 0);
-        VkExtent3D extent{static_cast<uint32_t>(width), static_cast<uint32_t>(height), 1};
-        assert(channel == 4);
-        auto driver = getDefaultAppContext().driver;
-        auto image = std::make_shared<Image>(
-            driver, 0, VK_FORMAT_R8G8B8_SRGB, extent, VK_SAMPLE_COUNT_1_BIT,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
-        image->updateByStaging(img_data, getDefaultAppContext().stage_pool, cmd_buf);
-        stbi_image_free(img_data);
-
-        // image view
-        return std::make_shared<ImageView>(
-            image, VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8_SRGB,
-            VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1, 1);             
+        auto ret = createImageView(img_data, width, height, channel, cmd_buf);        
+        stbi_image_free(img_data);        
+        return ret;
     }
 
     void GPUAssetManager::gc()
