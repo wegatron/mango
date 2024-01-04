@@ -90,6 +90,7 @@ void Image::updateByStaging(void *data, const std::shared_ptr<StagePool> &stage_
       .imageOffset = { 0, 0, 0 },
       .imageExtent = extent_
   };
+
   VkImageSubresourceRange transitionRange = {
       .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
       .baseMipLevel = 0,
@@ -104,7 +105,7 @@ void Image::updateByStaging(void *data, const std::shared_ptr<StagePool> &stage_
   vkCmdCopyBufferToImage(cmd_buf_handle, stage->buffer, image_,
           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-  transitionLayout(cmd_buf_handle, transitionRange, getDefaultLayout());
+  //transitionLayout(cmd_buf_handle, transitionRange, getDefaultLayout());
 }
 
 void setTransSrcDst(const VkImageLayout old_layout, const VkImageLayout new_layout,
@@ -170,20 +171,24 @@ void Image::transitionLayout(const VkCommandBuffer cmd_buf, const VkImageSubreso
   layout_ = layout;
 }
 
-VkImageLayout Image::getDefaultLayout() const
-{
-    // Filament sometimes samples from depth while it is bound to the current render target, (e.g.
-    // SSAO does this while depth writes are disabled) so let's keep it simple and use GENERAL for
-    // all depth textures.
-    if ((image_usage_ & VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL) 
-    || (image_usage_ & VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-    || ((image_usage_ & VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL))) {
-        return VK_IMAGE_LAYOUT_GENERAL;
-    }
+// VkImageLayout Image::getDefaultLayout() const
+// {
+//     // Filament sometimes samples from depth while it is bound to the current render target, (e.g.
+//     // SSAO does this while depth writes are disabled) so let's keep it simple and use GENERAL for
+//     // all depth textures.
+//     bool sample_flag = image_usage_ & VK_IMAGE_USAGE_SAMPLED_BIT;
 
-    // Finally, the layout for an immutable texture is optimal read-only.
-    return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-}
+//     bool attachment_flag =
+//         (image_usage_ & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) ||
+//         (image_usage_ & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+//     if ((sample_flag && attachment_flag) || image_usage_ & VK_IMAGE_USAGE_STORAGE_BIT)
+//       return VK_IMAGE_LAYOUT_GENERAL;
+
+//     if(sample_flag)
+//       return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+//     return VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL;
+// }
 
 ImageView::ImageView(const std::shared_ptr<Image> &image,
                      VkImageViewType view_type, VkFormat format,

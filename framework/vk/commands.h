@@ -14,6 +14,7 @@ class Pipeline;
 class Buffer;
 class DescriptorSet;
 class ImageView;
+class Image;
 
 class CommandPool final {
 public:
@@ -103,6 +104,9 @@ public:
 
   void imageMemoryBarrier(const ImageMemoryBarrier &image_memory_barrier,
                           const std::shared_ptr<ImageView> &image_view);
+
+  void imageMemoryBarrier(const ImageMemoryBarrier &image_memory_barrier,
+                          const std::shared_ptr<Image> &image);
 
 private:
   CommandBuffer(const std::shared_ptr<VkDriver> &driver,

@@ -31,20 +31,21 @@ namespace vk_engine
             driver, 0, VK_FORMAT_R8G8B8A8_SRGB, extent, VK_SAMPLE_COUNT_1_BIT,
             VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE);
         image->updateByStaging(data_ptr, getDefaultAppContext().stage_pool, cmd_buf);
-        
-        // add memory barrier
-        ImageMemoryBarrier barrier{
-        .old_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .new_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        .src_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .dst_access_mask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-        .src_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .dst_stage_mask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-        .src_queue_family_index = VK_QUEUE_FAMILY_IGNORED,
-        .dst_queue_family_index = VK_QUEUE_FAMILY_IGNORED};        
-        cmd_buf->imageMemoryBarrier();
-        if (data_ptr != img_data)
-          delete[] static_cast<uint8_t *>(data_ptr);
+        if (data_ptr != img_data) delete[] static_cast<uint8_t *>(data_ptr);
+        VkImageSubresourceRange range = {
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .baseMipLevel = 0,
+            .levelCount = 1,
+            .baseArrayLayer = 0,
+            .layerCount = 1
+        };        
+        image->transitionLayout(cmd_buf->getHandle(), range,
+                                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        auto img_v = std::make_shared<ImageView>(
+            image, VK_IMAGE_VIEW_TYPE_2D, VK_FORMAT_R8G8B8A8_SRGB,
+            VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1, 1);
+
+        return img_v;
     }
 
     template <>

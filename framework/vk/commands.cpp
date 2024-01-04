@@ -276,4 +276,31 @@ void CommandBuffer::imageMemoryBarrier(
                          image_memory_barrier.dst_stage_mask, 0, 0, nullptr, 0,
                          nullptr, 1, &barrier);
 }
+
+void CommandBuffer::imageMemoryBarrier(const ImageMemoryBarrier &image_memory_barrier,
+                        const std::shared_ptr<Image> &image)
+{
+  VkImageSubresourceRange range{
+    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+    .levelCount = 1,
+    .baseArrayLayer = 0,
+    .layerCount = 1
+  };
+  VkImageMemoryBarrier barrier{
+      .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+      .pNext = nullptr,
+      .srcAccessMask = image_memory_barrier.src_access_mask,
+      .dstAccessMask = image_memory_barrier.dst_access_mask,
+      .oldLayout = image_memory_barrier.old_layout,
+      .newLayout = image_memory_barrier.new_layout,
+      .srcQueueFamilyIndex = image_memory_barrier.src_queue_family_index,
+      .dstQueueFamilyIndex = image_memory_barrier.dst_queue_family_index,
+      .image = image->getHandle(),
+      .subresourceRange = range
+  };
+
+  vkCmdPipelineBarrier(command_buffer_, image_memory_barrier.src_stage_mask,
+                       image_memory_barrier.dst_stage_mask, 0, 0, nullptr, 0,
+                       nullptr, 1, &barrier);                          
+}
 } // namespace vk_engine

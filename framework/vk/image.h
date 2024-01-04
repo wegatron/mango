@@ -33,7 +33,7 @@ public:
 
   void transitionLayout(VkCommandBuffer cmd_buf, const VkImageSubresourceRange &range, const VkImageLayout layout);
 
-  VkImageLayout getDefaultLayout() const;
+  // VkImageLayout getDefaultLayout() const;
 
 private:
   std::shared_ptr<VkDriver> driver_;
