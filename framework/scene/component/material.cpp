@@ -263,7 +263,7 @@ void Material::updateParams() {
       .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
       .pImageInfo = &desc_img_infos.back()});
   }
-  getDefaultAppContext().driver->update(wds);  
+  if(!wds.empty()) getDefaultAppContext().driver->update(wds);  
 }
 
 void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {

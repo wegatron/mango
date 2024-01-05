@@ -28,11 +28,20 @@ public:
   virtual void tick(const float seconds, const uint32_t rt_index,
                     const uint32_t frame_index) = 0;
 
+  /**
+   * \brief init graphics rendering stuff and setup framebuffer.
+  */
   virtual void init(Window * window, const std::shared_ptr<VkDriver> &driver,
                     const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
+  /**
+   * \brief update the render target in frame buffer, also with camera aspect ratio.
+  */
   virtual void updateRts(const std::vector<std::shared_ptr<RenderTarget>> &rts) = 0;
 
+  /**
+   * \brief using the event manager to process event.
+  */
   virtual void
   inputMouseEvent(const std::shared_ptr<MouseInputEvent> &mouse_event) {}
 

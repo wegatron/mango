@@ -48,9 +48,10 @@ uint32_t Vk11Config::checkSelectAndUpdate(
     uint32_t graphics_queue_family_index = pd.getGraphicsQueueFamilyIndex();
     if (graphics_queue_family_index == 0XFFFFFFFF)
       continue;
-    VkBool32 surface_support = false;
-    vkGetPhysicalDeviceSurfaceSupportKHR(handle, graphics_queue_family_index,
-                                         surface, &surface_support);
+    VkBool32 surface_support = (surface == nullptr);
+    if(!surface_support)
+      vkGetPhysicalDeviceSurfaceSupportKHR(handle, graphics_queue_family_index,
+                                          surface, &surface_support);
     if (!surface_support || (pd.getProperties().deviceType != device_type_))
       continue;
 

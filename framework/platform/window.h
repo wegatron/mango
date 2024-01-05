@@ -30,12 +30,18 @@ public:
 
   virtual void getExtent(uint32_t &width, uint32_t &height) const = 0;
 
+  /**
+   * \brief event process one loop, generate user input event to callback.
+  */
   virtual void processEvents() = 0;
 
   virtual void initImgui() = 0;
 
   virtual void shutdownImgui() = 0;
 
+  /**
+   * \brief 
+  */
   virtual void imguiNewFrame() = 0;
 
   // setup callback function

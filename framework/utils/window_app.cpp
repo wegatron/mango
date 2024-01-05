@@ -9,6 +9,13 @@
 #include <framework/platform/glfw_window.h>
 
 namespace vk_engine {
+
+WindowApp::WindowApp(const std::shared_ptr<Window> &window)
+{
+  assert(window != nullptr);
+  window_->getExtent(width_, height_);
+}
+
 WindowApp::~WindowApp() {
 
   driver_->waitIdle();
@@ -25,19 +32,10 @@ WindowApp::~WindowApp() {
   // destroy swapchain and depth images implicitly
 }
 
-bool WindowApp::init(VkFormat color_format, VkFormat ds_format) {
+bool WindowApp::init(const std::shared_ptr<VkConfig> &config, VkFormat color_format, VkFormat ds_format) {
   color_format_ = color_format;
   ds_format_ = ds_format;
-  window_ = std::make_unique<GlfwWindow>(window_title_, width_, height_);
   driver_ = std::make_shared<VkDriver>();
-  auto config = std::make_shared<Vk11Config>();
-  config->setDeviceType(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
-  config->setFeatureEnabled(VkConfig::FeatureExtension::GLFW_EXTENSION,
-                            VkConfig::EnableState::REQUIRED);  
-  config->setFeatureEnabled(VkConfig::FeatureExtension::KHR_SWAPCHAIN,
-                            VkConfig::EnableState::REQUIRED);
-  config->setFeatureEnabled(VkConfig::FeatureExtension::INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
-                            VkConfig::EnableState::REQUIRED);
   try {
 #ifdef NDEBUG
     driver_->init(window_title_, config, window_);

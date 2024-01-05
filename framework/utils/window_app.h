@@ -14,15 +14,14 @@
 namespace vk_engine {
 class WindowApp final {
 public:
-  WindowApp(const std::string &window_title, const int width, const int height)
-      : window_title_(window_title), width_(width), height_(height), current_frame_index_(0) {}
+  WindowApp(const std::shared_ptr<Window> &window);
 
   ~WindowApp();
 
   WindowApp(const WindowApp &) = delete;
   WindowApp &operator=(const WindowApp &) = delete;
 
-  bool init(VkFormat color_format, VkFormat ds_format);
+  bool init(const std::shared_ptr<VkConfig> &config, VkFormat color_format, VkFormat ds_format);
 
   void setApp(std::shared_ptr<AppBase> &&app);
   

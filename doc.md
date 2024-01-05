@@ -1,6 +1,10 @@
 # vk_engine
 
-doc use mermaid. [comparation between graphviz and mermaid](https://www.devtoolsdaily.com/diagrams/graphviz_vs_mermaidjs/)
+doc use mermaid. 
+[comparation between graphviz and mermaid](https://www.devtoolsdaily.com/diagrams/graphviz_vs_mermaidjs/)
+[class diagram](https://mermaid.js.org/syntax/classDiagram.html)
+
+vulkan quick start: [vulkan-in-30-minutes](https://renderdoc.org/vulkan-in-30-minutes.html)
 
 ## framework Modules
 
@@ -24,6 +28,89 @@ The descriptor set number 1 will be used for material resources,
 and the number 2 will be used for per-object resources. 
 
 This way, the inner render loops will only be binding descriptor sets 1 and 2, and performance will be high.
+
+### Initialization
+#### Vulkan
+通过VkConfig类来设置Vulkan的配置: 需要启用的特性(instance extension, device extension), 使用的设备类型(独显/集显). 通过设置的信息, 该类帮助创建所需的create info并选择满足条件的physical device. 高版本的Vulkan会将一些原来的扩展作为默认的特性, VkConfig被设计为一个虚类(接口).
+
+Vulkan的基础知识:
+Instance创建时可以指定需要添加layer(validation layer), 通过instance来query系统中的device以及device的特性. 基本的流程是: `vkCreateInstance()` → `vkEnumeratePhysicalDevices()` → `vkCreateDevice()`.
+
+```mermaid
+---
+title: Vulkan Initialization
+---
+classDiagram
+    class VkConfig {     
+        void setFeatureEnabled(FeatureExtension feature, EnableState enable_state)
+        
+        void setDeviceType(VkPhysicalDeviceType device_type)
+        
+        EnableState isFeatureEnabled(FeatureExtension feature)
+
+        virtual void checkAndUpdate(VkInstanceCreateInfo &create_info)
+
+        virtual uint32_t checkSelectAndUpdate(const std::vector<PhysicalDevice> &physical_devices, VkDeviceCreateInfo &create_info, VkSurfaceKHR surface)
+    }
+
+    class Vk11Config
+
+    VkConfig <|-- Vk11Config
+```
+
+#### App
+* `Window` 是窗口的抽象基类(framework/platform/window.h). 由其负责窗口的创建、关闭、移动、缩放, imgUI的初始化接入, 接收用户的UI操作产生输入事件, 创建surface.
+* `AppBase` 是应用程序的抽象基类(framework/utils/app_base.h). 实现了应用的真正逻辑, 包括初始化、每一帧的tick, 以及事件的处理.
+* `WindowApp` 包含了`Window`和`AppBase`, 将他们组装成一个完整的功能类(framework/utils/window_app.h).
+
+```mermaid
+---
+title: App
+---
+classDiagram
+    class Window {
+        virtual VkSurfaceKHR createSurface(VkInstance instance)
+
+        virtual bool shouldClose()
+
+        virtual void getExtent(uint32_t &width, uint32_t &height) const
+
+        virtual void processEvents() //接收用户操作, 产生ui event
+
+        virtual void initImgui() // 这里将ui事件与接入imgui, 这里可以全部转移到callback中(待优化)
+
+        virtual void shutdownImgui()
+
+        virtual void imguiNewFrame()
+
+        virtual void setupCallback(AppBase * app) // ui event callback
+    }
+    
+    class GlfwWindow
+
+    class AppBase {
+        AppBase(const std::string &name)
+        virtual void tick(const float seconds, const uint32_t rt_index, const uint32_t frame_index)
+        virtual void init(Window * window, const std::shared_ptr< VkDriver > &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts)
+        virtual void updateRts(const std::vector< std::shared_ptr< RenderTarget > > &rts)
+        virtual void inputMouseEvent(const std::shared_ptr<MouseInputEvent> &mouse_event)
+    }
+
+    class ViewerApp
+
+    class AppManager {
+        bool init(VkFormat color_format, VkFormat ds_format)
+
+        void setApp(std::shared_ptr<AppBase> &&app)
+        
+        void run()
+    }
+
+    Window <|-- GlfwWindow
+    AppBase <|-- ViewerApp
+    WindowApp --o AppBase : 1
+    WindowApp --o Window : 1
+```
 
 ### scene
 #### Material
@@ -100,3 +187,5 @@ classDiagram
 ``` 
 
 #### Asset Loader
+
+### UI

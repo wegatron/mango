@@ -116,9 +116,9 @@ void VkDriver::init(const std::string &app_name,
   config_ = config;
   initInstance();
 
-  assert(window != nullptr);
-
-  surface_ = window->createSurface(instance_);
+  //assert(window != nullptr);
+  if(window != nullptr)
+    surface_ = window->createSurface(instance_);
 
   initDevice();
 
