@@ -1,7 +1,8 @@
 #pragma once
 
 #include <Eigen/Dense>
-
+#define _USE_MATH_DEFINES
+#include <math.h>
 namespace vk_engine {
 class Camera {
 public:
@@ -49,9 +50,9 @@ public:
    * \param near The near clipping plane distance from the camera > 0
    * \param far The far clipping plane distance from the camera > 0
    */
-  void setClipPlanes(float near, float far) {
-    near_ = -near; // to coordinate system of camera
-    far_ = -far;   // to coordinate system of camera
+  void setClipPlanes(float near, float f) {
+    near_ = -n; // to camera coordinate
+    far_ = -f;
     dirty_proj_ = true;
   }
 
@@ -78,8 +79,8 @@ public:
   const Eigen::Matrix4f &getProjMatrix() {
     if (!dirty_proj_)
       return proj_mat_;
-    float f = 1.0 / tan(fovy_ * 0.5);
-    float r = 1.0 / (far_ - near_);
+    float f = 1.0f / tan(fovy_ * 0.5f);
+    float r = 1.0f / (far_ - near_);
     proj_mat_ << f / aspect_, 0.0f, 0.0f, 0.0f,
                 0.0f, f, 0.0f, 0.0f, 0.0f,
                 0.0f, -far_ * r, far_ * near_ * r,
