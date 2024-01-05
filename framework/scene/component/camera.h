@@ -50,7 +50,7 @@ public:
    * \param near The near clipping plane distance from the camera > 0
    * \param far The far clipping plane distance from the camera > 0
    */
-  void setClipPlanes(float near, float f) {
+  void setClipPlanes(float n, float f) {
     near_ = -n; // to camera coordinate
     far_ = -f;
     dirty_proj_ = true;
