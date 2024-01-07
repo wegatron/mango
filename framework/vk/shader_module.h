@@ -80,7 +80,11 @@ public:
     addDefine("PER_OBJECT_SET_INDEX " + std::to_string(PER_OBJECT_SET_INDEX));
   }
 
-  ShaderVariant(std::string &&preamble) : preamble_(std::move(preamble)) {}
+  ShaderVariant(std::string &&preamble) : preamble_(std::move(preamble)) {
+    addDefine("GLOBAL_SET_INDEX " + std::to_string(GLOBAL_SET_INDEX));
+    addDefine("MATERIAL_SET_INDEX " + std::to_string(MATERIAL_SET_INDEX));
+    addDefine("PER_OBJECT_SET_INDEX " + std::to_string(PER_OBJECT_SET_INDEX));    
+  }
 
   /**
    * @brief Add definitions to shader variant
