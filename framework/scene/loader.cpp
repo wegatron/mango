@@ -260,7 +260,7 @@ AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
   auto driver = getDefaultAppContext().driver;
   auto gpu_asset_manager = getDefaultAppContext().gpu_asset_manager;
 
-  for (auto i = 0; i < num_materials; ++i) {
+  for (uint32_t i = 0; i < num_materials; ++i) {
     auto a_mat = a_scene->mMaterials[i];
     auto cur_mat = std::make_shared<PbrMaterial>();
     ret_mats[i] = cur_mat;
@@ -270,6 +270,9 @@ AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
     loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_BASE_COLOR,
                AI_MATKEY_COLOR_DIFFUSE, BASE_COLOR_TEXTURE_NAME,
                BASE_COLOR_NAME, cur_mat);
+    // loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_NORMALS,
+    //             nullptr, 0, 0, NORMAL_TEXTURE_NAME, NORMAL_NAME, cur_mat);
+    
     // loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
     //            "specular_color_texture", "pbr_mat.specular_color", cur_mat);
     // loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS,

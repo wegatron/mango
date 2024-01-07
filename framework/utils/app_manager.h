@@ -12,14 +12,14 @@
 #include <framework/vk/frame_buffer.h>
 
 namespace vk_engine {
-class WindowApp final {
+class AppManager final {
 public:
-  WindowApp(std::unique_ptr<Window> &&window);
+  AppManager(std::unique_ptr<Window> &&window);
 
-  ~WindowApp();
+  ~AppManager();
 
-  WindowApp(const WindowApp &) = delete;
-  WindowApp &operator=(const WindowApp &) = delete;
+  AppManager(const AppManager &) = delete;
+  AppManager &operator=(const AppManager &) = delete;
 
   bool init(const std::shared_ptr<VkConfig> &config, VkFormat color_format, VkFormat ds_format);
 
@@ -49,6 +49,6 @@ private:
   uint32_t width_;
   uint32_t height_;
   std::string window_title_;
-  uint32_t current_frame_index_;
+  uint32_t current_frame_index_{0};
 };
 } // namespace vk_engine

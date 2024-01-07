@@ -5,7 +5,7 @@
 #include <volk.h>
 #include <vulkan/vulkan.h>
 
-#include <framework/utils/window_app.h>
+#include <framework/utils/app_manager.h>
 #include "triangle_app.h"
 #include <memory_resource>
 

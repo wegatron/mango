@@ -149,7 +149,7 @@ public:
    * \brief update the information(vs,fs, multisample, subpass index) to
    * pipeline state
    */
-  virtual void setPipelineState(PipelineState &pipeline_state) = 0;
+  virtual void setPipelineState(GPipelineState &pipeline_state) = 0;
 
   virtual void compile() = 0;
 
@@ -191,7 +191,7 @@ public:
 
   ~PbrMaterial() override = default;
 
-  void setPipelineState(PipelineState &pipeline_state) override;
+  void setPipelineState(GPipelineState &pipeline_state) override;
 
   void compile() override;
 

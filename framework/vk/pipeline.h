@@ -44,9 +44,9 @@ namespace vk_engine
             const std::shared_ptr<VkDriver> &driver,
             const std::shared_ptr<ResourceCache> &cache,
             const std::shared_ptr<RenderPass> &render_pass,
-            std::unique_ptr<PipelineState> &&pipeline_state);
+            std::unique_ptr<GPipelineState> &&pipeline_state);
 
-        PipelineState & getPipelineState() const {
+        GPipelineState & getPipelineState() const {
             assert(pipeline_state_ != nullptr);
             return *pipeline_state_;
         }
@@ -56,6 +56,6 @@ namespace vk_engine
         void cleanDirtyFlag() { pipeline_state_->dirty_ = false; }
 
     private:
-        std::unique_ptr<PipelineState> pipeline_state_;
+        std::unique_ptr<GPipelineState> pipeline_state_;
     };
 }

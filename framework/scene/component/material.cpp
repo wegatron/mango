@@ -78,7 +78,7 @@ std::shared_ptr<GraphicsPipeline> MatGpuResourcePool::requestGraphicsPipeline(
   // pipeline cache
   auto &driver = getDefaultAppContext().driver;
   auto &rs_cache = getDefaultAppContext().resource_cache;
-  auto pipeline_state = std::make_unique<PipelineState>();
+  auto pipeline_state = std::make_unique<GPipelineState>();
   mat->setPipelineState(*pipeline_state);
   // set other pipeline state:
 
@@ -266,7 +266,7 @@ void Material::updateParams() {
   if(!wds.empty()) getDefaultAppContext().driver->update(wds);  
 }
 
-void PbrMaterial::setPipelineState(PipelineState &pipeline_state) {
+void PbrMaterial::setPipelineState(GPipelineState &pipeline_state) {
   VertexInputState vertex_input_state{
       {// bindings, 3 float pos + 3 float normal + 2 float uv
        {0, 8 * sizeof(float), VK_VERTEX_INPUT_RATE_VERTEX}},

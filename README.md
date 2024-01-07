@@ -12,9 +12,11 @@ setup:
 ## TODO List
 - [ ] basic BRDF
 - [ ] image based lighting
+- [ ] FXAA refer to http://blog.simonrodriguez.fr/articles/2016/07/implementing_fxaa.html
 - [ ] [normal maping](https://learnopengl.com/Advanced-Lighting/Normal-Mapping)
 - [ ] animation
 - [ ] area lighting
 - [ ] [parallax occlusion maping](https://learnopengl.com/Advanced-Lighting/Parallax-Mapping)
 - [ ] principle BSDF
 - [ ] subsurface scattering
+- [ ] other algorithms: https://replicability.graphics/

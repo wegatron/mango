@@ -173,21 +173,21 @@ void ColorBlendState::getCreateInfo(VkPipelineColorBlendStateCreateInfo &create_
   memcpy(create_info.blendConstants, blend_constants, sizeof(float) * 4);
 }
 
-void PipelineState::setShaders(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules)
+void GPipelineState::setShaders(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules)
 {
   if (shader_modules == shader_modules_) return;
   shader_modules_ = shader_modules;
   dirty_ = true;
 }
 
-void PipelineState::setVertexInputState(const VertexInputState &state) {
+void GPipelineState::setVertexInputState(const VertexInputState &state) {
   if (state != vertex_input_state_) {
     vertex_input_state_ = state;
     dirty_ = true;
   }
 }
 
-void PipelineState::setInputAssemblyState(const InputAssemblyState &state)
+void GPipelineState::setInputAssemblyState(const InputAssemblyState &state)
 {
   if (state != input_assembly_state_) {
     input_assembly_state_ = state;
@@ -195,7 +195,7 @@ void PipelineState::setInputAssemblyState(const InputAssemblyState &state)
   }
 }
 
-void PipelineState::setRasterizationState(const RasterizationState &state)
+void GPipelineState::setRasterizationState(const RasterizationState &state)
 {
   if (state != rasterization_state_) {
     rasterization_state_ = state;
@@ -203,7 +203,7 @@ void PipelineState::setRasterizationState(const RasterizationState &state)
   }
 }
 
-void PipelineState::setViewportState(const ViewPortState &state)
+void GPipelineState::setViewportState(const ViewPortState &state)
 {
   if (state != viewport_state_) {
     viewport_state_ = state;
@@ -211,7 +211,7 @@ void PipelineState::setViewportState(const ViewPortState &state)
   }
 }
 
-void PipelineState::setMultisampleState(const MultisampleState &state)
+void GPipelineState::setMultisampleState(const MultisampleState &state)
 {
   if (state != multisample_state_) {
     multisample_state_ = state;
@@ -219,7 +219,7 @@ void PipelineState::setMultisampleState(const MultisampleState &state)
   }
 }
 
-void PipelineState::setDepthStencilState(const DepthStencilState &state)
+void GPipelineState::setDepthStencilState(const DepthStencilState &state)
 {
   if (state != depth_stencil_state_) {
     depth_stencil_state_ = state;
@@ -227,7 +227,7 @@ void PipelineState::setDepthStencilState(const DepthStencilState &state)
   }
 }
 
-void PipelineState::setColorBlendState(const ColorBlendState &state)
+void GPipelineState::setColorBlendState(const ColorBlendState &state)
 {
   if (state != color_blend_state_) {
     color_blend_state_ = state;
@@ -235,13 +235,13 @@ void PipelineState::setColorBlendState(const ColorBlendState &state)
   }
 }
 
-void PipelineState::setSubpassIndex(uint32_t subpass_index) {
+void GPipelineState::setSubpassIndex(uint32_t subpass_index) {
   if(subpass_index == subpass_index_)  return;
   subpass_index_ = subpass_index;
   dirty_ = true;
 }
 
-void PipelineState::getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo & dynamic_state) const
+void GPipelineState::getDynamicStateCreateInfo(VkPipelineDynamicStateCreateInfo & dynamic_state) const
 {
   dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	dynamic_state.pDynamicStates = dynamic_states_.data();

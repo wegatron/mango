@@ -5,7 +5,7 @@
 #include <volk.h>
 #include <vulkan/vulkan.h>
 
-#include <framework/utils/window_app.h>
+#include <framework/utils/app_manager.h>
 #include <framework/platform/glfw_window.h>
 #include <framework/vk/vk_config.h>
 
@@ -38,7 +38,7 @@ int main(int argc, char const *argv[])
                             vk_engine::VkConfig::EnableState::REQUIRED);  
   auto window = std::make_unique<vk_engine::GlfwWindow>("viewer", 800, 600);
   auto window_app =
-      std::make_shared<vk_engine::WindowApp>(std::move(window));
+      std::make_shared<vk_engine::AppManager>(std::move(window));
   window_app->setApp(std::move(app));
   if (!window_app->init(config, color_format, depth_stencil_format)) {
     LOGE("Failed to init window app");

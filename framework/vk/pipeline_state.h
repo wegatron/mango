@@ -70,13 +70,13 @@ struct ColorBlendState {
 // dynamic pipeline state vulkan 1.0: viewport, scissor, line width, depth bias,
 // blend constants... 1.3: depth test enable, depth write enable, depth compare
 // op, depth bounds test enable...
-class PipelineState final {
+class GPipelineState final {
 public:
-  PipelineState() = default;
+  GPipelineState() = default;
 
-  PipelineState(PipelineState &&) = default;
+  GPipelineState(GPipelineState &&) = default;
 
-  ~PipelineState() = default;
+  ~GPipelineState() = default;
 
   void setShaders(const std::vector<std::shared_ptr<ShaderModule>> &shader_modules);
 
