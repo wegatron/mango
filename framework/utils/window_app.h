@@ -14,7 +14,7 @@
 namespace vk_engine {
 class WindowApp final {
 public:
-  WindowApp(const std::shared_ptr<Window> &window);
+  WindowApp(std::unique_ptr<Window> &&window);
 
   ~WindowApp();
 

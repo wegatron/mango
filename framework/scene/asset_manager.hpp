@@ -6,7 +6,7 @@
 
 namespace vk_engine {
 
-struct ImageView;
+class ImageView; // in visualstudio stract and class use different namemangling rules 
 class CommandBuffer;
 
 struct Asset {

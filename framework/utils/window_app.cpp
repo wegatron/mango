@@ -10,9 +10,10 @@
 
 namespace vk_engine {
 
-WindowApp::WindowApp(const std::shared_ptr<Window> &window)
+WindowApp::WindowApp(std::unique_ptr<Window> &&window)
 {
   assert(window != nullptr);
+  window_ = std::move(window);
   window_->getExtent(width_, height_);
 }
 

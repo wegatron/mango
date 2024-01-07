@@ -25,11 +25,9 @@ int main(int argc, char const *argv[])
   VkFormat color_format = VK_FORMAT_B8G8R8A8_SRGB;
   VkFormat depth_stencil_format = VK_FORMAT_D24_UNORM_S8_UINT;
   auto app = std::make_shared<vk_engine::ViewerApp>("viewer");
-
-  //app->setScene("data/buster_drone/scene.gltf");  
   app->setScene(argv[1]);
    
-  auto window = std::make_unique<vk_engine::GlfwWindow>("viewer", 800, 600);
+  
   auto config = std::make_shared<vk_engine::Vk11Config>();
   config->setDeviceType(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
   config->setFeatureEnabled(vk_engine::VkConfig::FeatureExtension::GLFW_EXTENSION,
@@ -38,8 +36,9 @@ int main(int argc, char const *argv[])
                             vk_engine::VkConfig::EnableState::REQUIRED);
   config->setFeatureEnabled(vk_engine::VkConfig::FeatureExtension::INSTANCE_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2,
                             vk_engine::VkConfig::EnableState::REQUIRED);  
+  auto window = std::make_unique<vk_engine::GlfwWindow>("viewer", 800, 600);
   auto window_app =
-      std::make_shared<vk_engine::WindowApp>("viewer", window);
+      std::make_shared<vk_engine::WindowApp>(std::move(window));
   window_app->setApp(std::move(app));
   if (!window_app->init(config, color_format, depth_stencil_format)) {
     LOGE("Failed to init window app");
