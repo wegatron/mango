@@ -242,12 +242,12 @@ void AssimpLoader::loadAndSet(const std::string &dir, const aiScene *a_scene,
           cmd_buf) : asset_manager->request<ImageView>(dir + texture_path.C_Str(),
                                             cmd_buf);
     mat->setTexture(shader_texture_name, img_view);
-  } else {
-    aiColor3D diffuse_color(0.0f, 0.0f, 0.0f);
-    a_mat->Get(pKey, vtype, idx, diffuse_color);
+  } else if(pKey != nullptr && shader_color_name != nullptr) {
+    aiColor3D value(0.0f, 0.0f, 0.0f);
+    a_mat->Get(pKey, vtype, idx, value);
     mat->setUboParamValue(
         shader_color_name,
-        glm::vec4(diffuse_color.r, diffuse_color.g, diffuse_color.b, 1.0));
+        glm::vec4(value.r, value.g, value.b, 1.0));
   }
 }
 
@@ -270,16 +270,17 @@ AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
     loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_BASE_COLOR,
                AI_MATKEY_COLOR_DIFFUSE, BASE_COLOR_TEXTURE_NAME,
                BASE_COLOR_NAME, cur_mat);
-    // loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_NORMALS,
-    //             nullptr, 0, 0, NORMAL_TEXTURE_NAME, NORMAL_NAME, cur_mat);
-    
-    // loadAndSet(a_mat, aiTextureType_SPECULAR, AI_MATKEY_COLOR_SPECULAR,
-    //            "specular_color_texture", "pbr_mat.specular_color", cur_mat);
-    // loadAndSet(a_mat, aiTextureType_DIFFUSE_ROUGHNESS,
-    //            AI_MATKEY_ROUGHNESS_FACTOR, "roughness_texture",
-    //            "pbr_mat.roughness", cur_mat);
-    // loadAndSet(a_mat, aiTextureType_METALNESS, AI_MATKEY_METALLIC_FACTOR,
-    //            "metallic_texture", "pbr_mat.metallic", cur_mat);
+    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_SPECULAR,
+               AI_MATKEY_COLOR_SPECULAR, SPECULAR_TEXTURE_NAME,
+               SPECULAR_NAME, cur_mat);
+    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_DIFFUSE_ROUGHNESS,
+               AI_MATKEY_ROUGHNESS_FACTOR, ROUGHNESS_TEXTURE_NAME,
+               ROUGHNESS_NAME, cur_mat);
+    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_METALNESS,
+               AI_MATKEY_METALLIC_FACTOR, METALLIC_TEXTURE_NAME,
+               METALLIC_NAME, cur_mat);
+    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_NORMALS,
+                nullptr, 0, 0, NORMAL_TEXTURE_NAME, nullptr, cur_mat);    
     cur_mat->compile();
   }
   return ret_mats;

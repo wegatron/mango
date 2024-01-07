@@ -12,20 +12,9 @@ namespace vk_engine {
 
 #define HAS_BASE_COLOR_TEXTURE "HAS_BASE_COLOR_TEXTURE"
 #define HAS_METALLIC_TEXTURE "HAS_METALLIC_TEXTURE"
+#define HAS_SPECULAR_TEXTURE "HAS_SPECULAR_TEXTURE"
 #define HAS_ROUGHNESS_TEXTURE "HAS_ROUGHNESS_TEXTURE"
 #define HAS_NORMAL_TEXTURE "HAS_NORMAL_TEXTURE"
-
-#define HAS_BASE_COLOR_TEXTURE_VARIANT 1
-#define HAS_METALLIC_TEXTURE_VARIANT 1<<1
-#define HAS_ROUGHNESS_TEXTURE_VARIANT 1<<2
-#define HAS_NORMAL_TEXTURE_VARIANT 1<<3
-
-enum PbrTextureParamIndex {
-  BASE_COLOR_TEXTURE_INDEX = 0,
-  METALLIC_TEXTURE_INDEX = 1,
-  NORMAL_TEXTURE_INDEX = 2,
-  MAT_TEXTURE_NUM_COUNT
-};
 
 MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
                                        VkFormat ds_format) {
@@ -136,13 +125,46 @@ PbrMaterial::PbrMaterial() {
   texture_params_ = {
     {
       .set = MATERIAL_SET_INDEX,
-      .binding = 1,
+      .binding = BASE_COLOR_TEXTURE_INDEX + 1,
       .index = 0,
       .name = BASE_COLOR_TEXTURE_NAME,
       .img_view = nullptr,
       .dirty = false
+    },
+    {
+      .set = MATERIAL_SET_INDEX,
+      .binding = METALLIC_TEXTURE_INDEX + 1,
+      .index = 0,
+      .name = METALLIC_TEXTURE_NAME,
+      .img_view = nullptr,
+      .dirty = false
+    },
+    {
+      .set = MATERIAL_SET_INDEX,
+      .binding = SPECULAR_TEXTURE_INDEX + 1,
+      .index = 0,
+      .name = SPECULAR_TEXTURE_NAME,
+      .img_view = nullptr,
+      .dirty = false
+    },
+    {
+      .set = MATERIAL_SET_INDEX,
+      .binding = ROUGHNESS_TEXTURE_INDEX + 1,
+      .index = 0,
+      .name = ROUGHNESS_TEXTURE_NAME,
+      .img_view = nullptr,
+      .dirty = false
+    },        
+    {
+      .set = MATERIAL_SET_INDEX,
+      .binding = NORMAL_TEXTURE_INDEX + 1,
+      .index = 0,
+      .name = NORMAL_TEXTURE_NAME,
+      .img_view = nullptr,
+      .dirty = false
     }
   };
+  assert(texture_params_.size() == MAT_TEXTURE_NUM_COUNT);
 }
 
 void PbrMaterial::compile() {
@@ -163,20 +185,22 @@ void PbrMaterial::compile() {
   };
 
   // shader variance
-  if(texture_params_[BASE_COLOR_TEXTURE_INDEX].img_view != nullptr)
+  for(auto &tp : texture_params_)
   {
-    variant.addDefine(HAS_BASE_COLOR_TEXTURE);
-    material_type_id_ |= HAS_BASE_COLOR_TEXTURE_VARIANT;
-    sr[sr_cnt++] = {
-      .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
-      .type = ShaderResourceType::ImageSampler,
-      .mode = ShaderResourceMode::Static,
-      .set = MATERIAL_SET_INDEX,
-      .binding = 1,
-      .array_size = 1
-    };
+    if(tp.img_view != nullptr)
+    {
+      variant.addDefine(tp.def);
+      material_type_id_ |= (1u<<tp.binding);
+      sr[sr_cnt++] = {
+        .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+        .type = ShaderResourceType::ImageSampler,
+        .mode = ShaderResourceMode::Static,
+        .set = MATERIAL_SET_INDEX,
+        .binding = tp.binding,
+        .array_size = 1
+      };      
+    }
   }
-
   desc_set_layout_ = std::make_unique<DescriptorSetLayout>(
       getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr, sr_cnt);
 

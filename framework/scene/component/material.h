@@ -22,12 +22,23 @@ namespace vk_engine {
 
 constexpr char const * BASE_COLOR_NAME = "mat.base_color";
 constexpr char const * METALLIC_NAME = "mat.metallic";
+constexpr char const * SPECULAR_NAME = "mat.specular";
 constexpr char const * ROUGHNESS_NAME = "mat.roughness";
-constexpr char const * NORMAL_NAME = "mat.normal";
 
 constexpr char const * BASE_COLOR_TEXTURE_NAME = "base_color_tex";
 constexpr char const * METALLIC_TEXTURE_NAME = "metallic_tex";
-constexpr char const * NORMAL_TEXTURE_NAME = "normal_tex";
+constexpr char const * SPECULAR_TEXTURE_NAME = "specular_tex";
+constexpr char const * ROUGHNESS_TEXTURE_NAME = "roughness_tex";
+constexpr char const * NORMAL_TEXTURE_NAME = "normal_map";
+
+enum PbrTextureParamIndex {
+  BASE_COLOR_TEXTURE_INDEX = 0,
+  METALLIC_TEXTURE_INDEX = 1,
+  SPECULAR_TEXTURE_INDEX = 2,
+  ROUGHNESS_TEXTURE_INDEX = 3,
+  NORMAL_TEXTURE_INDEX = 4,
+  MAT_TEXTURE_NUM_COUNT
+};
 
 class GraphicsPipeline;
 class ImageView;
@@ -55,6 +66,7 @@ struct MaterialTextureParam {
   uint32_t binding;
   uint32_t index; // for array texture
   std::string name;
+  std::string def; // add definition to shader  
   std::shared_ptr<vk_engine::ImageView> img_view;
   std::shared_ptr<vk_engine::Sampler> sampler;
   bool dirty;
@@ -174,7 +186,7 @@ protected:
   std::shared_ptr<MatParamsSet> mat_param_set_;
   std::unique_ptr<DescriptorSetLayout> desc_set_layout_;
     
-  uint32_t material_type_id_{0};
+  uint32_t material_type_id_{0}; //!< using uint64_t to define a material type code, the higher 16 bit for Basic Material type, and the lower 16 bits for variant input.
 
   friend class MatGpuResourcePool;  
   // uint32_t variance_; // material variance bit flags, check by value
