@@ -126,6 +126,16 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   }
 
   spv::SpvBuildLogger logger;
+  
+  // to enable optimization, add option
+  // debug in renderdoc need vulkan 1.3
+  // refer to: https://www.khronos.org/assets/uploads/developers/presentations/Source-level_Shader_Debugging_in_Vulkan_with_RenderDoc_VULOCT2022.pdf
+  // glslang::SpvOptions options;
+  // options.disableOptimizer = true;
+  // options.generateDebugInfo = true;
+  // options.emitNonSemanticShaderDebugInfo = true;
+  // options.emitNonSemanticShaderDebugSource = true;
+  // glslang::GlslangToSpv(*intermediate, spirv_code, &logger, &options);
   glslang::GlslangToSpv(*intermediate, spirv_code, &logger);
   auto log_str = logger.getAllMessages();
   if (log_str.length() > 0)
