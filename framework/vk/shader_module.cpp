@@ -86,7 +86,6 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   // Initialize glslang library.
   glslang::InitializeProcess();
 
-  // TODO add support for shader varient
   EShLanguage lang = findShaderLanguage(stage);
   glslang::TShader shader(lang);
   const char *file_name_list[1] = {""};

@@ -180,7 +180,7 @@ PbrMaterial::PbrMaterial() {
       .binding = NORMAL_TEXTURE_INDEX + 1,
       .index = 0,
       .name = NORMAL_TEXTURE_NAME,
-      .def = "HAS_NORMAL_TEXTURE",
+      .def = "HAS_NORMAL_MAP",
       .img_view = nullptr,
       .dirty = false
     }
@@ -203,6 +203,7 @@ void PbrMaterial::compile() {
       .binding = 0,
       .array_size = 1,
       .size = ubo_info_.size,
+      .name = "pbr_mat"
   });
 
   // shader variance
@@ -218,7 +219,8 @@ void PbrMaterial::compile() {
         .mode = ShaderResourceMode::Static,
         .set = MATERIAL_SET_INDEX,
         .binding = tp.binding,
-        .array_size = 1
+        .array_size = 1,
+        .name = tp.name
       });
     }
   }
@@ -230,10 +232,6 @@ void PbrMaterial::compile() {
 
   fs_ = std::make_shared<ShaderModule>(variant);
   fs_->load("shaders/basic.frag");
-
-  // create uniform buffers
-
-  // shader_resources_ = parseShaderResources({vs_, fs_});
 }
 
 std::shared_ptr<MatParamsSet>
