@@ -10,12 +10,6 @@ namespace vk_engine {
 
 #define MAX_FORWARD_LIGHT_COUNT 4
 
-#define HAS_BASE_COLOR_TEXTURE "HAS_BASE_COLOR_TEXTURE"
-#define HAS_METALLIC_TEXTURE "HAS_METALLIC_TEXTURE"
-#define HAS_ROUGHNESS_TEXTURE "HAS_ROUGHNESS_TEXTURE"
-#define HAS_SPECULAR_TEXTURE "HAS_SPECULAR_TEXTURE"
-#define HAS_NORMAL_TEXTURE "HAS_NORMAL_TEXTURE"
-
 MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
                                        VkFormat ds_format) {
   auto &driver = getDefaultAppContext().driver;
@@ -116,7 +110,7 @@ PbrMaterial::PbrMaterial() {
                               .data = std::vector<std::byte>(32, std::byte{0}),
                               .params{
                                   {.stride = 0,
-                                   .tinfo = typeid(glm::vec4),
+                                   .tinfo = typeid(Eigen::Vector4f),
                                    .ub_offset = 0,
                                    .name = "pbr_mat.base_color"},
                                   {.stride = 0,
@@ -141,6 +135,7 @@ PbrMaterial::PbrMaterial() {
       .binding = BASE_COLOR_TEXTURE_INDEX + 1,
       .index = 0,
       .name = BASE_COLOR_TEXTURE_NAME,
+      .def = "HAS_BASE_COLOR_TEXTURE",
       .img_view = nullptr,
       .dirty = false
     },
@@ -149,6 +144,7 @@ PbrMaterial::PbrMaterial() {
       .binding = METALLIC_TEXTURE_INDEX + 1,
       .index = 0,
       .name = METALLIC_TEXTURE_NAME,
+      .def = "HAS_METALLIC_TEXTURE",
       .img_view = nullptr,
       .dirty = false
     },
@@ -157,6 +153,7 @@ PbrMaterial::PbrMaterial() {
       .binding =  + 1,
       .index = 0,
       .name = ROUGHNESS_TEXTURE_NAME,
+      .def = "HAS_ROUGHNESS_TEXTURE",
       .img_view = nullptr,
       .dirty = false
     },
@@ -165,6 +162,7 @@ PbrMaterial::PbrMaterial() {
       .binding = METALLIC_ROUGHNESS_TEXTURE_INDEX + 1,
       .index = 0,
       .name = METALLIC_ROUGHNESS_TEXTURE_NAME,
+      .def = "HAS_METALLIC_ROUGHNESS_TEXTURE",
       .img_view = nullptr,
       .dirty = false
     },     
@@ -173,6 +171,7 @@ PbrMaterial::PbrMaterial() {
       .binding = SPECULAR_TEXTURE_INDEX + 1,
       .index = 0,
       .name = SPECULAR_TEXTURE_NAME,
+      .def = "HAS_SPECULAR_TEXTURE",
       .img_view = nullptr,
       .dirty = false
     },       
@@ -181,6 +180,7 @@ PbrMaterial::PbrMaterial() {
       .binding = NORMAL_TEXTURE_INDEX + 1,
       .index = 0,
       .name = NORMAL_TEXTURE_NAME,
+      .def = "HAS_NORMAL_TEXTURE",
       .img_view = nullptr,
       .dirty = false
     }
@@ -193,9 +193,9 @@ void PbrMaterial::compile() {
 
   material_type_id_ = PBR_MATERIAL;
 
-  uint32_t sr_cnt = 0;
-  ShaderResource sr[2];
-  sr[sr_cnt++] = {
+  std::vector<ShaderResource> sr;
+  sr.reserve(texture_params_.size() + 1);
+  sr.emplace_back(ShaderResource{
       .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
       .type = ShaderResourceType::BufferUniform,
       .mode = ShaderResourceMode::Static,
@@ -203,7 +203,7 @@ void PbrMaterial::compile() {
       .binding = 0,
       .array_size = 1,
       .size = ubo_info_.size,
-  };
+  });
 
   // shader variance
   for(auto &tp : texture_params_)
@@ -212,18 +212,18 @@ void PbrMaterial::compile() {
     {
       variant.addDefine(tp.def);
       material_type_id_ |= (1u<<tp.binding);
-      sr[sr_cnt++] = {
+      sr.emplace_back(ShaderResource{
         .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
         .type = ShaderResourceType::ImageSampler,
         .mode = ShaderResourceMode::Static,
         .set = MATERIAL_SET_INDEX,
         .binding = tp.binding,
         .array_size = 1
-      };      
+      });
     }
   }
   desc_set_layout_ = std::make_unique<DescriptorSetLayout>(
-      getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr, sr_cnt);
+      getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr.data(), sr.size());
 
   vs_ = std::make_shared<ShaderModule>(variant);
   vs_->load("shaders/basic.vert");

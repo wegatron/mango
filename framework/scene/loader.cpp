@@ -243,13 +243,13 @@ void loadAndSet(const std::string &dir, const aiScene *a_scene,
     a_mat->Get(AI_MATKEY_COLOR_DIFFUSE, value);
     mat->setUboParamValue(
         BASE_COLOR_NAME,
-        glm::vec4(value.r, value.g, value.b, 1.0));
+        Eigen::Vector4f(value.r, value.g, value.b, 1.0));
   }
+
   // metallic - roughness
-  //AI_MATKEY_ROUGHNESS_TEXTURE
   aiString metallic_tex_path, roughness_tex_path;
   bool has_m = (AI_SUCCESS == a_mat->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &metallic_tex_path));
-  bool has_r = (AI_SUCCESS == a_mat->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &metallic_tex_path));
+  bool has_r = (AI_SUCCESS == a_mat->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &roughness_tex_path));
   if(has_m && has_r && metallic_tex_path == roughness_tex_path)
   {
     auto a_texture = a_scene->GetEmbeddedTexture(metallic_tex_path.C_Str());
@@ -296,8 +296,33 @@ void loadAndSet(const std::string &dir, const aiScene *a_scene,
   }
 
   // specular
+  if (AI_SUCCESS == a_mat->GetTexture(aiTextureType_SPECULAR, 0, &texture_path)) {
+    auto a_texture = a_scene->GetEmbeddedTexture(texture_path.C_Str());
+
+    auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+    std::shared_ptr<ImageView> img_view = (a_texture != nullptr) ? asset_manager->request<ImageView>(
+          reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
+          cmd_buf) : asset_manager->request<ImageView>(dir + texture_path.C_Str(),
+                                            cmd_buf);
+    mat->setTexture(SPECULAR_TEXTURE_NAME, img_view);
+  } else {
+    float value = 0.5f;
+    a_mat->Get(AI_MATKEY_SPECULAR_FACTOR, value);
+    mat->setUboParamValue(SPECULAR_NAME, value);
+  }
 
   // normal map 
+  if(AI_SUCCESS ==  a_mat->GetTexture(aiTextureType_NORMALS, 0, &texture_path))
+  {
+    auto a_texture = a_scene->GetEmbeddedTexture(texture_path.C_Str());
+
+    auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+    std::shared_ptr<ImageView> img_view = (a_texture != nullptr) ? asset_manager->request<ImageView>(
+          reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
+          cmd_buf) : asset_manager->request<ImageView>(dir + texture_path.C_Str(),
+                                            cmd_buf);
+    mat->setTexture(NORMAL_TEXTURE_NAME, img_view);
+  }
 }
 
 std::vector<std::shared_ptr<Material>>

@@ -20,10 +20,10 @@ namespace vk_engine {
 // using uint64_t to define a material type code, the higher 16 bit for Basic Material type, and the lower 16 bits for variant input.
 #define PBR_MATERIAL 1u<<16
 
-constexpr char const * BASE_COLOR_NAME = "mat.base_color";
-constexpr char const * METALLIC_NAME = "mat.metallic";
-constexpr char const * ROUGHNESS_NAME = "mat.roughness";
-constexpr char const * SPECULAR_NAME = "mat.specular";
+constexpr char const * BASE_COLOR_NAME = "pbr_mat.base_color";
+constexpr char const * METALLIC_NAME = "pbr_mat.metallic";
+constexpr char const * ROUGHNESS_NAME = "pbr_mat.roughness";
+constexpr char const * SPECULAR_NAME = "pbr_mat.specular";
 
 constexpr char const * BASE_COLOR_TEXTURE_NAME = "base_color_tex";
 constexpr char const * METALLIC_TEXTURE_NAME = "metallic_tex";
@@ -67,8 +67,8 @@ struct MaterialTextureParam {
   uint32_t set;
   uint32_t binding;
   uint32_t index; // for array texture
-  std::string name;
-  std::string def; // add definition to shader  
+  const char * name;
+  const char * def; // add definition to shader
   std::shared_ptr<vk_engine::ImageView> img_view;
   std::shared_ptr<vk_engine::Sampler> sampler;
   bool dirty;
