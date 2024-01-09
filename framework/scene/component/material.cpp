@@ -12,8 +12,8 @@ namespace vk_engine {
 
 #define HAS_BASE_COLOR_TEXTURE "HAS_BASE_COLOR_TEXTURE"
 #define HAS_METALLIC_TEXTURE "HAS_METALLIC_TEXTURE"
-#define HAS_SPECULAR_TEXTURE "HAS_SPECULAR_TEXTURE"
 #define HAS_ROUGHNESS_TEXTURE "HAS_ROUGHNESS_TEXTURE"
+#define HAS_SPECULAR_TEXTURE "HAS_SPECULAR_TEXTURE"
 #define HAS_NORMAL_TEXTURE "HAS_NORMAL_TEXTURE"
 
 MatGpuResourcePool::MatGpuResourcePool(VkFormat color_format,
@@ -119,9 +119,22 @@ PbrMaterial::PbrMaterial() {
                                    .tinfo = typeid(glm::vec4),
                                    .ub_offset = 0,
                                    .name = "pbr_mat.base_color"},
-                                  {0, typeid(glm::vec2), sizeof(glm::vec4),
-                                   "pbr_mat.metallic_roughness"},
-                              }};
+                                  {.stride = 0,
+                                   .tinfo = typeid(float),
+                                   .ub_offset = sizeof(float)*4,
+                                   .name = "pbr_mat.metallic"},
+                                  {.stride = 0,
+                                   .tinfo = typeid(float),
+                                   .ub_offset = sizeof(float)*5,
+                                   .name = "pbr_mat.roughness"
+                                  },
+                                  {.stride = 0,
+                                   .tinfo = typeid(float),
+                                   .ub_offset = sizeof(float)*6,
+                                   .name = "pbr_mat.specular"
+                                  }
+                              }
+                              };
   texture_params_ = {
     {
       .set = MATERIAL_SET_INDEX,
@@ -141,20 +154,28 @@ PbrMaterial::PbrMaterial() {
     },
     {
       .set = MATERIAL_SET_INDEX,
-      .binding = SPECULAR_TEXTURE_INDEX + 1,
+      .binding =  + 1,
       .index = 0,
-      .name = SPECULAR_TEXTURE_NAME,
+      .name = ROUGHNESS_TEXTURE_NAME,
       .img_view = nullptr,
       .dirty = false
     },
     {
       .set = MATERIAL_SET_INDEX,
-      .binding = ROUGHNESS_TEXTURE_INDEX + 1,
+      .binding = METALLIC_ROUGHNESS_TEXTURE_INDEX + 1,
       .index = 0,
-      .name = ROUGHNESS_TEXTURE_NAME,
+      .name = METALLIC_ROUGHNESS_TEXTURE_NAME,
       .img_view = nullptr,
       .dirty = false
-    },        
+    },     
+    {
+      .set = MATERIAL_SET_INDEX,
+      .binding = SPECULAR_TEXTURE_INDEX + 1,
+      .index = 0,
+      .name = SPECULAR_TEXTURE_NAME,
+      .img_view = nullptr,
+      .dirty = false
+    },       
     {
       .set = MATERIAL_SET_INDEX,
       .binding = NORMAL_TEXTURE_INDEX + 1,

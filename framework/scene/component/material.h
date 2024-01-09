@@ -22,21 +22,23 @@ namespace vk_engine {
 
 constexpr char const * BASE_COLOR_NAME = "mat.base_color";
 constexpr char const * METALLIC_NAME = "mat.metallic";
-constexpr char const * SPECULAR_NAME = "mat.specular";
 constexpr char const * ROUGHNESS_NAME = "mat.roughness";
+constexpr char const * SPECULAR_NAME = "mat.specular";
 
 constexpr char const * BASE_COLOR_TEXTURE_NAME = "base_color_tex";
 constexpr char const * METALLIC_TEXTURE_NAME = "metallic_tex";
-constexpr char const * SPECULAR_TEXTURE_NAME = "specular_tex";
 constexpr char const * ROUGHNESS_TEXTURE_NAME = "roughness_tex";
+constexpr char const * METALLIC_ROUGHNESS_TEXTURE_NAME = "metallic_roughness_tex";
+constexpr char const * SPECULAR_TEXTURE_NAME = "specular_tex";
 constexpr char const * NORMAL_TEXTURE_NAME = "normal_map";
 
 enum PbrTextureParamIndex {
   BASE_COLOR_TEXTURE_INDEX = 0,
   METALLIC_TEXTURE_INDEX = 1,
-  SPECULAR_TEXTURE_INDEX = 2,
-  ROUGHNESS_TEXTURE_INDEX = 3,
-  NORMAL_TEXTURE_INDEX = 4,
+  ROUGHNESS_TEXTURE_INDEX = 2,
+  METALLIC_ROUGHNESS_TEXTURE_INDEX = 3,
+  SPECULAR_TEXTURE_INDEX = 4,
+  NORMAL_TEXTURE_INDEX = 5,
   MAT_TEXTURE_NUM_COUNT
 };
 

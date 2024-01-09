@@ -224,16 +224,12 @@ std::vector<Camera> AssimpLoader::processCameras(const aiScene *a_scene) {
   return ret_cameras;
 }
 
-void AssimpLoader::loadAndSet(const std::string &dir, const aiScene *a_scene,
+void loadAndSet(const std::string &dir, const aiScene *a_scene,
                               aiMaterial *a_mat,
                               const std::shared_ptr<CommandBuffer> &cmd_buf,
-                              aiTextureType ttype, const char *pKey,
-                              unsigned int vtype, unsigned int idx,
-                              const char *shader_texture_name,
-                              const char *shader_color_name,
-                              std::shared_ptr<PbrMaterial> &mat) {
+                              std::shared_ptr<PbrMaterial> &mat) {                              
   aiString texture_path;
-  if (AI_SUCCESS == a_mat->GetTexture(ttype, 0, &texture_path)) {
+  if (AI_SUCCESS == a_mat->GetTexture(AI_MATKEY_BASE_COLOR_TEXTURE, &texture_path)) {
     auto a_texture = a_scene->GetEmbeddedTexture(texture_path.C_Str());
 
     auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
@@ -241,14 +237,67 @@ void AssimpLoader::loadAndSet(const std::string &dir, const aiScene *a_scene,
           reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
           cmd_buf) : asset_manager->request<ImageView>(dir + texture_path.C_Str(),
                                             cmd_buf);
-    mat->setTexture(shader_texture_name, img_view);
-  } else if(pKey != nullptr && shader_color_name != nullptr) {
+    mat->setTexture(BASE_COLOR_TEXTURE_NAME, img_view);
+  } else {
     aiColor3D value(0.0f, 0.0f, 0.0f);
-    a_mat->Get(pKey, vtype, idx, value);
+    a_mat->Get(AI_MATKEY_COLOR_DIFFUSE, value);
     mat->setUboParamValue(
-        shader_color_name,
+        BASE_COLOR_NAME,
         glm::vec4(value.r, value.g, value.b, 1.0));
   }
+  // metallic - roughness
+  //AI_MATKEY_ROUGHNESS_TEXTURE
+  aiString metallic_tex_path, roughness_tex_path;
+  bool has_m = (AI_SUCCESS == a_mat->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &metallic_tex_path));
+  bool has_r = (AI_SUCCESS == a_mat->GetTexture(AI_MATKEY_ROUGHNESS_TEXTURE, &metallic_tex_path));
+  if(has_m && has_r && metallic_tex_path == roughness_tex_path)
+  {
+    auto a_texture = a_scene->GetEmbeddedTexture(metallic_tex_path.C_Str());
+
+    auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+    std::shared_ptr<ImageView> img_view = (a_texture != nullptr) ? asset_manager->request<ImageView>(
+          reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
+          cmd_buf) : asset_manager->request<ImageView>(dir + metallic_tex_path.C_Str(),
+                                            cmd_buf);
+    mat->setTexture(METALLIC_ROUGHNESS_TEXTURE_NAME, img_view);
+  } else {
+    if(has_m)
+    {
+      auto a_texture = a_scene->GetEmbeddedTexture(metallic_tex_path.C_Str());
+
+      auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+      std::shared_ptr<ImageView> img_view = (a_texture != nullptr) ? asset_manager->request<ImageView>(
+            reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
+            cmd_buf) : asset_manager->request<ImageView>(dir + metallic_tex_path.C_Str(),
+                                              cmd_buf);
+      mat->setTexture(METALLIC_TEXTURE_NAME, img_view);      
+    } else {
+      float value = 0.0f;
+      a_mat->Get(AI_MATKEY_METALLIC_FACTOR, value);
+      mat->setUboParamValue(
+          METALLIC_NAME, value);      
+    }
+    if(has_r)
+    {
+      auto a_texture = a_scene->GetEmbeddedTexture(roughness_tex_path.C_Str());
+
+      auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+      std::shared_ptr<ImageView> img_view = (a_texture != nullptr) ? asset_manager->request<ImageView>(
+            reinterpret_cast<uint8_t *>(a_texture->pcData), a_texture->mWidth,
+            cmd_buf) : asset_manager->request<ImageView>(dir + roughness_tex_path.C_Str(),
+                                              cmd_buf);
+      mat->setTexture(ROUGHNESS_TEXTURE_NAME, img_view);      
+    } else {
+      float value = 0.0f;
+      a_mat->Get(AI_MATKEY_METALLIC_FACTOR, value);
+      mat->setUboParamValue(
+          ROUGHNESS_NAME, value);      
+    }
+  }
+
+  // specular
+
+  // normal map 
 }
 
 std::vector<std::shared_ptr<Material>>
@@ -267,20 +316,7 @@ AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
     // aiTextureType_DIFFUSE is same as aiTextureType_BASE_COLOR
     // diffuse is used for old specular-glossiness workflow
     // and base color is used for metallic-roughness workflow
-    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_BASE_COLOR,
-               AI_MATKEY_COLOR_DIFFUSE, BASE_COLOR_TEXTURE_NAME,
-               BASE_COLOR_NAME, cur_mat);
-    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_SPECULAR,
-               AI_MATKEY_COLOR_SPECULAR, SPECULAR_TEXTURE_NAME,
-               SPECULAR_NAME, cur_mat);
-    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_DIFFUSE_ROUGHNESS,
-               AI_MATKEY_ROUGHNESS_FACTOR, ROUGHNESS_TEXTURE_NAME,
-               ROUGHNESS_NAME, cur_mat);
-    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_METALNESS,
-               AI_MATKEY_METALLIC_FACTOR, METALLIC_TEXTURE_NAME,
-               METALLIC_NAME, cur_mat);
-    loadAndSet(dir, a_scene, a_mat, cmd_buf, aiTextureType_NORMALS,
-                nullptr, 0, 0, NORMAL_TEXTURE_NAME, nullptr, cur_mat);    
+    loadAndSet(dir, a_scene, a_mat, cmd_buf, cur_mat);
     cur_mat->compile();
   }
   return ret_mats;
