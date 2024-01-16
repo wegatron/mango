@@ -70,9 +70,11 @@ public:
 
   VkImage getVkImage() const { return vk_image_; }
 
+#ifndef NDEBUG
   VkImageSubresourceRange getSubresourceRange() const {
     return subresource_range_;
   }
+#endif
 
   ~ImageView();
 
