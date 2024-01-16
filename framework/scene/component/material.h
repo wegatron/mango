@@ -49,8 +49,8 @@ class Sampler;
 
 struct MaterialUboParam {
   uint32_t stride{0}; // for array element in uniform buffer
-  const std::type_info &tinfo;
-  const uint8_t ub_offset;
+  const uint32_t ub_offset;
+  const std::type_info &tinfo;  
   std::string name;
 };
 

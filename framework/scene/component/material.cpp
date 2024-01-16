@@ -110,21 +110,21 @@ PbrMaterial::PbrMaterial() {
                               .data = std::vector<std::byte>(32, std::byte{0}),
                               .params{
                                   {.stride = 0,
-                                   .tinfo = typeid(Eigen::Vector4f),
-                                   .ub_offset = 0,
+                                  .ub_offset = 0,
+                                   .tinfo = typeid(Eigen::Vector4f),                                   
                                    .name = "pbr_mat.base_color"},
                                   {.stride = 0,
-                                   .tinfo = typeid(float),
                                    .ub_offset = sizeof(float)*4,
+                                   .tinfo = typeid(float),
                                    .name = "pbr_mat.metallic"},
                                   {.stride = 0,
+                                   .ub_offset = sizeof(float)*5,                                  
                                    .tinfo = typeid(float),
-                                   .ub_offset = sizeof(float)*5,
                                    .name = "pbr_mat.roughness"
                                   },
                                   {.stride = 0,
-                                   .tinfo = typeid(float),
                                    .ub_offset = sizeof(float)*6,
+                                   .tinfo = typeid(float),
                                    .name = "pbr_mat.specular"
                                   }
                               }

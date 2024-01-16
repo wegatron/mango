@@ -1,6 +1,24 @@
 #version 450
 
-layout(set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial
+struct LightT
+{
+  int light_type;
+  float angle;
+  float blend;
+  float falloff;
+
+  vec3 position;
+  vec3 direction;
+  vec3 color;
+  float intensity;
+};
+
+layout(std430, set=GLOBAL_SET_INDEX, binding = 1) uniform LightsBlock
+{
+    LightT lights[MAX_LIGHTS_COUNT];
+};
+
+layout(std140, set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial
 {
     vec4 base_color;
     float metallic;
