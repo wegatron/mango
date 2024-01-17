@@ -33,6 +33,15 @@ Scene::createCameraEntity(const std::string &name,
   return entity;
 }
 
+entt::entity
+Scene::createLightEntity(const std::string_view &name,
+                  const std::shared_ptr<TransformRelationship> &tr,
+                  const Light &light)
+{
+  entt::entity entity = light_manager_.create();
+  
+}
+
 void Scene::update(const float seconds) {
   auto &scene_aabb = root_tr_->aabb;
   scene_aabb.setEmpty();

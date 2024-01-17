@@ -13,10 +13,11 @@ struct LightT
   float intensity;
 };
 
-layout(std430, set=GLOBAL_SET_INDEX, binding = 1) uniform LightsBlock
-{
-    LightT lights[MAX_LIGHTS_COUNT];
-};
+// layout(std430, set=GLOBAL_SET_INDEX, binding = 1) uniform LightsBlock
+// {
+//     int light_count;
+//     LightT lights[MAX_LIGHTS_COUNT];
+// };
 
 layout(std140, set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial
 {

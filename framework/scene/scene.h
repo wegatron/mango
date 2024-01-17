@@ -5,6 +5,7 @@
 #include <framework/scene/component/material.h>
 #include <framework/scene/component/mesh.h>
 #include <framework/scene/component/camera.h>
+#include <framework/scene/component/light.h>
 
 namespace vk_engine {
 class Scene final {
@@ -28,7 +29,12 @@ public:
   entt::entity
   createCameraEntity(const std::string &name, const std::shared_ptr<TransformRelationship> &tr,
                      const Camera &camera);
-  
+
+  entt::entity
+  createLightEntity(const std::string_view &name,
+                    const std::shared_ptr<TransformRelationship> &tr,
+                    const Light &light);
+
   void setRootTr(const std::shared_ptr<TransformRelationship> &root_tr) { root_tr_ = root_tr; }
 
   // disable copy/move

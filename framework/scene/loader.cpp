@@ -56,6 +56,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
   std::vector<std::shared_ptr<Material>> materials =
       processMaterials(a_scene, dir, cmd_buf);
   std::vector<Camera> cameras = processCameras(a_scene);
+  auto lights = processLight(a_scene);
 
   // process root node's mesh
   auto root_tr = std::make_shared<TransformRelationship>();
@@ -72,7 +73,8 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
 
   auto camera_node_name =
       cameras.empty() ? "vk_engine_default_main_camera" : cameras[0].getName();
-  std::shared_ptr<TransformRelationship> camera_tr_re = root_tr;
+  auto camera_tr = root_tr;
+  //auto light_tr = root_tr;
   while (!process_queue.empty()) {
     auto e = process_queue.front();
     process_queue.pop();
@@ -87,7 +89,7 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
 
       if (!cameras.empty() &&
           pnode->mChildren[i]->mName.C_Str() == camera_node_name)
-        camera_tr_re = cur_tr_re;
+        camera_tr = cur_tr_re;
 
       if (i == 0)
         parent_tr->child = cur_tr_re;
@@ -109,9 +111,11 @@ void AssimpLoader::loadScene(const std::string &path, Scene &scene,
     Eigen::Vector3f eye = center + Eigen::Vector3f(0, 0, 5.0f * radius);
     default_camera.setLookAt(eye, Eigen::Vector3f(0, 1, 0), center);
     default_camera.setFovy(0.6f);
-    scene.createCameraEntity(camera_node_name, camera_tr_re, default_camera);
+    scene.createCameraEntity(camera_node_name, camera_tr, default_camera);
   } else
-    scene.createCameraEntity(camera_node_name, camera_tr_re, cameras[0]);
+    scene.createCameraEntity(camera_node_name, camera_tr, cameras[0]);
+
+  scene.createLightEntity("default_light", root_tr, lights.l[0]);
 
   // load the default camera if have
   LOGI("load scene: {}", path.c_str());
@@ -347,4 +351,31 @@ AssimpLoader::processMaterials(const aiScene *a_scene, const std::string &dir,
   return ret_mats;
 }
 
+Lights AssimpLoader::processLight(const aiScene *a_scene) {
+  // There is bugs in assimp load light from gltf
+  // Lights lights{a_scene->mNumLights};
+  // for (auto i=0; i<a_scene->mNumLights; ++i)
+  // {
+  //   auto a_light = a_scene->mLights[i];
+  //   auto &l = lights.l[i];
+  //   l.light_type = static_cast<LightType>(a_light->mType);
+  //   l.inner_angle = a_light->mAngleInnerCone;
+  //   l.outer_angle = a_light->mAngleOuterCone;
+  //   l.intensity = a_light->mAttenuationConstant;
+  //   l.position = Eigen::Vector3f(a_light->mPosition[0], a_light->mPosition[1], a_light->mPosition[2]);
+  //   l.direction = Eigen::Vector3f(
+  //       a_light->mDirection[0], a_light->mDirection[1], a_light->mDirection[2]);
+  //   l.color = Eigen::Vector3f(a_light->mColorDiffuse[0], a_light->mColorDiffuse[1], a_light->mColorDiffuse[2]);
+  // }
+  Lights lights;
+  
+  lights.light_count = 1;
+  auto &l = lights.l[0];
+  l.light_type = LightType::DIRECTIONAL;
+  l.intensity = 1.0f;
+  l.direction = Eigen::Vector3f(0.0f, -1.0f, 0.0f);
+  l.color = Eigen::Vector3f(1.0f, 1.0f, 1.0f);
+
+  return lights;
+}
 } // namespace vk_engine

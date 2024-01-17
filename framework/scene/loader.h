@@ -6,6 +6,7 @@
 #include <framework/scene/scene.h>
 #include <framework/utils/app_context.h>
 #include <framework/vk/vk_driver.h>
+#include <framework/scene/component/light.h>
 
 namespace vk_engine {
 
@@ -38,6 +39,7 @@ private:
 
   std::vector<Camera> processCameras(const aiScene *a_scene);
 
+  Lights processLight(const aiScene *a_scene);
   // void loadAndSet(const std::string &dir, const aiScene *a_scene, aiMaterial *a_mat,
   //                 const std::shared_ptr<CommandBuffer> &cmd_buf,
   //                 aiTextureType ttype, const char *pKey, unsigned int vtype,
