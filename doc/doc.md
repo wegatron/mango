@@ -29,5 +29,10 @@ vulkan quick start: [vulkan-in-30-minutes](https://renderdoc.org/vulkan-in-30-mi
 
 ### [App](app.md)
 
+### Performace
+
+使用`alignas`来要求数据对齐, `string_view`来替代`std::string`.
+[taskflow](https://github.com/taskflow/taskflow)
+
 ## Reference
 https://zeux.io/2020/02/27/writing-an-efficient-vulkan-renderer/
