@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_scalar_block_layout : require
 
 struct LightT
 {
@@ -90,7 +91,7 @@ float Fr_DisneyDiffuse(float NdotV, float NdotL, float LdotH, float roughness)
   // do energy conservation
   float energyBias = 0.5f * roughness;
   float energyFactor = mix(1.0f, 1.0f / 1.51f, roughness);
-  float fd90 = energyBias + 2.0f * LdotH*LdotH*roughness;
+  vec3 fd90 = vec3(energyBias + 2.0f * LdotH*LdotH*roughness);
   vec3 f0 = vec3(1.0f);
   float lightScatter = F_Schlick(f0, fd90, NdotL).r;
   float viewScatter = F_Schlick(f0, fd90, NdotV).r;
@@ -116,13 +117,13 @@ vec3 surfaceShading(const PixelShadingParam pixel)
 {
   // diffuse
   vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
-  float Fd = Fr_DisneyDiffuse(pixel.NdotV, pixel.NdotL, pixel.LDotH); // diffuse
+  float Fd = Fr_DisneyDiffuse(pixel.NdotV, pixel.NdotL, pixel.LdotH, pixel.roughness); // diffuse
   
   // reflection: D, F, G
-  vec3 f0 = mix(0.16 * pixel.specular * pixel.specular, pixel.base_color.rgb, metallic);
-  vec3 f90 = clamp(50 * f0, 0.0f, 1.0f);
+  vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
+  vec3 f90 = clamp(50.0f * f0, 0.0f, 1.0f);
   vec3 F = F_Schlick(f0, f90, pixel.LdotH);
-  float D = D_GGX();
+  float D = D_GGX(pixel.NdotH, pixel.roughness);
   float Vis = V_SmithGGXCorrelated(pixel.NdotL, pixel.NdotV, pixel.roughness);
   vec3 Fr = D * Vis * F;
   
@@ -142,7 +143,7 @@ void main(void)
   pixel.metallic = pbr_mat.metallic;
   pixel.roughness = pbr_mat.roughness;
   #ifdef HAS_METALLIC_ROUGHNESS_TEXTURE
-  vec2 mr = texture(metallic_roughness_tex, uv);
+  vec2 mr = texture(metallic_roughness_tex, uv).rg;
   pixel.metallic = mr[0];
   pixel.roughness = mr[1];
   #endif
@@ -159,20 +160,20 @@ void main(void)
   pixel.specular = pbr_mat.specular;
   #endif
 
-  vec4 result_color = vec4(0.0f);
+  vec4 result_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
   vec3 V = -global_uniform.view[3].xyz - pos;
   pixel.NdotV = max(0.0f, dot(normal, V));
-  for(int index=0; index<light_count; ++index)
+  for(int index=0; index<global_uniform.light_count; ++index)
   {
-    if(lights[index].light_type == DIRECTIONAL)
+    if(global_uniform.lights[index].light_type == DIRECTIONAL)
     {
-      pixel.NdotL = max(0.0f, dot(normal, -lights[index].direction));
-      vec3 H = normalize(-lights[index].direction + V);
+      pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
+      vec3 H = normalize(-global_uniform.lights[index].direction + V);
       pixel.NdotH = max(0.0f, dot(normal, H));
-      pixel.LdotH = max(0.0f, dot(-lights[index].direction, H));
-      pixel.intensity = lights[index].color;
+      pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));
+      pixel.intensity = global_uniform.lights[index].color;
     }
-    result_color += surfaceShading(pixel);
+    result_color.xyz += surfaceShading(pixel);
   }
 
   frag_color = result_color;

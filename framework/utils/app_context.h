@@ -35,6 +35,7 @@ namespace vk_engine
         // lights
         Light lights[MAX_LIGHTS_COUNT]; // 128 + 64 * MAX_LIGHTS_COUNT
         int lights_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
+        float reserve[3];  // reserve
     };
 
     constexpr uint32_t GLOBAL_UBO_CAMERA_SIZE = sizeof(float) * 32;

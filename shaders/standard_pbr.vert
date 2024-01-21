@@ -1,4 +1,5 @@
 #version 450
+#extension GL_EXT_scalar_block_layout : require
 
 // vertex data binding = 0
 layout(location=0) in vec4 vpos;
@@ -30,7 +31,7 @@ layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 
     // lights
     LightT lights[MAX_LIGHTS_COUNT]; // 128 + 64 * MAX_LIGHTS_COUNT
-    uint32_t light_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
+    uint light_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
 } global_uniform;
 
 layout(set=PER_OBJECT_SET_INDEX, binding = 0) uniform MeshUniform
@@ -40,8 +41,9 @@ layout(set=PER_OBJECT_SET_INDEX, binding = 0) uniform MeshUniform
 
 void main(void)
 {
-    out_pos = mesh_uniform.model * vpos;    
-    out_normal = mesh_uniform.model * normal;
     out_uv = uv;
-    gl_Position = global_uniform.proj * global_uniform.view * out_pos;
+    out_normal = (mesh_uniform.model * vec4(normal, 1.0f)).xyz;
+    vec4 gpos = mesh_uniform.model * vpos;
+    out_pos = gpos.xyz;
+    gl_Position = global_uniform.proj * global_uniform.view * gpos;
 }

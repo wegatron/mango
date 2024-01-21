@@ -117,9 +117,11 @@ void GlobalParamSet::setCameraParam(const Eigen::Matrix4f &view, const Eigen::Ma
 }
 
 void GlobalParamSet::setLights(const Lights &lights)
-{
-  ub_data_.lights_count = lights.lights_count;
-  memcpy(&(ub_data_.lights_count), &lights, sizeof(Lights));
+{  
+  static_assert(sizeof(Lights) == 64 * MAX_LIGHTS_COUNT + 16);  
+  memcpy(&(ub_data_.lights), &lights, sizeof(Lights));
+  static_assert(sizeof(ub_data_) == 128 + 64 * MAX_LIGHTS_COUNT + 16);
+  static_assert(sizeof(ub_data_.lights[0]) == 64);
 }
 
 void GlobalParamSet::update()

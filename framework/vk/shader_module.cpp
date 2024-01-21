@@ -98,7 +98,7 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   EShMessages messages = static_cast<EShMessages>(
       EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);
 
-  if (!shader.parse(GetDefaultResources(), 100, false, messages)) {
+  if (!shader.parse(GetDefaultResources(), 110, false, messages)) {
     auto error_msg = std::string(shader.getInfoLog()) + "\n" +
                      std::string(shader.getInfoDebugLog());
     throw std::runtime_error("compile glsl to spirv error: " + error_msg);
