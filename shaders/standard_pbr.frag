@@ -13,18 +13,16 @@ struct LightT
   float intensity;
 };
 
-layout(set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
+layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 {
     // camera
-    mat4 view;
-    mat4 proj;
-} global_uniform;
+    mat4 view; // 64
+    mat4 proj; // 128
 
-layout(std430, set=GLOBAL_SET_INDEX, binding = 1) uniform LightsBlock
-{
-    int light_count;
-    LightT lights[MAX_LIGHTS_COUNT];
-};
+    // lights
+    LightT lights[MAX_LIGHTS_COUNT]; // 128 + 64 * MAX_LIGHTS_COUNT
+    int light_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
+} global_uniform;
 
 layout(std430, set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial
 {

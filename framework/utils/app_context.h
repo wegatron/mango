@@ -2,9 +2,11 @@
 
 #include <vector>
 #include <memory>
+#include <Eigen/Dense>
 #include <framework/vk/syncs.h>
 #include <framework/vk/buffer.h>
-#include <Eigen/Dense>
+#include <framework/vk/vk_constants.h>
+#include <framework/scene/component/light.h>
 
 namespace vk_engine
 {
@@ -24,24 +26,35 @@ namespace vk_engine
         std::shared_ptr<RenderTarget> render_tgt;
     };
 
-    constexpr uint32_t GLOBAL_UBO_CAMERA_SIZE = sizeof(float) * 32;
-    constexpr uint32_t GLOBAL_UBO_SIZE = GLOBAL_UBO_CAMERA_SIZE;
 
+    struct GlobalUb{
+        // camera
+        Eigen::Matrix4f view; // 64
+        Eigen::Matrix4f proj; // 128
+
+        // lights
+        Light lights[MAX_LIGHTS_COUNT]; // 128 + 64 * MAX_LIGHTS_COUNT
+        int lights_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
+    };
+
+    constexpr uint32_t GLOBAL_UBO_CAMERA_SIZE = sizeof(float) * 32;
+    constexpr uint32_t GLOBAL_UBO_SIZE = GLOBAL_UBO_CAMERA_SIZE + MAX_LIGHTS_COUNT * 64 + 16;    
     class GlobalParamSet final
     {
     public:
         GlobalParamSet();
-        ~GlobalParamSet() = default;       
-        void updateCameraParam(const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
-          float data[GLOBAL_UBO_CAMERA_SIZE];
-          memcpy(data, view.data(), sizeof(float) * 16);
-          memcpy(data + 16, proj.data(), sizeof(float) * 16);
-          ubo_->update(data, GLOBAL_UBO_CAMERA_SIZE);
-        }
+        ~GlobalParamSet() = default;
+
+        void setCameraParam(const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj);
+
+        void setLights(const Lights &lights);
+
+        void update();
+
         std::shared_ptr<DescriptorSet> getDescSet() const { return desc_set_; }
     private:
-        
-        std::unique_ptr<Buffer> ubo_;
+        GlobalUb ub_data_;
+        std::unique_ptr<Buffer> ubo_;        
         std::shared_ptr<DescriptorSet> desc_set_;
     };    
 

@@ -23,13 +23,13 @@ struct alignas(16) Light {
   //float preserved;
   alignas(16) Eigen::Vector3f position;
   alignas(16) Eigen::Vector3f direction;
-  Eigen::Vector3f color;
+  alignas(16) Eigen::Vector3f color;
   float falloff;  
 };
 
-struct Lights {
-  uint32_t light_count{0};
+struct Lights {  
   Light l[MAX_LIGHTS_COUNT];
+  uint32_t lights_count{0}; 
 };
 // filament/src/details/View.cpp --> prepare
 

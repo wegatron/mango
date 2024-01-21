@@ -7,6 +7,7 @@
 #include <framework/vk/stage_pool.h>
 #include <framework/vk/syncs.h>
 #include <framework/vk/vk_constants.h>
+#include <framework/scene/component/light.h>
 
 namespace vk_engine {
 static AppContext g_app_context;
@@ -76,12 +77,14 @@ GlobalParamSet::GlobalParamSet() {
       VMA_ALLOCATION_CREATE_MAPPED_BIT |
           VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
       VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
-
-  Eigen::Matrix4f identitys[2] = {
-    Eigen::Matrix4f::Identity(),
-    Eigen::Matrix4f::Identity()
+  
+  ub_data_ = {
+    .view  = Eigen::Matrix4f::Identity(),
+    .proj = Eigen::Matrix4f::Identity(),
+    .lights_count = 0
   };
-  ubo_->update(&identitys, GLOBAL_UBO_CAMERA_SIZE);
+
+  ubo_->update(&ub_data_, GLOBAL_UBO_CAMERA_SIZE);
 
   ShaderResource sr[] = {{
       .stages = VK_SHADER_STAGE_VERTEX_BIT,
@@ -106,5 +109,21 @@ GlobalParamSet::GlobalParamSet() {
                             .descriptorCount = 1,
                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                             .pBufferInfo = &desc_buffer_info}});
+}
+
+void GlobalParamSet::setCameraParam(const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
+  ub_data_.view = view;
+  ub_data_.proj = proj;
+}
+
+void GlobalParamSet::setLights(const Lights &lights)
+{
+  ub_data_.lights_count = lights.lights_count;
+  memcpy(&(ub_data_.lights_count), &lights, sizeof(Lights));
+}
+
+void GlobalParamSet::update()
+{
+  ubo_->update(&ub_data_, sizeof(ub_data_));
 }
 } // namespace vk_engine

@@ -369,7 +369,7 @@ Lights AssimpLoader::processLight(const aiScene *a_scene) {
   // }
   Lights lights;
   
-  lights.light_count = 1;
+  lights.lights_count = 1;
   auto &l = lights.l[0];
   l.light_type = LightType::DIRECTIONAL;
   l.intensity = 1.0f;

@@ -53,7 +53,24 @@ void Render::render(Scene *scene, Gui * gui)
                                          Camera>();
   const auto &cam_tr = camera_manager.get<std::shared_ptr<TransformRelationship>>(*view_camera.begin());
   auto &cam = camera_manager.get<Camera>(*view_camera.begin());
-  getDefaultAppContext().global_param_set->updateCameraParam(cam_tr->gtransform * cam.getViewMatrix(), cam.getProjMatrix());
+  auto &global_param_set = getDefaultAppContext().global_param_set;
+  global_param_set->setCameraParam(cam_tr->gtransform * cam.getViewMatrix(), cam.getProjMatrix());
+
+  auto &lm = scene->light_manager();
+  auto lv = lm.view<std::shared_ptr<TransformRelationship>, Light>();
+  Lights lights;
+  lights.lights_count = std::distance(lv.begin(), lv.end());
+  assert(lights.lights_count <= MAX_LIGHTS_COUNT);
+  uint32_t light_index = 0;
+  for(auto &&[entity, tr, l] : lv.each())
+  {
+    lights.l[light_index] = l;
+    Eigen::Vector4f tp;
+    tp.head(3) = l.position; tp[3] = 1.0f;
+    lights.l[light_index].position = (tr->gtransform * tp).head(3);
+  }
+  global_param_set->setLights(lights);
+  global_param_set->update();
 
   auto &rm = scene->renderableManager();
   auto view = rm.view<std::shared_ptr<TransformRelationship>,

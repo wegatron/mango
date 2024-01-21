@@ -39,7 +39,11 @@ Scene::createLightEntity(const std::string_view &name,
                   const Light &light)
 {
   entt::entity entity = light_manager_.create();
-  
+  light_manager_.emplace<std::string>(entity, name);
+  light_manager_.emplace<std::shared_ptr<TransformRelationship>>(entity,
+                                                                  tr); // node transform index
+  light_manager_.emplace<Light>(entity, light);
+  return entity;
 }
 
 void Scene::update(const float seconds) {
