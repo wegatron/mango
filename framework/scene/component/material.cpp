@@ -228,10 +228,10 @@ void PbrMaterial::compile() {
       getDefaultAppContext().driver, MATERIAL_SET_INDEX, sr.data(), sr.size());
 
   vs_ = std::make_shared<ShaderModule>(variant);
-  vs_->load("shaders/basic.vert");
+  vs_->load("shaders/standard_pbr.vert");
 
   fs_ = std::make_shared<ShaderModule>(variant);
-  fs_->load("shaders/basic.frag");
+  fs_->load("shaders/standard_pbr.frag");
 }
 
 std::shared_ptr<MatParamsSet>
