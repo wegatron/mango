@@ -11,7 +11,7 @@
 
 #include <framework/utils/logging.h>
 #include <framework/utils/spirv_reflection.h>
-#include <framework/utils/app_context.h>
+//#include <framework/utils/app_context.h>
 #include <volk.h>
 
 namespace vk_engine {
@@ -96,9 +96,13 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   shader.setEntryPoint("main");
   shader.setSourceEntryPoint("main");
   shader.setPreamble(preamble.c_str());
-  EShMessages messages = static_cast<EShMessages>(
-      EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);  
-  if (!shader.parse(GetDefaultResources(), getDefaultAppContext().driver->getVkVersion(), false, messages)) {
+  shader.setEnvClient(glslang::EShClient::EShClientVulkan,
+                      glslang::EShTargetClientVersion::EShTargetVulkan_1_3);
+  shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetLanguageVersion::EShTargetSpv_1_6);
+  shader.setDebugInfo(true);
+  EShMessages messages = static_cast<EShMessages>(EShMsgVulkanRules | EShMsgSpvRules | EShMsgDebugInfo);
+  if (!shader.parse(GetDefaultResources(), 110, false, messages)) // 110 for desktop, 100 for es
+  {
     auto error_msg = std::string(shader.getInfoLog()) + "\n" +
                      std::string(shader.getInfoDebugLog());
     throw std::runtime_error("compile glsl to spirv error: " + error_msg);
@@ -132,8 +136,12 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   // refer to: https://www.khronos.org/assets/uploads/developers/presentations/Source-level_Shader_Debugging_in_Vulkan_with_RenderDoc_VULOCT2022.pdf
   #ifndef NDEBUG
   glslang::SpvOptions options;
-  options.disableOptimizer = true;
   options.generateDebugInfo = true;
+  //options.stripDebugInfo = false;
+  options.disableOptimizer = true;
+  //options.optimizeSize = false;
+  options.disassemble = true;
+  options.validate = true;
   options.emitNonSemanticShaderDebugInfo = true;
   options.emitNonSemanticShaderDebugSource = true;
   glslang::GlslangToSpv(*intermediate, spirv_code, &logger, &options);

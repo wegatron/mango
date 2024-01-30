@@ -118,7 +118,7 @@ protected:
   virtual void checkAndUpdateExtensions(VkInstanceCreateInfo &create_info) = 0;
 
   VkPhysicalDeviceType device_type_{VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU};
-  uint32_t version_{110u};
+  uint32_t version_{VK_API_VERSION_1_0};
   
   std::vector<EnableState> enableds_;    
   std::vector<std::pair<const char *, EnableState>> request_layers_;
@@ -135,7 +135,7 @@ protected:
 class Vk13Config : public VkConfig {
 public:
   Vk13Config() : VkConfig() {
-    version_ = 130u;
+    version_ = VK_API_VERSION_1_3;
     // for vma
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_GET_MEMORY_REQUIREMENTS_2)] = EnableState::REQUIRED;
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEDICATED_ALLOCATION)] = EnableState::REQUIRED;

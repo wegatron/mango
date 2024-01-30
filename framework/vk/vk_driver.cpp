@@ -16,8 +16,6 @@
 #include <framework/platform/window.h>
 
 namespace vk_engine {
-constexpr uint32_t vulkan_version = VK_API_VERSION_1_1;
-
 void VkDriver::initInstance() {
   if (VK_SUCCESS != volkInitialize()) {
     throw std::runtime_error("failed to initialize volk!");
@@ -29,7 +27,7 @@ void VkDriver::initInstance() {
   app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
   app_info.pEngineName = "No Engine";
   app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0); // 以上这些意义不大
-  app_info.apiVersion = vulkan_version;              // vulkan api version
+  app_info.apiVersion = config_->getVersion();              // vulkan api version
 
   VkInstanceCreateInfo instance_info{};
   instance_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -242,7 +240,7 @@ void VkDriver::initAllocator() {
   allocator_info.physicalDevice = physical_device_;
   allocator_info.device = device_;
   allocator_info.instance = instance_;
-  allocator_info.vulkanApiVersion = vulkan_version;
+  allocator_info.vulkanApiVersion = config_->getVersion();
   allocator_info.pVulkanFunctions = &vma_vulkan_func;
 
   bool can_get_memory_requirements =
