@@ -137,7 +137,7 @@ protected:
 class Vk13Config : public VkConfig {
 public:
   Vk13Config() : VkConfig() {
-    version_ = VK_API_VERSION_1_1;
+    version_ = VK_API_VERSION_1_3;
     // for vma
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_GET_MEMORY_REQUIREMENTS_2)] = EnableState::REQUIRED;
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEDICATED_ALLOCATION)] = EnableState::REQUIRED;
@@ -146,7 +146,7 @@ public:
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEVICE_GROUP)] = EnableState::REQUIRED;
 
     //enableds_[static_cast<uint32_t>(FeatureExtension::KHR_UNIFORM_BUFFER_STANDARD_LAYOUT)] = EnableState::REQUIRED;
-    //enableds_[static_cast<uint32_t>(FeatureExtension::VK_KHR_SHADER_NON_SEMANTIC_INFO)] = EnableState::REQUIRED;
+    enableds_[static_cast<uint32_t>(FeatureExtension::VK_KHR_SHADER_NON_SEMANTIC_INFO)] = EnableState::REQUIRED;
   }
 
   ~Vk13Config() override = default;

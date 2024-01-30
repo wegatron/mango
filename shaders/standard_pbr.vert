@@ -2,7 +2,7 @@
 #extension GL_EXT_scalar_block_layout : require
 
 // vertex data binding = 0
-layout(location=0) in vec4 vpos;
+layout(location=0) in vec3 vpos;
 layout(location=1) in vec3 normal;
 layout(location=2) in vec2 uv;
 
@@ -44,7 +44,7 @@ void main(void)
 {
     out_uv = uv;
     out_normal = mat3x3(mesh_uniform.model) * normal;
-    vec4 gpos = mesh_uniform.model * vpos;
+    vec4 gpos = mesh_uniform.model * vec4(vpos, 1.0f);
     out_pos = gpos.xyz;
     gl_Position = global_uniform.proj * global_uniform.view * gpos;
 }
