@@ -11,7 +11,7 @@
 
 #include <framework/utils/logging.h>
 #include <framework/utils/spirv_reflection.h>
-//#include <framework/utils/app_context.h>
+// #include <framework/utils/app_context.h>
 #include <volk.h>
 
 namespace vk_engine {
@@ -84,31 +84,31 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
                                  const std::string &preamble,
                                  VkShaderStageFlagBits stage,
                                  std::vector<uint32_t> &spirv_code) {
-  if(stage == VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT)
-  {
-    std::ifstream inputFile("debug/debug_frag.spv", std::ifstream::binary);
-    inputFile.seekg(0, std::ios::end);
-    std::streampos fileSize = inputFile.tellg();
-    inputFile.seekg(0, std::ios::beg);
-    spirv_code.resize(fileSize / 4);
-    inputFile.read(reinterpret_cast<char*>(spirv_code.data()), fileSize);
+  // if(stage == VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT)
+  // {
+  //   std::ifstream inputFile("debug/debug_frag.spv", std::ifstream::binary);
+  //   inputFile.seekg(0, std::ios::end);
+  //   std::streampos fileSize = inputFile.tellg();
+  //   inputFile.seekg(0, std::ios::beg);
+  //   spirv_code.resize(fileSize / 4);
+  //   inputFile.read(reinterpret_cast<char*>(spirv_code.data()), fileSize);
 
-    // Close the file after reading
-    inputFile.close();
-    return;
-  } else if(stage == VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT)
-  {
-    std::ifstream inputFile("debug/debug_vert.spv", std::ifstream::binary);
-    inputFile.seekg(0, std::ios::end);
-    std::streampos fileSize = inputFile.tellg();
-    inputFile.seekg(0, std::ios::beg);
-    spirv_code.resize(fileSize / 4);
-    inputFile.read(reinterpret_cast<char*>(spirv_code.data()), fileSize);
+  //   // Close the file after reading
+  //   inputFile.close();
+  //   return;
+  // } else if(stage == VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT)
+  // {
+  //   std::ifstream inputFile("debug/debug_vert.spv", std::ifstream::binary);
+  //   inputFile.seekg(0, std::ios::end);
+  //   std::streampos fileSize = inputFile.tellg();
+  //   inputFile.seekg(0, std::ios::beg);
+  //   spirv_code.resize(fileSize / 4);
+  //   inputFile.read(reinterpret_cast<char*>(spirv_code.data()), fileSize);
 
-    // Close the file after reading
-    inputFile.close();
-    return;    
-  }                                  
+  //   // Close the file after reading
+  //   inputFile.close();
+  //   return;    
+  // }                                  
   // Initialize glslang library.
   glslang::InitializeProcess();
 
@@ -121,12 +121,12 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   shader.setEntryPoint("main");
   shader.setSourceEntryPoint("main");
   shader.setPreamble(preamble.c_str());
-  shader.setEnvClient(glslang::EShClient::EShClientVulkan,
-                      glslang::EShTargetClientVersion::EShTargetVulkan_1_3);
-  shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetLanguageVersion::EShTargetSpv_1_6);
-  shader.setDebugInfo(true);
+  // shader.setEnvClient(glslang::EShClient::EShClientVulkan,
+  //                     glslang::EShTargetClientVersion::EShTargetVulkan_1_3);
+  // shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetLanguageVersion::EShTargetSpv_1_6);
+  //shader.setDebugInfo(true);
   EShMessages messages = static_cast<EShMessages>(EShMsgVulkanRules | EShMsgSpvRules | EShMsgDebugInfo);
-  if (!shader.parse(GetDefaultResources(), 110, false, messages)) // 110 for desktop, 100 for es
+  if (!shader.parse(GetDefaultResources(), 100, false, messages)) // 110 for desktop, 100 for es
   {
     auto error_msg = std::string(shader.getInfoLog()) + "\n" +
                      std::string(shader.getInfoDebugLog());

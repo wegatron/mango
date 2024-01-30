@@ -236,6 +236,12 @@ void VkDriver::initAllocator() {
   vma_vulkan_func.vkUnmapMemory = vkUnmapMemory;
   vma_vulkan_func.vkCmdCopyBuffer = vkCmdCopyBuffer;
 
+  if(config_->getVersion() >= VK_MAKE_VERSION(1, 3, 0))
+  {
+    vma_vulkan_func.vkGetDeviceBufferMemoryRequirements = vkGetDeviceBufferMemoryRequirements;
+    vma_vulkan_func.vkGetDeviceImageMemoryRequirements = vkGetDeviceImageMemoryRequirements;
+  }
+
   VmaAllocatorCreateInfo allocator_info{};
   allocator_info.physicalDevice = physical_device_;
   allocator_info.device = device_;
