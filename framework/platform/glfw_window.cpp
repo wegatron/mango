@@ -105,6 +105,8 @@ void GlfwWindow::imguiNewFrame()
 void GlfwWindow::getExtent(uint32_t &width, uint32_t &height) const {
   glfwGetWindowSize(window_, reinterpret_cast<int *>(&width),
                     reinterpret_cast<int *>(&height));
+  width = std::max(width, 1u);
+  height = std::max(height, 1u);
 }
 
 void GlfwWindow::setupCallback(AppBase *app) {

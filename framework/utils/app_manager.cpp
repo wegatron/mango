@@ -71,7 +71,7 @@ void AppManager::run() {
   while(!window_->shouldClose()) {
     window_->processEvents();
     uint32_t width, height;
-    window_->getExtent(width, height);
+    window_->getExtent(width, height);    
     resize(width, height);
 
     auto &render_output_sync = getDefaultAppContext().render_output_syncs[current_frame_index_];

@@ -49,6 +49,11 @@ public:
     vkUpdateDescriptorSets(device_, static_cast<uint32_t>(descriptor_writes.size()), descriptor_writes.data(), 0, nullptr);    
   }
 
+  uint32_t getVkVersion() const
+  {
+    return config_->getVersion();
+  }
+
 private:
   void initInstance();
 

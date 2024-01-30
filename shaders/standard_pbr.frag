@@ -11,18 +11,19 @@ struct LightT
   vec3 position;
   vec3 direction;
   vec3 color;
-  float intensity;
+  float intensity; // lux for directional light or cd for other lights
 };
 
 layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 {
     // camera
-    mat4 view; // 64
-    mat4 proj; // 128
+    float ev100; // 16
+    mat4 view; // 80
+    mat4 proj; // 144    
 
     // lights
-    LightT lights[MAX_LIGHTS_COUNT]; // 128 + 64 * MAX_LIGHTS_COUNT
-    int light_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
+    LightT lights[MAX_LIGHTS_COUNT]; // 144 + 64 * MAX_LIGHTS_COUNT
+    int light_count;  // 144 + 64 * MAX_LIGHTS_COUNT + 16
 } global_uniform;
 
 layout(std430, set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial

@@ -71,6 +71,7 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
 }
 
 GlobalParamSet::GlobalParamSet() {
+  static_assert(sizeof(ub_data_) == GLOBAL_UBO_SIZE);
   auto driver = getDefaultAppContext().driver;
   ubo_ = std::move(std::make_unique<Buffer>(
       driver, 0, GLOBAL_UBO_SIZE, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
@@ -79,6 +80,7 @@ GlobalParamSet::GlobalParamSet() {
       VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
   
   ub_data_ = {
+    .ev100 = 0.0f,
     .view  = Eigen::Matrix4f::Identity(),
     .proj = Eigen::Matrix4f::Identity(),
     .lights_count = 0
@@ -87,7 +89,7 @@ GlobalParamSet::GlobalParamSet() {
   ubo_->update(&ub_data_, GLOBAL_UBO_CAMERA_SIZE);
 
   ShaderResource sr[] = {{
-      .stages = VK_SHADER_STAGE_VERTEX_BIT,
+      .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
       .type = ShaderResourceType::BufferUniform,
       .mode = ShaderResourceMode::Static,
       .set = GLOBAL_SET_INDEX,
@@ -111,17 +113,17 @@ GlobalParamSet::GlobalParamSet() {
                             .pBufferInfo = &desc_buffer_info}});
 }
 
-void GlobalParamSet::setCameraParam(const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
+void GlobalParamSet::setCameraParam(const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
+  ub_data_.ev100 = ev100;
   ub_data_.view = view;
   ub_data_.proj = proj;
 }
 
 void GlobalParamSet::setLights(const Lights &lights)
 {  
-  static_assert(sizeof(Lights) == 64 * MAX_LIGHTS_COUNT + 16);  
-  memcpy(&(ub_data_.lights), &lights, sizeof(Lights));
-  static_assert(sizeof(ub_data_) == 128 + 64 * MAX_LIGHTS_COUNT + 16);
+  static_assert(sizeof(Lights) == 64 * MAX_LIGHTS_COUNT + 16);
   static_assert(sizeof(ub_data_.lights[0]) == 64);
+  memcpy(&(ub_data_.lights), &lights, sizeof(Lights));  
 }
 
 void GlobalParamSet::update()

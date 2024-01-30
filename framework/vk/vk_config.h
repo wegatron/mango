@@ -87,7 +87,11 @@ public:
    * \brief Check and update the instance create info, for enable layers and
    * extensions.
    */
-  virtual void checkAndUpdate(VkInstanceCreateInfo &create_info) = 0;
+  void checkAndUpdate(VkInstanceCreateInfo &create_info)
+  {
+    checkAndUpdateLayers(create_info);
+    checkAndUpdateExtensions(create_info);
+  }
 
   /**
    * \brief check and select the best physical device, for enable features and
@@ -103,10 +107,20 @@ public:
     device_type_ = device_type;
   }
 
+  uint32_t getVersion() const noexcept
+  {
+    return version_;
+  }
+
 protected:
-  std::vector<EnableState> enableds_;
+
+  virtual void checkAndUpdateLayers(VkInstanceCreateInfo &create_info) = 0;
+  virtual void checkAndUpdateExtensions(VkInstanceCreateInfo &create_info) = 0;
+
   VkPhysicalDeviceType device_type_{VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU};
+  uint32_t version_{110u};
   
+  std::vector<EnableState> enableds_;    
   std::vector<std::pair<const char *, EnableState>> request_layers_;
   std::vector<std::pair<const char *, EnableState>> request_device_extensions_;
     
@@ -118,9 +132,10 @@ protected:
   VkPhysicalDeviceFeatures device_features_{VK_FALSE};
 };
 
-class Vk11Config : public VkConfig {
+class Vk13Config : public VkConfig {
 public:
-  Vk11Config() : VkConfig() {
+  Vk13Config() : VkConfig() {
+    version_ = 130u;
     // for vma
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_GET_MEMORY_REQUIREMENTS_2)] = EnableState::REQUIRED;
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_DEDICATED_ALLOCATION)] = EnableState::REQUIRED;
@@ -130,17 +145,15 @@ public:
     enableds_[static_cast<uint32_t>(FeatureExtension::KHR_UNIFORM_BUFFER_STANDARD_LAYOUT)] = EnableState::REQUIRED;
   }
 
-  ~Vk11Config() = default;
-
-  void checkAndUpdate(VkInstanceCreateInfo &create_info) override;
+  ~Vk13Config() override = default;
 
   uint32_t
   checkSelectAndUpdate(const std::vector<PhysicalDevice> &physical_devices,
                        VkDeviceCreateInfo &create_info,
                        VkSurfaceKHR surface) override;
 
-private:
-  void checkAndUpdateLayers(VkInstanceCreateInfo &create_info);
-  void checkAndUpdateExtensions(VkInstanceCreateInfo &create_info);
+protected:
+  void checkAndUpdateLayers(VkInstanceCreateInfo &create_info) override;
+  void checkAndUpdateExtensions(VkInstanceCreateInfo &create_info) override;
 };
 } // namespace vk_engine

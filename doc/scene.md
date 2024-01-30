@@ -126,7 +126,7 @@ classDiagram
 
 #### Light
 
-基于物理的度量, 灯光的亮度度量 $\to$ 反射亮度度量 $\to$ 曝光 $\to$ 图片.
+基于物理的度量, 灯光的亮度度量 $\to$ 反射亮度度量 $\to$ 相机曝光设置 $\to$ 图片曝光值.
 
 参考[filament](https://google.github.io/filament/Filament.md.html#lighting/directlighting)
 

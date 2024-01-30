@@ -29,16 +29,17 @@ namespace vk_engine
 
     struct GlobalUb{
         // camera
-        Eigen::Matrix4f view; // 64
-        Eigen::Matrix4f proj; // 128
+        float ev100; // camera exposure setting value in 100 ISO
+        alignas(16) Eigen::Matrix4f view; // 16 + 64
+        Eigen::Matrix4f proj; // 16 + 128
 
         // lights
-        Light lights[MAX_LIGHTS_COUNT]; // 128 + 64 * MAX_LIGHTS_COUNT
-        int lights_count;  // 128 + 64 * MAX_LIGHTS_COUNT + 16
+        Light lights[MAX_LIGHTS_COUNT]; // 16 + 128 + 64 * MAX_LIGHTS_COUNT
+        int lights_count;  // 16 + 128 + 64 * MAX_LIGHTS_COUNT + 16
         float reserve[3];  // reserve
     };
 
-    constexpr uint32_t GLOBAL_UBO_CAMERA_SIZE = sizeof(float) * 32;
+    constexpr uint32_t GLOBAL_UBO_CAMERA_SIZE = sizeof(float) * (32+4);
     constexpr uint32_t GLOBAL_UBO_SIZE = GLOBAL_UBO_CAMERA_SIZE + MAX_LIGHTS_COUNT * 64 + 16;    
     class GlobalParamSet final
     {
@@ -46,7 +47,7 @@ namespace vk_engine
         GlobalParamSet();
         ~GlobalParamSet() = default;
 
-        void setCameraParam(const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj);
+        void setCameraParam(const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj);
 
         void setLights(const Lights &lights);
 

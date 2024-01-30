@@ -28,7 +28,7 @@ int main(int argc, char const *argv[])
   app->setScene(argv[1]);
    
   
-  auto config = std::make_shared<vk_engine::Vk11Config>();
+  auto config = std::make_shared<vk_engine::Vk13Config>();
   config->setDeviceType(VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU);
   config->setFeatureEnabled(vk_engine::VkConfig::FeatureExtension::GLFW_EXTENSION,
                             vk_engine::VkConfig::EnableState::REQUIRED);  

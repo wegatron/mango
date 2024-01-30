@@ -5,12 +5,7 @@
 
 namespace vk_engine {
 
-void Vk11Config::checkAndUpdate(VkInstanceCreateInfo &create_info) {
-  checkAndUpdateLayers(create_info);
-  checkAndUpdateExtensions(create_info);
-}
-
-uint32_t Vk11Config::checkSelectAndUpdate(
+uint32_t Vk13Config::checkSelectAndUpdate(
     const std::vector<PhysicalDevice> &physical_devices,
     VkDeviceCreateInfo &create_info, VkSurfaceKHR surface) {
   for (auto i = static_cast<uint32_t>(
@@ -110,7 +105,7 @@ uint32_t Vk11Config::checkSelectAndUpdate(
   return selected_physical_device_index;
 }
 
-void Vk11Config::checkAndUpdateLayers(VkInstanceCreateInfo &create_info) {
+void Vk13Config::checkAndUpdateLayers(VkInstanceCreateInfo &create_info) {
   for (auto i = static_cast<uint32_t>(FeatureExtension::LAYER_BEGIN_PIVOT) + 1;
        i < static_cast<uint32_t>(FeatureExtension::LAYER_END_PIVOT); ++i) {
     if (enableds_[i] != EnableState::DISABLED) {
@@ -150,7 +145,7 @@ void Vk11Config::checkAndUpdateLayers(VkInstanceCreateInfo &create_info) {
   create_info.ppEnabledLayerNames = enabled_layers_.data();
 }
 
-void Vk11Config::checkAndUpdateExtensions(VkInstanceCreateInfo &create_info) {
+void Vk13Config::checkAndUpdateExtensions(VkInstanceCreateInfo &create_info) {
   enabled_instance_extensions_.clear();
   uint32_t extension_count = 0;
   for (auto i = static_cast<uint32_t>(

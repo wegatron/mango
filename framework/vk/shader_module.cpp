@@ -11,6 +11,7 @@
 
 #include <framework/utils/logging.h>
 #include <framework/utils/spirv_reflection.h>
+#include <framework/utils/app_context.h>
 #include <volk.h>
 
 namespace vk_engine {
@@ -96,9 +97,8 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   shader.setSourceEntryPoint("main");
   shader.setPreamble(preamble.c_str());
   EShMessages messages = static_cast<EShMessages>(
-      EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);
-
-  if (!shader.parse(GetDefaultResources(), 110, false, messages)) {
+      EShMsgDefault | EShMsgVulkanRules | EShMsgSpvRules);  
+  if (!shader.parse(GetDefaultResources(), getDefaultAppContext().driver->getVkVersion(), false, messages)) {
     auto error_msg = std::string(shader.getInfoLog()) + "\n" +
                      std::string(shader.getInfoDebugLog());
     throw std::runtime_error("compile glsl to spirv error: " + error_msg);
@@ -130,13 +130,16 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   // to enable optimization, add option
   // debug in renderdoc need vulkan 1.3
   // refer to: https://www.khronos.org/assets/uploads/developers/presentations/Source-level_Shader_Debugging_in_Vulkan_with_RenderDoc_VULOCT2022.pdf
-  // glslang::SpvOptions options;
-  // options.disableOptimizer = true;
-  // options.generateDebugInfo = true;
-  // options.emitNonSemanticShaderDebugInfo = true;
-  // options.emitNonSemanticShaderDebugSource = true;
-  // glslang::GlslangToSpv(*intermediate, spirv_code, &logger, &options);
+  #ifndef NDEBUG
+  glslang::SpvOptions options;
+  options.disableOptimizer = true;
+  options.generateDebugInfo = true;
+  options.emitNonSemanticShaderDebugInfo = true;
+  options.emitNonSemanticShaderDebugSource = true;
+  glslang::GlslangToSpv(*intermediate, spirv_code, &logger, &options);
+  #else
   glslang::GlslangToSpv(*intermediate, spirv_code, &logger);
+  #endif
   auto log_str = logger.getAllMessages();
   if (log_str.length() > 0)
     LOGI(logger.getAllMessages());
