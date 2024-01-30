@@ -84,6 +84,31 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
                                  const std::string &preamble,
                                  VkShaderStageFlagBits stage,
                                  std::vector<uint32_t> &spirv_code) {
+  if(stage == VkShaderStageFlagBits::VK_SHADER_STAGE_FRAGMENT_BIT)
+  {
+    std::ifstream inputFile("debug/debug_frag.spv", std::ifstream::binary);
+    inputFile.seekg(0, std::ios::end);
+    std::streampos fileSize = inputFile.tellg();
+    inputFile.seekg(0, std::ios::beg);
+    spirv_code.resize(fileSize / 4);
+    inputFile.read(reinterpret_cast<char*>(spirv_code.data()), fileSize);
+
+    // Close the file after reading
+    inputFile.close();
+    return;
+  } else if(stage == VkShaderStageFlagBits::VK_SHADER_STAGE_VERTEX_BIT)
+  {
+    std::ifstream inputFile("debug/debug_vert.spv", std::ifstream::binary);
+    inputFile.seekg(0, std::ios::end);
+    std::streampos fileSize = inputFile.tellg();
+    inputFile.seekg(0, std::ios::beg);
+    spirv_code.resize(fileSize / 4);
+    inputFile.read(reinterpret_cast<char*>(spirv_code.data()), fileSize);
+
+    // Close the file after reading
+    inputFile.close();
+    return;    
+  }                                  
   // Initialize glslang library.
   glslang::InitializeProcess();
 
