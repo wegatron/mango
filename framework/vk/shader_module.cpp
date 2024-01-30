@@ -125,6 +125,7 @@ void ShaderModule::compile2spirv(const std::string &glsl_code,
   //                     glslang::EShTargetClientVersion::EShTargetVulkan_1_3);
   // shader.setEnvTarget(glslang::EShTargetLanguage::EShTargetSpv, glslang::EShTargetLanguageVersion::EShTargetSpv_1_6);
   //shader.setDebugInfo(true);
+  // EShMsgDebugInfo for debug in renderdoc
   EShMessages messages = static_cast<EShMessages>(EShMsgVulkanRules | EShMsgSpvRules | EShMsgDebugInfo);
   if (!shader.parse(GetDefaultResources(), 100, false, messages)) // 110 for desktop, 100 for es
   {
