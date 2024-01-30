@@ -117,21 +117,18 @@ float V_SmithGGXCorrelated(const float NdotL, const float NdotV, const float rou
 vec3 surfaceShading(const PixelShadingParam pixel)
 {
   // diffuse
-  return pixel.base_color.rgb;
-  //vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
-  //return diffuse_color;
-  // float Fd = Fr_DisneyDiffuse(pixel.NdotV, pixel.NdotL, pixel.LdotH,
-  //                             pixel.roughness); // diffuse
-
-  // // reflection: D, F, G
-  // vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
-  // vec3 f90 = clamp(50.0f * f0, 0.0f, 1.0f);
-  // vec3 F = F_Schlick(f0, f90, pixel.LdotH);
-  // float D = D_GGX(pixel.NdotH, pixel.roughness);
-  // float Vis = V_SmithGGXCorrelated(pixel.NdotL, pixel.NdotV, pixel.roughness);
-  // vec3 Fr = D * Vis * F;
+  vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
+  float Fd = Fr_DisneyDiffuse(pixel.NdotV, pixel.NdotL, pixel.LdotH, pixel.roughness); // diffuse
   
-  // return pixel.intensity * ((vec3(1.0f) - F) * Fd * diffuse_color + Fr);
+  // reflection: D, F, G
+  vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
+  vec3 f90 = clamp(50.0f * f0, 0.0f, 1.0f);
+  vec3 F = F_Schlick(f0, f90, pixel.LdotH);
+  float D = D_GGX(pixel.NdotH, pixel.roughness);
+  float Vis = V_SmithGGXCorrelated(pixel.NdotL, pixel.NdotV, pixel.roughness);
+  vec3 Fr = D * Vis * F;
+  
+  return pixel.intensity * ((vec3(1.0f) - F) * Fd * diffuse_color + Fr);
 }
 
 void main(void)
