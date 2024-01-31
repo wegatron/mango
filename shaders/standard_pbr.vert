@@ -43,7 +43,7 @@ layout(set=PER_OBJECT_SET_INDEX, binding = 0) uniform MeshUniform
 void main(void)
 {
     out_uv = uv;
-    out_normal = mat3x3(mesh_uniform.model) * normal;
+    out_normal = normalize(mat3x3(mesh_uniform.model) * normal);
     vec4 gpos = mesh_uniform.model * vec4(vpos, 1.0f);
     out_pos = gpos.xyz;
     gl_Position = global_uniform.proj * global_uniform.view * gpos;

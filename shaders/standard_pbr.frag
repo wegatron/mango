@@ -111,7 +111,7 @@ float V_SmithGGXCorrelated(const float NdotL, const float NdotV, const float rou
   float sq_r = roughness * roughness;
   float lambda_GGXV = NdotL * sqrt(NdotV * NdotV *(1-sq_r) + sq_r);
   float lambda_GGXL = NdotV * sqrt(NdotL * NdotL *(1-sq_r) + sq_r);
-  return 0.5f/(lambda_GGXL + lambda_GGXV);
+  return 0.5f/max(1e-4f, (lambda_GGXL + lambda_GGXV));
 }
 
 vec3 surfaceShading(const PixelShadingParam pixel)
@@ -162,7 +162,7 @@ void main(void)
   #endif
 
   vec4 result_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-  vec3 V = -global_uniform.view[3].xyz - pos;
+  vec3 V = normalize(-global_uniform.view[3].xyz - pos);
   pixel.NdotV = max(0.0f, dot(normal, V));
   for(int index=0; index<global_uniform.light_count; ++index)
   {

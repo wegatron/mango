@@ -1,4 +1,10 @@
 #include "material_normal_vis.h"
+#include <framework/utils/app_context.h>
+#include <framework/vk/buffer.h>
+#include <framework/vk/pipeline.h>
+#include <framework/vk/resource_cache.h>
+#include <framework/vk/image.h>
+#include <framework/vk/sampler.h>
 
 namespace vk_engine
 {
