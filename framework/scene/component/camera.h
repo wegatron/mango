@@ -106,6 +106,11 @@ public:
 
   const float getDis() const noexcept { return dis_; }
 
+  const Eigen::Vector3f getCameraPos() const noexcept
+  {
+    return view_mat_.block<3,3>(0,0).transpose() * -view_mat_.block<3,1>(0,3);
+  }
+
 private:
   std::string name_;
   bool dirty_proj_{true};

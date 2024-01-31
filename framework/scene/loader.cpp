@@ -4,10 +4,12 @@
 #include <queue>
 #include <stbi/stb_image.h>
 
-#include <framework/scene/asset_manager.hpp>
-#include <framework/scene/component/camera.h>
 #include <framework/utils/logging.h>
 #include <framework/vk/commands.h>
+#include <framework/scene/asset_manager.hpp>
+#include <framework/scene/component/camera.h>
+#include <framework/scene/component/material_pbr.h>
+
 
 namespace vk_engine {
 
@@ -293,7 +295,7 @@ void loadAndSet(const std::string &dir, const aiScene *a_scene,
       mat->setTexture(ROUGHNESS_TEXTURE_NAME, img_view);      
     } else {
       float value = 0.0f;
-      a_mat->Get(AI_MATKEY_METALLIC_FACTOR, value);
+      a_mat->Get(AI_MATKEY_ROUGHNESS_FACTOR, value);
       mat->setUboParamValue(
           ROUGHNESS_NAME, value);      
     }

@@ -113,7 +113,8 @@ GlobalParamSet::GlobalParamSet() {
                             .pBufferInfo = &desc_buffer_info}});
 }
 
-void GlobalParamSet::setCameraParam(const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
+void GlobalParamSet::setCameraParam(const Eigen::Vector3f &pos, const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
+  ub_data_.cam_pos = pos;
   ub_data_.ev100 = ev100;
   ub_data_.view = view;
   ub_data_.proj = proj;
