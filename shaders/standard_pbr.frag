@@ -4,14 +4,13 @@
 struct LightT
 {
   int light_type;
-  float angle;
-  float blend;
+  float inner_angle;
+  float outer_angle;
   float falloff;
 
   vec3 position;
   vec3 direction;
-  vec3 color;
-  float intensity; // lux for directional light or cd for other lights
+  vec3 intensity; // lux for directional light or cd for other lights
 };
 
 layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
@@ -80,7 +79,7 @@ struct PixelShadingParam
   float specular;
 
   // light
-  vec3 intensity;
+  vec3 illumance;
 };
 
 vec3 F_Schlick (const vec3 f0 , const vec3 f90 , float u)
@@ -129,7 +128,7 @@ vec3 surfaceShading(const PixelShadingParam pixel)
   float Vis = V_SmithGGXCorrelated(pixel.NdotL, pixel.NdotV, pixel.roughness);
   vec3 Fr = D * Vis * F;
   
-  return pixel.intensity * ((vec3(1.0f) - F) * Fd * diffuse_color + Fr);
+  return pixel.illumance * ((vec3(1.0f) - F) * Fd * diffuse_color + Fr);
 }
 
 void main(void)
@@ -172,8 +171,8 @@ void main(void)
       pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
       vec3 H = normalize(-global_uniform.lights[index].direction + V);
       pixel.NdotH = max(0.0f, dot(normal, H));
-      pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));
-      pixel.intensity = global_uniform.lights[index].color;
+      pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));      
+      pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
     }
     result_color.xyz += surfaceShading(pixel);
   }

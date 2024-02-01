@@ -19,8 +19,7 @@ struct LightT
 
   vec3 position;
   vec3 direction;
-  vec3 color; // 64
-  float intensity; // 64
+  vec3 color_intensity; // 64
 };
 
 layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
