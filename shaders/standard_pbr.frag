@@ -17,9 +17,10 @@ struct LightT
 layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 {
     // camera
+    vec3 camera_pos;
     float ev100; // 16
     mat4 view; // 80
-    mat4 proj; // 144    
+    mat4 proj; // 144
 
     // lights
     LightT lights[MAX_LIGHTS_COUNT]; // 144 + 64 * MAX_LIGHTS_COUNT
@@ -162,7 +163,7 @@ void main(void)
   #endif
 
   vec4 result_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
-  vec3 V = normalize(-global_uniform.view[3].xyz - pos);
+  vec3 V = normalize(global_uniform.camera_pos - pos);
   pixel.NdotV = max(0.0f, dot(normal, V));
   for(int index=0; index<global_uniform.light_count; ++index)
   {

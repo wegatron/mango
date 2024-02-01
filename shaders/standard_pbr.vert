@@ -26,9 +26,10 @@ struct LightT
 layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 {
     // camera
+    vec3 camera_pos;
     float ev100; // 16
     mat4 view; // 80
-    mat4 proj; // 144    
+    mat4 proj; // 144
 
     // lights
     LightT lights[MAX_LIGHTS_COUNT]; // 144 + 64 * MAX_LIGHTS_COUNT
