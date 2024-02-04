@@ -17,7 +17,7 @@ layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 {
     // camera
     vec3 camera_pos;
-    float ev100; // 16
+    float ev; // 16, [0.65 * 2^(ev100)]
     mat4 view; // 80
     mat4 proj; // 144
 
@@ -161,7 +161,7 @@ void main(void)
   pixel.specular = pbr_mat.specular;
   #endif
 
-  vec4 result_color = vec4(0.0f, 0.0f, 0.0f, 1.0f);
+  vec3 out_illumance = vec3(0.0f);
   vec3 V = normalize(global_uniform.camera_pos - pos);
   pixel.NdotV = max(0.0f, dot(normal, V));
   for(int index=0; index<global_uniform.light_count; ++index)
@@ -174,8 +174,7 @@ void main(void)
       pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));      
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
     }
-    result_color.xyz += surfaceShading(pixel);
+    out_illumance += surfaceShading(pixel);
   }
-
-  frag_color = result_color;
+  frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
 }

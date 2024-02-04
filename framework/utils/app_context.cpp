@@ -80,7 +80,7 @@ GlobalParamSet::GlobalParamSet() {
       VMA_MEMORY_USAGE_AUTO_PREFER_HOST));
   
   ub_data_ = {
-    .ev100 = 0.0f,
+    .ev = 0.65f,
     .view  = Eigen::Matrix4f::Identity(),
     .proj = Eigen::Matrix4f::Identity(),
     .lights_count = 0
@@ -115,7 +115,7 @@ GlobalParamSet::GlobalParamSet() {
 
 void GlobalParamSet::setCameraParam(const Eigen::Vector3f &pos, const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {
   ub_data_.cam_pos = pos;
-  ub_data_.ev100 = ev100;
+  ub_data_.ev = 0.65f*pow(2.0f, ev100);
   ub_data_.view = view;
   ub_data_.proj = proj;
 }

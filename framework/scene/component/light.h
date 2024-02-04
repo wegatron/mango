@@ -19,12 +19,12 @@ struct alignas(16) Light {
   LightType light_type;
   float inner_angle;
   float outer_angle;
-  float intensity;
+  float falloff;  
+
   //float preserved;
   alignas(16) Eigen::Vector3f position;
   alignas(16) Eigen::Vector3f direction;
-  alignas(16) Eigen::Vector3f color;
-  float falloff;
+  alignas(16) Eigen::Vector3f color_intensity;
 };
 
 struct Lights {  

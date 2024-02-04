@@ -30,7 +30,7 @@ namespace vk_engine
     struct GlobalUb{
         // camera
         Eigen::Vector3f cam_pos; // camera position
-        float ev100; // camera exposure setting value in 100 ISO
+        float ev; // camera exposure setting value in 100 ISO, 0.65*2^ev100
         alignas(16) Eigen::Matrix4f view; // 16 + 64
         Eigen::Matrix4f proj; // 16 + 128
 
