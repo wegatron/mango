@@ -2,6 +2,7 @@
 #include <framework/utils/app_base.h>
 #include <framework/utils/error.h>
 #include <imgui/backends/imgui_impl_glfw.h>
+#include <imgui/imgui.h>
 //#include <imgui/backends/imgui_impl_vulkan.h>
 
 namespace vk_engine {
@@ -25,6 +26,7 @@ static MouseAction translateMouseAction(int action) {
 }
 
 static void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos) {
+  if(ImGui::GetIO().WantCaptureMouse) return;
   if (auto *app =
           reinterpret_cast<AppBase *>(glfwGetWindowUserPointer(window))) {
     int width, height;
@@ -39,6 +41,7 @@ static void cursorPositionCallback(GLFWwindow *window, double xpos, double ypos)
 
 static void mouseButtonCallback(GLFWwindow *window, int button, int action,
                          int /*mods*/) {
+  if(ImGui::GetIO().WantCaptureMouse) return;
   MouseAction mouse_action = translateMouseAction(action);
 
   if (auto *app =
@@ -55,7 +58,8 @@ static void mouseButtonCallback(GLFWwindow *window, int button, int action,
   }
 }
 
-static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {  
+static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset) {
+  if(ImGui::GetIO().WantCaptureMouse) return;
   if (AppBase* app = reinterpret_cast<AppBase*>(glfwGetWindowUserPointer(window))) {
     app->inputMouseEvent(std::make_shared<MouseInputEvent>(false,
         MouseButton::Unknown, MouseAction::Scroll, static_cast<float>(xoffset),
