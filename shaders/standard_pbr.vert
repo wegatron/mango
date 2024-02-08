@@ -17,7 +17,7 @@ struct LightT
   float blend;
   float falloff;//16
 
-  vec3 position;
+  vec3 position[4]; // position[1..3] for area light
   vec3 direction;
   vec3 color_intensity; // 64
 };

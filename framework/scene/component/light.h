@@ -19,7 +19,7 @@ struct alignas(16) Light {
   LightType light_type;
   float inner_angle;
   float outer_angle;
-  float falloff;  
+  float falloff;
 
   //float preserved;
   alignas(16) Eigen::Vector3f position;

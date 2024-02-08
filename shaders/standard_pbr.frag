@@ -1,5 +1,5 @@
 #version 450
-#extension GL_EXT_scalar_block_layout : require
+//#extension GL_EXT_scalar_block_layout : require
 
 struct LightT
 {
@@ -8,7 +8,8 @@ struct LightT
   float outer_angle;
   float falloff;
 
-  vec3 position;
+  vec3 position[4]; // position[1..3] for area light
+
   vec3 direction;
   vec3 intensity; // lux for directional light or cd for other lights
 };
@@ -25,6 +26,14 @@ layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
     LightT lights[MAX_LIGHTS_COUNT]; // 144 + 64 * MAX_LIGHTS_COUNT
     int light_count;  // 144 + 64 * MAX_LIGHTS_COUNT + 16
 } global_uniform;
+
+#ifdef HAS_AREA_LIGHT
+layout(set=GLOBAL_SET_INDEX, binding=1) uniform sampler2D LTC1;
+layout(set=GLOBAL_SET_INDEX, binding=2) uniform sampler2D LTC2;
+const float LUT_SIZE  = 64.0; // ltc_texture size
+const float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
+const float LUT_BIAS  = 0.5/LUT_SIZE;
+#endif
 
 layout(std430, set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial
 {
@@ -131,6 +140,34 @@ vec3 surfaceShading(const PixelShadingParam pixel)
   return pixel.illumance * ((vec3(1.0f) - F) * Fd * diffuse_color + Fr);
 }
 
+vec3 ltcShading(const PixelShadingParam pixel, const int light_index)
+{
+    // use roughness and sqrt(1-cos_theta) to sample M_texture
+    vec2 uv = vec2(pixel.roughness, sqrt(1.0f - pixel.NdotV));
+    uv = uv*LUT_SCALE + LUT_BIAS;
+
+    // get 4 parameters for inverse_M
+    vec4 t1 = texture(LTC1, uv);
+
+    // Get 2 parameters for Fresnel calculation
+    vec4 t2 = texture(LTC2, uv);
+    mat3 Minv = mat3(
+        vec3(t1.x, 0, t1.y),
+        vec3(  0,  1,    0),
+        vec3(t1.z, 0, t1.w)
+    );
+
+    vec3 diffuse = LTC_Evaluate(N, V, P, mat3(1), light_index);
+    vec3 Fr = LTC_Evaluate(N, V, P, Minv, light_index); // Fr without Freshnel
+
+    // GGX BRDF shadowing and Fresnel
+    // t2.x: shadowedF90 (F90 normally it should be 1.0)
+    // t2.y: Smith function for Geometric Attenuation Term, it is dot(V or L, H).
+    Fr *= pixel.specular*t2.x + (1.0f - pixel.specular) * t2.y;
+    result = pixel.illumance * (mDiffuse * diffuse + Fr);
+    return result;
+}
+
 void main(void)
 {
   PixelShadingParam pixel;
@@ -173,8 +210,11 @@ void main(void)
       pixel.NdotH = max(0.0f, dot(normal, H));
       pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));      
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
-    }
-    out_illumance += surfaceShading(pixel);
+      out_illumance += surfaceShading(pixel);
+    } else if(global_uniform.lights[index].light_type == AREA)
+    {
+
+    }    
   }
   frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
 }
