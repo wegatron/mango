@@ -375,7 +375,9 @@ Lights AssimpLoader::processLight(const aiScene *a_scene) {
   auto &l = lights.l[0];
   l.light_type = LightType::DIRECTIONAL;
   l.direction = Eigen::Vector3f(0.0f, 0.0f, -1.0f);
-  l.color_intensity = Eigen::Vector3f(0.8f, 0.8f, 0.8f);
+  l.intensity = Eigen::Vector3f(0.8f, 0.8f, 0.8f);
+
+
 
   return lights;
 }

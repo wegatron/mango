@@ -22,9 +22,9 @@ struct alignas(16) Light {
   float falloff;
 
   //float preserved;
-  alignas(16) Eigen::Vector3f position;
+  alignas(16) Eigen::Vector3f position[4];
   alignas(16) Eigen::Vector3f direction;
-  alignas(16) Eigen::Vector3f color_intensity;
+  alignas(16) Eigen::Vector3f intensity;
 };
 
 struct Lights {  
