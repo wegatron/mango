@@ -29,7 +29,6 @@ layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
 
 #ifdef HAS_AREA_LIGHT
 layout(set=GLOBAL_SET_INDEX, binding=1) uniform sampler2D LTC1;
-layout(set=GLOBAL_SET_INDEX, binding=2) uniform sampler2D LTC2;
 const float LUT_SIZE  = 64.0; // ltc_texture size
 const float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
 const float LUT_BIAS  = 0.5/LUT_SIZE;
@@ -137,35 +136,99 @@ vec3 surfaceShading(const PixelShadingParam pixel)
   float Vis = V_SmithGGXCorrelated(pixel.NdotL, pixel.NdotV, pixel.roughness);
   vec3 Fr = D * Vis * F;
   
-  return pixel.illumance * ((vec3(1.0f) - F) * Fd * diffuse_color + Fr);
+  return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
 }
 
-vec3 ltcShading(const PixelShadingParam pixel, const int light_index)
+vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, const int light_index)
 {
-    // use roughness and sqrt(1-cos_theta) to sample M_texture
-    vec2 uv = vec2(pixel.roughness, sqrt(1.0f - pixel.NdotV));
-    uv = uv*LUT_SCALE + LUT_BIAS;
+    // construct orthonormal basis around N
+    vec3 T1, T2;
+    T1 = normalize(V - N*dot(V, N));
+    T2 = cross(N, T1);
 
-    // get 4 parameters for inverse_M
-    vec4 t1 = texture(LTC1, uv);
+    // rotate area light in (T1, T2, N) basis
+    Minv = Minv * transpose(mat3(T1, T2, N));
 
-    // Get 2 parameters for Fresnel calculation
-    vec4 t2 = texture(LTC2, uv);
-    mat3 Minv = mat3(
-        vec3(t1.x, 0, t1.y),
-        vec3(  0,  1,    0),
-        vec3(t1.z, 0, t1.w)
-    );
+    // polygon (allocate 5 vertices for clipping)
+    vec3 L[5];
+    L[0] = Minv * (points[0] - P);
+    L[1] = Minv * (points[1] - P);
+    L[2] = Minv * (points[2] - P);
+    L[3] = Minv * (points[3] - P);
 
-    vec3 diffuse = LTC_Evaluate(N, V, P, mat3(1), light_index);
-    vec3 Fr = LTC_Evaluate(N, V, P, Minv, light_index); // Fr without Freshnel
+    int n=0;
+    // The integration is assumed on the upper hemisphere
+    // so we need to clip the frustum, the clipping will add 
+    // at most 1 edge, that's why L is declared 5 elements.
+    ClipQuadToHorizon(L, n);
+    
+    if (n == 0)
+        return vec3(0, 0, 0);
 
-    // GGX BRDF shadowing and Fresnel
-    // t2.x: shadowedF90 (F90 normally it should be 1.0)
-    // t2.y: Smith function for Geometric Attenuation Term, it is dot(V or L, H).
-    Fr *= pixel.specular*t2.x + (1.0f - pixel.specular) * t2.y;
-    result = pixel.illumance * (mDiffuse * diffuse + Fr);
-    return result;
+    // project onto sphere
+    vec3 PL[5];
+    PL[0] = normalize(L[0]);
+    PL[1] = normalize(L[1]);
+    PL[2] = normalize(L[2]);
+    PL[3] = normalize(L[3]);
+    PL[4] = normalize(L[4]);
+
+    // integrate for every edge.
+    float sum = 0.0;
+
+    sum += IntegrateEdge(PL[0], PL[1]);
+    sum += IntegrateEdge(PL[1], PL[2]);
+    sum += IntegrateEdge(PL[2], PL[3]);
+    if (n >= 4)
+        sum += IntegrateEdge(PL[3], PL[4]);
+    if (n == 5)
+        sum += IntegrateEdge(PL[4], PL[0]);
+
+    sum =  max(0.0, sum);
+    
+    // Calculate colour
+    vec3 e1 = normalize(L[0] - L[1]);
+    vec3 e2 = normalize(L[2] - L[1]);
+    vec3 N2 = cross(e1, e2); // Normal to light
+    vec3 V2 = N2 * dot(L[1], N2); // Vector to some point in light rect
+    vec2 Tlight_shape = vec2(length(L[0] - L[1]), length(L[2] - L[1]));
+    V2 = V2 - L[1];
+    float b = e1.y*e2.x - e1.x*e2.y + .1; // + .1 to remove artifacts
+	vec2 pLight = vec2((V2.y*e2.x - V2.x*e2.y)/b, (V2.x*e1.y - V2.y*e1.x)/b);
+   	pLight /= Tlight_shape;
+    pLight -= .5;
+    pLight /= 2.5;
+    pLight += .5;
+    
+    vec3 ref_col = texture(iChannel3, pLight).xyz;
+
+    vec3 Lo_i = vec3(sum) * ref_col;
+
+    return Lo_i;
+}
+
+vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const vec3 P, const int light_index)
+{
+  // use roughness and sqrt(1-cos_theta) to sample M_texture
+  vec2 uv = vec2(pixel.roughness, sqrt(1.0f - pixel.NdotV));
+  uv = uv*LUT_SCALE + LUT_BIAS;
+
+  // get 4 parameters for inverse_M
+  vec4 t1 = texture(LTC1, uv);
+
+  mat3 Minv = mat3(
+      vec3(t1.x, 0, t1.y),
+      vec3(  0,  1,    0),
+      vec3(t1.z, 0, t1.w)
+  );
+
+  vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
+  vec3 f90 = clamp(50.0f * f0, 0.0f, 1.0f);
+  vec3 F = F_Schlick(f0, f90, pixel.LdotH);
+  vec3 Fd = LTC_Evaluate(N, V, P, mat3(1), light_index);
+  vec3 Fr = F * LTC_Evaluate(N, V, P, Minv, light_index);
+  vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
+  return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
 }
 
 void main(void)
@@ -213,8 +276,10 @@ void main(void)
       out_illumance += surfaceShading(pixel);
     } else if(global_uniform.lights[index].light_type == AREA)
     {
-
-    }    
+      pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
+      pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
+      out_illumance += ltcShading();
+    }  
   }
   frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
 }
