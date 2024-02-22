@@ -139,72 +139,82 @@ vec3 surfaceShading(const PixelShadingParam pixel)
   return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
 }
 
+#ifdef HAS_AREA_LIGHT
+// Vector form without project to the plane (dot with the normal)
+// Use for proxy sphere clipping
+vec3 IntegrateEdgeVec(vec3 v1, vec3 v2)
+{
+    // Using built-in acos() function will result flaws
+    // Using fitting result for calculating acos()
+    float x = dot(v1, v2);
+    float y = abs(x);
+
+    float a = 0.8543985 + (0.4965155 + 0.0145206*y)*y;
+    float b = 3.4175940 + (4.1616724 + y)*y;
+    float v = a / b;
+
+    float theta_sintheta = (x > 0.0) ? v : 0.5*inversesqrt(max(1.0 - x*x, 1e-7)) - v;
+
+    return cross(v1, v2)*theta_sintheta;
+}
+
 vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, const int light_index)
 {
-    // construct orthonormal basis around N
-    vec3 T1, T2;
-    T1 = normalize(V - N*dot(V, N));
-    T2 = cross(N, T1);
+  // construct orthonormal basis around N
+  vec3 T1, T2;
+  T1 = normalize(V - N * dot(V, N));
+  T2 = cross(N, T1);
 
-    // rotate area light in (T1, T2, N) basis
-    Minv = Minv * transpose(mat3(T1, T2, N));
+  // rotate area light in (T1, T2, N) basis
+  Minv = Minv * transpose(mat3(T1, T2, N));
 
-    // polygon (allocate 5 vertices for clipping)
-    vec3 L[5];
-    L[0] = Minv * (points[0] - P);
-    L[1] = Minv * (points[1] - P);
-    L[2] = Minv * (points[2] - P);
-    L[3] = Minv * (points[3] - P);
+  // polygon (allocate 4 vertices for clipping)
+  vec3 L[4];
+  // transform polygon from LTC back to origin Do (cosine weighted)
+  L[0] = Minv * (points[0] - P);
+  L[1] = Minv * (points[1] - P);
+  L[2] = Minv * (points[2] - P);
+  L[3] = Minv * (points[3] - P);
 
-    int n=0;
-    // The integration is assumed on the upper hemisphere
-    // so we need to clip the frustum, the clipping will add 
-    // at most 1 edge, that's why L is declared 5 elements.
-    ClipQuadToHorizon(L, n);
-    
-    if (n == 0)
-        return vec3(0, 0, 0);
+  // use tabulated horizon-clipped sphere
+  // check if the shading point is behind the light
+  vec3 dir = points[0] - P; // LTC space
+  vec3 lightNormal = cross(points[1] - points[0], points[3] - points[0]);
+  bool behind = (dot(dir, lightNormal) < 0.0);
 
-    // project onto sphere
-    vec3 PL[5];
-    PL[0] = normalize(L[0]);
-    PL[1] = normalize(L[1]);
-    PL[2] = normalize(L[2]);
-    PL[3] = normalize(L[3]);
-    PL[4] = normalize(L[4]);
+  // cos weighted space
+  L[0] = normalize(L[0]);
+  L[1] = normalize(L[1]);
+  L[2] = normalize(L[2]);
+  L[3] = normalize(L[3]);
 
-    // integrate for every edge.
-    float sum = 0.0;
+  // integrate
+  vec3 vsum = vec3(0.0);
+  vsum += IntegrateEdgeVec(L[0], L[1]);
+  vsum += IntegrateEdgeVec(L[1], L[2]);
+  vsum += IntegrateEdgeVec(L[2], L[3]);
+  vsum += IntegrateEdgeVec(L[3], L[0]);
 
-    sum += IntegrateEdge(PL[0], PL[1]);
-    sum += IntegrateEdge(PL[1], PL[2]);
-    sum += IntegrateEdge(PL[2], PL[3]);
-    if (n >= 4)
-        sum += IntegrateEdge(PL[3], PL[4]);
-    if (n == 5)
-        sum += IntegrateEdge(PL[4], PL[0]);
+  // form factor of the polygon in direction vsum
+  float len = length(vsum);
 
-    sum =  max(0.0, sum);
-    
-    // Calculate colour
-    vec3 e1 = normalize(L[0] - L[1]);
-    vec3 e2 = normalize(L[2] - L[1]);
-    vec3 N2 = cross(e1, e2); // Normal to light
-    vec3 V2 = N2 * dot(L[1], N2); // Vector to some point in light rect
-    vec2 Tlight_shape = vec2(length(L[0] - L[1]), length(L[2] - L[1]));
-    V2 = V2 - L[1];
-    float b = e1.y*e2.x - e1.x*e2.y + .1; // + .1 to remove artifacts
-	vec2 pLight = vec2((V2.y*e2.x - V2.x*e2.y)/b, (V2.x*e1.y - V2.y*e1.x)/b);
-   	pLight /= Tlight_shape;
-    pLight -= .5;
-    pLight /= 2.5;
-    pLight += .5;
-    
-    vec3 ref_col = texture(iChannel3, pLight).xyz;
+  float z = vsum.z/len;
+  if (behind)
+      z = -z;
 
-    vec3 Lo_i = vec3(sum) * ref_col;
+  vec2 uv = vec2(z*0.5f + 0.5f, len); // range [0, 1]
+  uv = uv*LUT_SCALE + LUT_BIAS;
 
-    return Lo_i;
+  // Fetch the form factor for horizon clipping
+  float scale = texture(LTC2, uv).w;
+
+  float sum = len*scale;
+  if (!behind && !twoSided)
+      sum = 0.0;
+
+  // Outgoing radiance (solid angle) for the entire polygon
+  vec3 Lo_i = vec3(sum, sum, sum);
+  return Lo_i;
 }
 
 vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const vec3 P, const int light_index)
@@ -230,6 +240,7 @@ vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const
   vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
   return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
 }
+#endif // HAS_AREA_LIGHT
 
 void main(void)
 {
@@ -274,12 +285,15 @@ void main(void)
       pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));      
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
       out_illumance += surfaceShading(pixel);
-    } else if(global_uniform.lights[index].light_type == AREA)
+    }
+    #ifdef HAS_AREA_LIGHT
+    else if(global_uniform.lights[index].light_type == AREA)
     {
       pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
       out_illumance += ltcShading();
-    }  
+    }
+    #endif //HAS_AREA_LIGHT
   }
   frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
 }
