@@ -158,8 +158,9 @@ vec3 IntegrateEdgeVec(vec3 v1, vec3 v2)
     return cross(v1, v2)*theta_sintheta;
 }
 
-vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, const int light_index)
+vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, int index)
 {
+  vec3 points[4] = global_uniform.lights[index].points;
   // construct orthonormal basis around N
   vec3 T1, T2;
   T1 = normalize(V - N * dot(V, N));
