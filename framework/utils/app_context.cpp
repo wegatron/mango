@@ -121,10 +121,10 @@ void GlobalParamSet::setCameraParam(const Eigen::Vector3f &pos, const float ev10
 }
 
 void GlobalParamSet::setLights(const Lights &lights)
-{  
-  static_assert(sizeof(Lights) == 64 * MAX_LIGHTS_COUNT + 16);
-  static_assert(sizeof(ub_data_.lights[0]) == 64);
-  memcpy(&(ub_data_.lights), &lights, sizeof(Lights));  
+{
+  static_assert(sizeof(Light) == 112);  
+  static_assert(sizeof(Lights) == 112 * MAX_LIGHTS_COUNT + 16);
+  memcpy(&(ub_data_.lights), &lights, sizeof(Lights));
 }
 
 void GlobalParamSet::update()

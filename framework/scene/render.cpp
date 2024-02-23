@@ -64,10 +64,10 @@ void Render::render(Scene *scene, Gui * gui)
   uint32_t light_index = 0;
   for(auto &&[entity, tr, l] : lv.each())
   {
-    lights.l[light_index] = l;
-    Eigen::Vector4f tp;
-    tp.head(3) = l.position; tp[3] = 1.0f;
-    lights.l[light_index].position = (tr->gtransform * tp).head(3);
+    lights.l[light_index] = l;    
+    // Eigen::Vector4f tp;
+    // tp.head(3) = l.position; tp[3] = 1.0f;
+    // lights.l[light_index].position = (tr->gtransform * tp).head(3);
   }
   global_param_set->setLights(lights);
   global_param_set->update();

@@ -1,5 +1,5 @@
 #version 450
-//#extension GL_EXT_scalar_block_layout : require
+#extension GL_EXT_scalar_block_layout : require
 
 struct LightT
 {
@@ -8,7 +8,7 @@ struct LightT
   float outer_angle;
   float falloff;
 
-  vec3 position[4]; // position[1..3] for area light
+  vec4 position[4]; // position[1..3] for area light
 
   vec3 direction;
   vec3 intensity; // lux for directional light or cd for other lights
