@@ -20,6 +20,9 @@ void ViewerApp::init(Window * window, const std::shared_ptr<VkDriver> &driver,
   auto cmd_buf =
       frames_data[0].command_pool->requestCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
   cmd_buf->begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+  initGlobalParamSet(cmd_buf);
+  
   AssimpLoader loader;
   loader.loadScene(scene_path_, *scene_, cmd_buf);
   cmd_buf->end();

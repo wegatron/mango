@@ -60,6 +60,9 @@ void Image::updateByStaging(void *data, const std::shared_ptr<StagePool> &stage_
   else if(format_ == VK_FORMAT_R8_UNORM)
   {
     pixel_size = 1;
+  } else if(format_ == VK_FORMAT_R32G32B32A32_SFLOAT)
+  {
+    pixel_size = 16;
   }
 
   if(pixel_size == 0)

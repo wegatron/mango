@@ -19,6 +19,8 @@ namespace vk_engine
     class RenderTarget;
     class DescriptorSet;
     class Buffer;
+    class ImageView;
+    class Sampler;
     
     struct FrameData
     {
@@ -45,7 +47,7 @@ namespace vk_engine
     class GlobalParamSet final
     {
     public:
-        GlobalParamSet();
+        GlobalParamSet(const std::shared_ptr<CommandBuffer> &cmd_buf);
         ~GlobalParamSet() = default;
 
         void setCameraParam(const Eigen::Vector3f &pos, const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj);
@@ -57,7 +59,10 @@ namespace vk_engine
         std::shared_ptr<DescriptorSet> getDescSet() const { return desc_set_; }
     private:
         GlobalUb ub_data_;
-        std::unique_ptr<Buffer> ubo_;        
+        std::unique_ptr<Buffer> ubo_;
+        std::shared_ptr<ImageView> ltc1_imgv_; // Linear Transformed Cosine lookup table
+        std::shared_ptr<ImageView> ltc2_imgv_; // Linear Transformed Cosine lookup table
+        std::shared_ptr<Sampler> sampler_;
         std::shared_ptr<DescriptorSet> desc_set_;
     };    
 
@@ -86,6 +91,8 @@ namespace vk_engine
     void updateRtsInContext(const std::vector<std::shared_ptr<RenderTarget>> &rts);
     
     bool initAppContext(const std::shared_ptr<VkDriver> &driver, const std::vector<std::shared_ptr<RenderTarget>> &rts);
+
+    void initGlobalParamSet(const std::shared_ptr<CommandBuffer> &cmd_buf);
     
     const AppContext &getDefaultAppContext();
     

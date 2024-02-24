@@ -5,10 +5,12 @@
 #include <framework/vk/queue.h>
 #include <framework/vk/resource_cache.h>
 #include <framework/vk/stage_pool.h>
+#include <framework/vk/sampler.h>
+#include <framework/vk/image.h>
 #include <framework/vk/syncs.h>
 #include <framework/vk/vk_constants.h>
 #include <framework/scene/component/light.h>
-
+#include <framework/utils/ltc_matrix.hpp>
 namespace vk_engine {
 static AppContext g_app_context;
 
@@ -49,9 +51,6 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
       driver, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_size,
       sizeof(pool_size) / sizeof(pool_size[0]), MAX_GLOBAL_DESC_SET);
 
-  // global param set
-  g_app_context.global_param_set = std::make_unique<GlobalParamSet>();
-
   // frames data
   auto cmd_queue = driver->getGraphicsQueue();
   auto &frames_data = g_app_context.frames_data;
@@ -70,7 +69,12 @@ bool initAppContext(const std::shared_ptr<VkDriver> &driver,
   return true;
 }
 
-GlobalParamSet::GlobalParamSet() {
+void initGlobalParamSet(const std::shared_ptr<CommandBuffer> &cmd_buf)
+{
+  g_app_context.global_param_set = std::move(std::make_unique<GlobalParamSet>(cmd_buf));
+}
+
+GlobalParamSet::GlobalParamSet(const std::shared_ptr<CommandBuffer> &cmd_buf) {
   static_assert(sizeof(ub_data_) == GLOBAL_UBO_SIZE);
   auto driver = getDefaultAppContext().driver;
   ubo_ = std::move(std::make_unique<Buffer>(
@@ -88,7 +92,8 @@ GlobalParamSet::GlobalParamSet() {
 
   ubo_->update(&ub_data_, GLOBAL_UBO_CAMERA_SIZE);
 
-  ShaderResource sr[] = {{
+  ShaderResource sr[] = {
+    {
       .stages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
       .type = ShaderResourceType::BufferUniform,
       .mode = ShaderResourceMode::Static,
@@ -96,21 +101,75 @@ GlobalParamSet::GlobalParamSet() {
       .binding = 0,
       .array_size = 1,
       .size = GLOBAL_UBO_SIZE,
-  }};
+    },
+    {
+      .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .type = ShaderResourceType::ImageSampler,
+      .mode = ShaderResourceMode::Static,
+      .set = GLOBAL_SET_INDEX,
+      .binding = 1
+    },
+    {
+      .stages = VK_SHADER_STAGE_FRAGMENT_BIT,
+      .type = ShaderResourceType::ImageSampler,
+      .mode = ShaderResourceMode::Static,
+      .set = GLOBAL_SET_INDEX,
+      .binding = 2
+    }    
+  };
   DescriptorSetLayout desc_layout(getDefaultAppContext().driver,
-                                  MATERIAL_SET_INDEX, sr, 1);
+                                  MATERIAL_SET_INDEX, sr, sizeof(sr)/sizeof(ShaderResource));
   auto &desc_pool = getDefaultAppContext().descriptor_pool;
   desc_set_ = desc_pool->requestDescriptorSet(desc_layout);
+
+  // LTC texture
+  auto &asset_manager = getDefaultAppContext().gpu_asset_manager;
+  ltc1_imgv_ = asset_manager->request<ImageView>(LTC1, 64, 64, 4, cmd_buf);
+  ltc2_imgv_ = asset_manager->request<ImageView>(LTC2, 64, 64, 4, cmd_buf);
+  sampler_ = getDefaultAppContext().resource_cache->requestSampler(driver, 
+    VK_FILTER_NEAREST, VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
+  
+  VkDescriptorImageInfo ltc_img_infos[2]{
+    {
+      .sampler = sampler_->getHandle(),
+      .imageView = ltc1_imgv_->getHandle(),
+      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    },
+    {
+      .sampler = sampler_->getHandle(),
+      .imageView = ltc2_imgv_->getHandle(),
+      .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    }
+  };
 
   VkDescriptorBufferInfo desc_buffer_info{
       .buffer = ubo_->getHandle(), .offset = 0, .range = GLOBAL_UBO_SIZE};
   driver->update(
-      {VkWriteDescriptorSet{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+      {
+        VkWriteDescriptorSet{.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
                             .dstSet = desc_set_->getHandle(),
                             .dstBinding = 0,
                             .descriptorCount = 1,
                             .descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-                            .pBufferInfo = &desc_buffer_info}});
+                            .pBufferInfo = &desc_buffer_info},
+        VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = desc_set_->getHandle(),
+          .dstBinding = 1,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .pImageInfo = &ltc_img_infos[0]
+        },
+        VkWriteDescriptorSet{
+          .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+          .dstSet = desc_set_->getHandle(),
+          .dstBinding = 2,
+          .descriptorCount = 1,
+          .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+          .pImageInfo = &ltc_img_infos[1]
+        }
+      });
 }
 
 void GlobalParamSet::setCameraParam(const Eigen::Vector3f &pos, const float ev100, const Eigen::Matrix4f &view, const Eigen::Matrix4f &proj) {

@@ -8,7 +8,7 @@ struct LightT
   float outer_angle;
   float falloff;
 
-  vec4 position[4]; // position[1..3] for area light
+  vec3 position[4]; // position[1..3] for area light
 
   vec3 direction;
   vec3 intensity; // lux for directional light or cd for other lights
@@ -27,12 +27,13 @@ layout(std430, set=GLOBAL_SET_INDEX, binding = 0) uniform GlobalUniform
     int light_count;  // 144 + 64 * MAX_LIGHTS_COUNT + 16
 } global_uniform;
 
-#ifdef HAS_AREA_LIGHT
+// AREA LIGHT LTC Lookup table
 layout(set=GLOBAL_SET_INDEX, binding=1) uniform sampler2D LTC1;
+layout(set=GLOBAL_SET_INDEX, binding=2) uniform sampler2D LTC2;
+
 const float LUT_SIZE  = 64.0; // ltc_texture size
 const float LUT_SCALE = (LUT_SIZE - 1.0)/LUT_SIZE;
 const float LUT_BIAS  = 0.5/LUT_SIZE;
-#endif
 
 layout(std430, set=MATERIAL_SET_INDEX, binding = 0) uniform BasicMaterial
 {
@@ -139,7 +140,6 @@ vec3 surfaceShading(const PixelShadingParam pixel)
   return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
 }
 
-#ifdef HAS_AREA_LIGHT
 // Vector form without project to the plane (dot with the normal)
 // Use for proxy sphere clipping
 vec3 IntegrateEdgeVec(vec3 v1, vec3 v2)
@@ -160,7 +160,7 @@ vec3 IntegrateEdgeVec(vec3 v1, vec3 v2)
 
 vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, int index)
 {
-  vec3 points[4] = global_uniform.lights[index].points;
+  vec3 points[4] = global_uniform.lights[index].position;
   // construct orthonormal basis around N
   vec3 T1, T2;
   T1 = normalize(V - N * dot(V, N));
@@ -210,8 +210,6 @@ vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, int index)
   float scale = texture(LTC2, uv).w;
 
   float sum = len*scale;
-  if (!behind && !twoSided)
-      sum = 0.0;
 
   // Outgoing radiance (solid angle) for the entire polygon
   vec3 Lo_i = vec3(sum, sum, sum);
@@ -241,7 +239,6 @@ vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const
   vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
   return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
 }
-#endif // HAS_AREA_LIGHT
 
 void main(void)
 {
@@ -287,14 +284,12 @@ void main(void)
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
       out_illumance += surfaceShading(pixel);
     }
-    #ifdef HAS_AREA_LIGHT
     else if(global_uniform.lights[index].light_type == AREA)
     {
       pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
-      out_illumance += ltcShading();
+      out_illumance += ltcShading(pixel, normal, V, pos, index);
     }
-    #endif //HAS_AREA_LIGHT
   }
   frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
 }
