@@ -127,7 +127,7 @@ GlobalParamSet::GlobalParamSet(const std::shared_ptr<CommandBuffer> &cmd_buf) {
   ltc1_imgv_ = asset_manager->request<ImageView>(LTC1, 64, 64, 4, cmd_buf);
   ltc2_imgv_ = asset_manager->request<ImageView>(LTC2, 64, 64, 4, cmd_buf);
   sampler_ = getDefaultAppContext().resource_cache->requestSampler(driver, 
-    VK_FILTER_NEAREST, VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_LINEAR,
+    VK_FILTER_LINEAR, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_NEAREST,
     VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE);
   
   VkDescriptorImageInfo ltc_img_infos[2]{

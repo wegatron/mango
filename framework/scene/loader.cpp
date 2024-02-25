@@ -374,15 +374,15 @@ Lights AssimpLoader::processLight(const aiScene *a_scene) {
   lights.lights_count = 1;
   auto &l = lights.l[0];
   // l.light_type = LightType::DIRECTIONAL;
-  // l.direction = Eigen::Vector3f(0.0f, 1.0f, -1.0f).normalized();
+  // l.direction = Eigen::Vector3f(0.0f, -1.0f, 1.0f).normalized();
   // l.intensity = Eigen::Vector3f(0.8f, 0.8f, 0.8f);
 
   l.light_type = LightType::AREA;
   l.intensity = Eigen::Vector3f(0.8f, 0.8f, 0.2f);
-  l.position[0] = Eigen::Vector4f(-0.8f, -0.8f, 0.4f, 1.0f);
-  l.position[1] = Eigen::Vector4f(0.8f, -0.8f, 0.4f, 1.0f);
-  l.position[2] = Eigen::Vector4f(0.8f, 0.8f, 0.4f, 1.0f);
-  l.position[3] = Eigen::Vector4f(-0.8f, 0.8f, 0.4f, 1.0f);
+  l.position[0] = Eigen::Vector4f(-8.0f, 2.4f, -1.0f, 1.0f);
+  l.position[1] = Eigen::Vector4f(-8.0f, 2.4f, 1.0f, 1.0f);
+  l.position[2] = Eigen::Vector4f(-8.0f, 0.4f, 1.0f, 1.0f);
+  l.position[3] = Eigen::Vector4f(-8.0f, 0.4f, -1.0f, 1.0f);
   return lights;
 }
 } // namespace vk_engine

@@ -216,6 +216,33 @@ vec3 LTC_Evaluate(vec3 N, vec3 V, vec3 P, mat3 Minv, int index)
   return Lo_i;
 }
 
+// vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const vec3 P, const int light_index)
+// {
+//   // use roughness and sqrt(1-cos_theta) to sample M_texture
+//   vec2 uv = vec2(pixel.roughness, sqrt(1.0f - pixel.NdotV));
+//   uv = uv*LUT_SCALE + LUT_BIAS;
+
+//   // get 4 parameters for inverse_M
+//   vec4 t1 = texture(LTC1, uv);
+//   vec4 t2 = texture(LTC2, uv);
+  
+//   mat3 Minv = mat3(
+//       vec3(t1.x, 0, t1.y),
+//       vec3(  0,  1,    0),
+//       vec3(t1.z, 0, t1.w)
+//   );
+
+//   vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
+//   // GGX BRDF shadowing and Fresnel
+//   // t2.x: shadowedF90 (F90 normally it should be 1.0)
+//   // t2.y: Smith function for Geometric Attenuation Term, it is dot(V or L, H).
+//   vec3 F = f0 * t2.x + (1.0f - f0) * t2.y; // shadowing and Fres
+//   vec3 Fd = LTC_Evaluate(N, V, P, mat3(1), light_index);
+//   vec3 Fr = F * LTC_Evaluate(N, V, P, Minv, light_index);
+//   vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
+//   return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
+// }
+
 vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const vec3 P, const int light_index)
 {
   // use roughness and sqrt(1-cos_theta) to sample M_texture
@@ -224,20 +251,23 @@ vec3 ltcShading(const PixelShadingParam pixel, const vec3 N, const vec3 V, const
 
   // get 4 parameters for inverse_M
   vec4 t1 = texture(LTC1, uv);
-
+  vec4 t2 = texture(LTC2, uv);
+  
   mat3 Minv = mat3(
       vec3(t1.x, 0, t1.y),
       vec3(  0,  1,    0),
       vec3(t1.z, 0, t1.w)
   );
 
-  vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
-  vec3 f90 = clamp(50.0f * f0, 0.0f, 1.0f);
-  vec3 F = F_Schlick(f0, f90, pixel.LdotH);
-  vec3 Fd = LTC_Evaluate(N, V, P, mat3(1), light_index);
-  vec3 Fr = F * LTC_Evaluate(N, V, P, Minv, light_index);
-  vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
-  return pixel.illumance * ((1.0f - F) * Fd * diffuse_color + Fr);
+  // vec3 f0 = mix(vec3(0.16f * pixel.specular * pixel.specular), pixel.base_color.rgb, pixel.metallic);
+  // // GGX BRDF shadowing and Fresnel
+  // // t2.x: shadowedF90 (F90 normally it should be 1.0)
+  // // t2.y: Smith function for Geometric Attenuation Term, it is dot(V or L, H).
+  // vec3 F = f0 * t2.x + (1.0f - f0) * t2.y; // shadowing and Fres
+  // vec3 Fd = LTC_Evaluate(N, V, P, mat3(1), light_index);
+  // vec3 Fr = F * LTC_Evaluate(N, V, P, Minv, light_index);
+  // vec3 diffuse_color = pixel.base_color.rgb * (1.0f - pixel.metallic);
+  return LTC_Evaluate(N, V, P, Minv, light_index);
 }
 
 void main(void)
@@ -271,25 +301,27 @@ void main(void)
   #endif
 
   vec3 out_illumance = vec3(0.0f);
-  vec3 V = normalize(global_uniform.camera_pos - pos);
+  //vec3 V = normalize(global_uniform.camera_pos - pos);
+  vec3 V = normalize(vec3(0, 1, 0.5) - pos);
   pixel.NdotV = max(0.0f, dot(normal, V));
   for(int index=0; index<global_uniform.light_count; ++index)
   {
     if(global_uniform.lights[index].light_type == DIRECTIONAL)
     {
       pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
-      vec3 H = normalize(-global_uniform.lights[index].direction + V);
+      vec3 H = normalize(-global_uniform.lights[index].direction + V);  
       pixel.NdotH = max(0.0f, dot(normal, H));
-      pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));      
+      pixel.LdotH = max(0.0f, dot(-global_uniform.lights[index].direction, H));
       pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
       out_illumance += surfaceShading(pixel);
     }
     else if(global_uniform.lights[index].light_type == AREA)
     {
-      pixel.NdotL = max(0.0f, dot(normal, -global_uniform.lights[index].direction));
-      pixel.illumance = pixel.NdotL * global_uniform.lights[index].intensity;
+      pixel.illumance = global_uniform.lights[index].intensity;
+      //out_illumance = LTC_Evaluate(normal, V, pos, mat3(1.0), 0);
       out_illumance += ltcShading(pixel, normal, V, pos, index);
     }
   }
-  frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
+  frag_color = vec4(out_illumance, 1.0f);
+  //frag_color = vec4(global_uniform.ev * out_illumance, 1.0f);
 }
