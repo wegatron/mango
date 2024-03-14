@@ -1,6 +1,6 @@
 #include <framework/platform/glfw_window.h>
-#include <framework/utils/app_base.h>
-#include <framework/utils/error.h>
+#include <framework/app_template/app_base.h>
+#include <framework/utils/base/error.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/imgui.h>
 //#include <imgui/backends/imgui_impl_vulkan.h>

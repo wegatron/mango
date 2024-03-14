@@ -1,5 +1,5 @@
-file(GLOB headers scene/*.h  scene/component/*.h utils/*.h vk/*.h platform/*.h)
-file(GLOB srcs scene/*.cpp scene/component/*.cpp utils/*.cpp vk/*.cpp platform/*.cpp)
+file(GLOB_RECURSE headers CONFIGURE_DEPENDS *.h *.hpp)
+file(GLOB_RECURSE srcs CONFIGURE_DEPENDS *.cpp)
 
 set(IMGUI_HEADERS
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/imconfig.h
@@ -20,7 +20,7 @@ set(IMGUI_SRC
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_glfw.cpp
     ${CMAKE_SOURCE_DIR}/thirdparty/imgui/backends/imgui_impl_vulkan.cpp
 )
-add_library(vk_engine ${headers} ${srcs} ${IMGUI_HEADERS} ${IMGUI_SRC})
+add_library(vk_engine STATIC ${headers} ${srcs} ${IMGUI_HEADERS} ${IMGUI_SRC})
 target_link_libraries(vk_engine PRIVATE 
 volk
 ${GLFW_LIBRARY}
